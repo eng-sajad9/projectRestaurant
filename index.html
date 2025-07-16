@@ -1,0 +1,523 @@
+
+```html
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>نظام تسجيل الحضور</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      direction: rtl;
+      background-color: #f4f4f4;
+      margin: 0; padding: 0;
+    }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      padding: 20px;
+      background: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      margin-top: 30px;
+    }
+    h2 { text-align: center; color: #333; }
+    input, button, select {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover { background-color: #0056b3; }
+    #mainContent, #adminPanel {
+      display: none;
+    }
+    #attendanceTable {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    #attendanceTable th, #attendanceTable td {
+      border: 1px solid #ccc;
+      padding: 5px;
+      text-align: center;
+    }
+    .editor-tag {
+      font-size: 12px;
+      color: #555;
+    }
+    .error {
+      color: red;
+      text-align: center;
+      margin: 10px 0;
+    }
+    .loading {
+      text-align: center;
+      color: #666;
+      margin: 10px 0;
+    }
+    #adminPanel {
+      margin-top: 20px;
+      border-top: 1px solid #ccc;
+      padding-top: 10px;
+    }
+    #adminPanel h3 {
+      margin-top: 0;
+      text-align: center;
+    }
+    table#usersTable, table#employeesTable {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    table#usersTable th, table#usersTable td,
+    table#employeesTable th, table#employeesTable td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+    .small-button {
+      padding: 5px 10px;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+    .btn-edit { background-color: #28a745; color: white; border: none; }
+    .btn-delete { background-color: #dc3545; color: white; border: none; }
+    .btn-toggle { background-color: #ffc107; color: black; border: none; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- تسجيل الدخول -->
+  <div id="loginBox">
+    <h2>تسجيل الدخول</h2>
+    <input type="text" id="username" placeholder="اسم المستخدم" autocomplete="off" />
+    <input type="password" id="password" placeholder="كلمة المرور" autocomplete="off" />
+    <button onclick="login()">دخول</button>
+    <div id="loginMessage"></div>
+  </div>
+
+  <!-- المحتوى الرئيسي وجدول الحضور -->
+  <div id="mainContent">
+    <h2>📋 جدول الحضور - تموز</h2>
+    <table id="attendanceTable">
+      <thead>
+        <tr>
+          <th>التاريخ</th>
+          <!-- أسماء الموظفين سيتم تحميلها ديناميكياً -->
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+    <button onclick="saveData()">💾 حفظ التعديلات</button>
+    <button onclick="logout()" style="background-color: #dc3545; margin-top: 10px;">🚪 تسجيل خروج</button>
+  </div>
+
+  <!-- لوحة تحكم الـ Admin -->
+  <div id="adminPanel">
+    <h3>لوحة تحكم المدير</h3>
+
+    <h4>إدارة الموظفين</h4>
+    <input type="text" id="newEmployeeName" placeholder="اسم الموظف الجديد" />
+    <button onclick="addEmployee()">➕ إضافة موظف</button>
+
+    <table id="employeesTable">
+      <thead>
+        <tr><th>اسم الموظف</th><th>حذف</th></tr>
+      </thead>
+      <tbody id="employeesBody"></tbody>
+    </table>
+
+    <hr />
+
+    <h4>إدارة المستخدمين</h4>
+    <input type="text" id="newUserName" placeholder="اسم المستخدم الجديد" />
+    <input type="password" id="newUserPass" placeholder="كلمة المرور" />
+    <label><input type="checkbox" id="newUserCanEdit" checked /> صلاحية تعديل الجدول</label>
+    <button onclick="addUser()">➕ إنشاء مستخدم</button>
+
+    <table id="usersTable">
+      <thead>
+        <tr>
+          <th>اسم المستخدم</th>
+          <th>الصلاحية (تعديل؟)</th>
+          <th>تغيير الصلاحية</th>
+          <th>حذف المستخدم</th>
+        </tr>
+      </thead>
+      <tbody id="usersBody"></tbody>
+    </table>
+
+  </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script>
+  // إعداد Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyDh8KquT-8Slr6B5SAGoyGj2zOEusyiEg4",
+    authDomain: "sjad-b3946.firebaseapp.com",
+    databaseURL: "https://sjad-b3946-default-rtdb.firebaseio.com",
+    projectId: "sjad-b3946",
+    storageBucket: "sjad-b3946.firebasestorage.app",
+    messagingSenderId: "1001672753514",
+    appId: "1:1001672753514:web:eac813b6e25621f5d16513",
+    measurementId: "G-EV0NVW2036"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  let employees = [];
+  const statuses = ["", "شفت", "نص", "❌"];
+  const month = 6; // تموز
+  const year = new Date().getFullYear();
+
+  let currentUser = "";
+  let currentUserRole = "";
+  let currentUserCanEdit = false;
+
+  function showMessage(message, isError = false) {
+    const messageDiv = document.getElementById("loginMessage");
+    messageDiv.innerHTML = message;
+    messageDiv.className = isError ? "error" : "loading";
+  }
+
+  // --- تسجيل الدخول مع التحقق من canEdit وصلاحية admin ---
+  function login() {
+    const usernameInput = document.getElementById("username");
+    const passwordInput = document.getElementById("password");
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value.trim();
+
+    if (!username || !password) {
+      showMessage("❌ يرجى إدخال اسم المستخدم وكلمة المرور", true);
+      return;
+    }
+
+    showMessage("🔄 جاري تسجيل الدخول...");
+
+    const userKey = username.toLowerCase();
+
+    db.ref("users/" + userKey).once("value")
+      .then(snapshot => {
+        if (!snapshot.exists()) {
+          showMessage("❌ اسم المستخدم غير موجود", true);
+          throw new Error("User not found");
+        }
+        const userData = snapshot.val();
+        if (userData.password !== password) {
+          showMessage("❌ كلمة المرور غير صحيحة", true);
+          throw new Error("Wrong password");
+        }
+
+        currentUser = userKey;
+        currentUserRole = userData.role || "user";
+        currentUserCanEdit = userData.canEdit !== undefined ? userData.canEdit : true;
+
+        showMessage("");
+        usernameInput.value = "";
+        passwordInput.value = "";
+
+        document.getElementById("loginBox").style.display = "none";
+        document.getElementById("mainContent").style.display = "block";
+
+        // تحميل الموظفين من قاعدة البيانات
+        loadEmployees().then(() => {
+          generateTable();
+        });
+
+        if (currentUserRole === "admin") {
+          document.getElementById("adminPanel").style.display = "block";
+          loadUsers();
+          loadEmployeesTable();
+        } else {
+          document.getElementById("adminPanel").style.display = "none";
+        }
+
+      })
+      .catch(error => {
+        console.error("Login error:", error);
+        if (!error.message.startsWith("User not found") && !error.message.startsWith("Wrong password")) {
+          showMessage("❌ خطأ في الاتصال: " + error.message, true);
+        }
+      });
+  }
+
+  function logout() {
+    currentUser = "";
+    currentUserRole = "";
+    currentUserCanEdit = false;
+
+    document.getElementById("loginBox").style.display = "block";
+    document.getElementById("mainContent").style.display = "none";
+    document.getElementById("adminPanel").style.display = "none";
+
+    document.getElementById("username").value = "";
+    document.getElementById("password").value = "";
+    showMessage("");
+  }
+
+  // تحميل الموظفين من Firebase
+  function loadEmployees() {
+    return db.ref("employees").once("value").then(snapshot => {
+      if (snapshot.exists()) {
+        employees = snapshot.val();
+      } else {
+        employees = [];
+      }
+      // تحديث ترويسة الجدول بأسماء الموظفين
+      const theadRow = document.querySelector("#attendanceTable thead tr");
+      // حذف كل الأعمدة ما عدا العمود الأول (التاريخ)
+      while (theadRow.children.length > 1) {
+        theadRow.removeChild(theadRow.lastChild);
+      }
+      employees.forEach(emp => {
+        const th = document.createElement("th");
+        th.textContent = emp;
+        theadRow.appendChild(th);
+      });
+      loadEmployeesTable();
+    });
+  }
+
+  // إنشاء أيام الشهر
+  function getDays() {
+    const days = [];
+    let date = new Date(year, month, 1);
+    while (date.getMonth() === month) {
+      const dayKey = `${year}-${month + 1}-${date.getDate()}`;
+      const dayLabel = `${date.getDate()} تموز (${date.toLocaleDateString('ar-EG', {weekday: 'long'})})`;
+      days.push({key: dayKey, label: dayLabel});
+      date.setDate(date.getDate() + 1);
+    }
+    return days;
+  }
+
+  // توليد جدول الحضور مع التحكم بصلاحيات التعديل (readonly إذا canEdit = false)
+  function generateTable() {
+    const days = getDays();
+    const tbody = document.getElementById("tableBody");
+    tbody.innerHTML = "";
+
+    db.ref("attendance").once("value").then(snapshot => {
+      const savedData = snapshot.val() || {};
+
+      days.forEach((day, dayIndex) => {
+        const row = document.createElement("tr");
+
+        // عمود التاريخ مع اسم المحرر فقط في الخانات المعدلة
+        const dateCell = document.createElement("td");
+        let dateContent = day.label;
+        if (savedData[day.key] && savedData[day.key].__editor) {
+          dateContent += `<div class='editor-tag'>🖊️ ${savedData[day.key].__editor}</div>`;
+        }
+        dateCell.innerHTML = dateContent;
+        row.appendChild(dateCell);
+
+        employees.forEach((employee, empIndex) => {
+          const cell = document.createElement("td");
+          const select = document.createElement("select");
+          select.id = `d${dayIndex}e${empIndex}`;
+
+          // إذا المستخدم لا يملك صلاحية التعديل، نجعل الاختيارات معطلة
+          if (!currentUserCanEdit) {
+            select.disabled = true;
+          }
+
+          statuses.forEach(status => {
+            const option = document.createElement("option");
+            option.value = status;
+            option.textContent = status;
+            select.appendChild(option);
+          });
+
+          // تعيين القيمة المحفوظة إذا وجدت
+          if (savedData[day.key] && savedData[day.key][employee]) {
+            select.value = savedData[day.key][employee];
+          }
+
+          cell.appendChild(select);
+          row.appendChild(cell);
+        });
+
+        tbody.appendChild(row);
+      });
+    });
+  }
+
+  // حفظ البيانات مع تسجيل اسم المحرر فقط في الأيام التي تغيرت (لا تؤثر الأيام الأخرى)
+  async function saveData() {
+    if (!currentUserCanEdit) {
+      alert("❌ ليس لديك صلاحية تعديل الجدول.");
+      return;
+    }
+
+    const days = getDays();
+
+    try {
+      const attendanceSnapshot = await db.ref("attendance").once("value");
+      const savedData = attendanceSnapshot.val() || {};
+      const updatedData = {...savedData}; // ننسخ البيانات الموجودة
+
+      days.forEach((day, dayIndex) => {
+        // تأكد وجود يوم في البيانات
+        if (!updatedData[day.key]) updatedData[day.key] = {};
+
+        let dayChanged = false;
+
+        employees.forEach((employee, empIndex) => {
+          const selectElement = document.getElementById(`d${dayIndex}e${empIndex}`);
+          if (selectElement) {
+            const newValue = selectElement.value;
+            const oldValue = savedData[day.key] ? savedData[day.key][employee] : undefined;
+
+            if (newValue !== oldValue) {
+              updatedData[day.key][employee] = newValue;
+              dayChanged = true;
+            }
+          }
+        });
+
+        if (dayChanged) {
+          updatedData[day.key].__editor = currentUser; // نحدث اسم المحرر فقط إذا تغير اليوم
+        }
+      });
+
+      await db.ref("attendance").set(updatedData);
+      alert("✅ تم حفظ التعديلات بنجاح");
+      generateTable(); // تحديث الجدول
+    } catch (error) {
+      console.error("خطأ في حفظ البيانات:", error);
+      alert("❌ خطأ في حفظ البيانات");
+    }
+  }
+
+  // ---- لوحة تحكم الـ admin ----
+
+  // تحميل المستخدمين للوحة التحكم
+  function loadUsers() {
+    db.ref("users").once("value").then(snapshot => {
+      const users = snapshot.val() || {};
+      const tbody = document.getElementById("usersBody");
+      tbody.innerHTML = "";
+
+      Object.entries(users).forEach(([username, data]) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${username}</td>
+          <td>${data.canEdit ? "نعم" : "لا"}</td>
+          <td>
+            <button class="small-button btn-toggle" onclick="toggleUserEdit('${username}', ${data.canEdit})">
+              ${data.canEdit ? "قفل التعديل" : "فتح التعديل"}
+            </button>
+          </td>
+          <td>
+            ${username === currentUser ? "لا يمكن حذف نفسك" : `<button class="small-button btn-delete" onclick="deleteUser('${username}')">حذف</button>`}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    });
+  }
+
+  // تغيير صلاحية التعديل لمستخدم
+  function toggleUserEdit(username, currentCanEdit) {
+    if (username === currentUser) {
+      alert("❌ لا يمكنك تغيير صلاحيتك الخاصة.");
+      return;
+    }
+    db.ref("users/" + username + "/canEdit").set(!currentCanEdit).then(() => {
+      loadUsers();
+      alert(`✅ تم ${!currentCanEdit ? "فتح" : "قفل"} صلاحية التعديل للمستخدم ${username}`);
+    });
+  }
+
+  // حذف مستخدم
+  function deleteUser(username) {
+    if (username === currentUser) {
+      alert("❌ لا يمكن حذف نفسك.");
+      return;
+    }
+    if (confirm(`هل أنت متأكد من حذف المستخدم ${username}؟`)) {
+      db.ref("users/" + username).remove().then(() => {
+        loadUsers();
+        alert("✅ تم حذف المستخدم بنجاح.");
+      });
+    }
+  }
+
+  // إضافة مستخدم جديد
+  function addUser() {
+    const username = document.getElementById("newUserName").value.trim().toLowerCase();
+    const password = document.getElementById("newUserPass").value.trim();
+    const canEdit = document.getElementById("newUserCanEdit").checked;
+
+    if (!username || !password) {
+      alert("❌ يرجى إدخال اسم المستخدم وكلمة المرور");
+      return;
+    }
+
+    db.ref("users/" + username).once("value").then(snapshot => {
+      if (snapshot.exists()) {
+        alert("❌ اسم المستخدم موجود مسبقاً");
+        return;
+      }
+      const newUserData = {
+        password: password,
+        role: "user",
+        canEdit: canEdit
+      };
+      return db.ref("users/" + username).set(newUserData);
+    }).then(() => {
+      alert("✅ تم إنشاء المستخدم بنجاح");
+      document.getElementById("newUserName").value = "";
+      document.getElementById("newUserPass").value = "";
+      document.getElementById("newUserCanEdit").checked = true;
+      loadUsers();
+    }).catch(err => {
+      console.error(err);
+      alert("❌ حدث خطأ أثناء إنشاء المستخدم");
+    });
+  }
+
+  // إضافة موظف جديد (غير مرتبط بإنشاء المستخدم)
+  function addEmployee() {
+    const name = document.getElementById("newEmployeeName").value.trim();
+    if (!name) {
+      alert("❌ يرجى إدخال اسم الموظف");
+      return;
+    }
+    if (employees.includes(name)) {
+      alert("❌ الموظف موجود مسبقاً");
+      return;
+    }
+    employees.push(name);
+        db.ref("employees").set(employees).then(() => {
+          alert("✅ تم إضافة الموظف بنجاح");
+          document.getElementById("newEmployeeName").value = "";
+          loadEmployeesTable();
+          generateTable();
+        }).catch(err => {
+          console.error(err);
+          alert("❌ حدث خطأ أثناء إضافة الموظف");
+        });
+      }
+    </script>
+    </body>
+    </html>
+}
