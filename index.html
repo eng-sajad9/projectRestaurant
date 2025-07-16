@@ -101,8 +101,53 @@
     @media (max-width: 767px) {
       .container { padding: 10px; }
       input, button, select { font-size: 14px; padding: 8px; }
-      #attendanceTable th, #attendanceTable td { font-size: 12px; padding: 3px; }
+      #attendanceTable th, #attendanceTable td { font-size: 18px; padding: 3px; }
     }
+    .tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+  cursor: help;
+}
+
+.tooltip-wrapper .tooltip-text {
+  visibility: hidden;
+  width: 200px;
+  background-color: #361fa7;
+  color: #fff;
+  text-align: right;
+  padding: 8px;
+  border-radius: 6px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  right: 50%;
+  transform: translateX(50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.tooltip-wrapper.show .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+
+.checkbox-label {
+  display: inline-flex;
+  align-items: center; /* يثبّتهم على نفس الخط عمودياً */
+  gap: 5px;            /* مسافة بين مربع الصح والنص */
+  margin-top: 5px;
+}
+
+.checkbox-label input[type="checkbox"] {
+  transform: none;     /* نلغي أي تعديل في الارتفاع */
+  vertical-align: middle; /* للتأكد من المحاذاة الوسطية */
+  margin: 0;           /* إزالة أي هوامش */
+}
+
+
   </style>
 </head>
 <body>
@@ -115,6 +160,11 @@
     <input type="password" id="password" placeholder="كلمة المرور" autocomplete="off" />
     <button onclick="login()">دخول</button>
     <div id="loginMessage"></div>
+    <div style="text-align:center; margin-top:10px; font-size:14px; color:#555; font-style:italic; line-height:1.3;">
+  بتصميم المهندس سجاد رشيد<br />
+  insta: e ._ mg
+
+</div>
   </div>
 
   <!-- المحتوى الرئيسي وجدول الحضور -->
@@ -139,43 +189,54 @@
   </div>
 
   <!-- لوحة تحكم الـ Admin -->
-  <div id="adminPanel">
-    <h3>لوحة تحكم المدير</h3>
+<div id="adminPanel" style="display:none">  <!-- تأكد انه مخفي بالبداية -->
+  <h3>لوحة تحكم المدير</h3>
 
-    <h4>إدارة الموظفين</h4>
-    <input type="text" id="newEmployeeName" placeholder="اسم الموظف الجديد" />
-    <button onclick="addEmployee()">➕ إضافة موظف</button>
+  <!-- إدارة الموظفين -->
+  <h4>إدارة الموظفين</h4>
+  <input type="text" id="newEmployeeName" placeholder="اسم الموظف الجديد" />
+  <button onclick="addEmployee()">➕ إضافة موظف</button>
+  <table id="employeesTable">
+    <thead>
+      <tr><th>اسم الموظف</th><th>حذف</th></tr>
+    </thead>
+    <tbody id="employeesBody"></tbody>
+  </table>
 
-    <table id="employeesTable">
-      <thead>
-        <tr><th>اسم الموظف</th><th>حذف</th></tr>
-      </thead>
-      <tbody id="employeesBody"></tbody>
-    </table>
+  <hr />
 
-    <hr />
+ <h4>إدارة المستخدمين</h4>
+<input type="text" id="newUserName" placeholder="اسم المستخدم الجديد" />
+<input type="password" id="newUserPass" placeholder="كلمة المرور" />
 
-    <h4>إدارة المستخدمين</h4>
-    <input type="text" id="newUserName" placeholder="اسم المستخدم الجديد" />
-    <input type="password" id="newUserPass" placeholder="كلمة المرور" />
-    <label><input type="checkbox" id="newUserCanEdit" checked /> صلاحية تعديل الجدول</label>
-    <button onclick="addUser()">➕ إنشاء مستخدم</button>
+<!-- ✅ رتبنا التسمية والـ label -->
+<label class="checkbox-label">
+  <input type="checkbox" id="newUserCanEdit" checked />صلاحية تعديل الجدول
+</label>
 
-    <table id="usersTable">
-      <thead>
-        <tr>
-          <th>اسم المستخدم</th>
-          <th>الصلاحية (تعديل؟)</th>
-          <th>تغيير الصلاحية</th>
-          <th>حذف المستخدم</th>
-        </tr>
-      </thead>
-      <tbody id="usersBody"></tbody>
-    </table>
+<button onclick="addUser()">➕ إنشاء مستخدم</button>
 
-  </div>
+<table id="usersTable">
+  <thead>
+    <tr>
+      <th>اسم المستخدم</th>
+      <th>الصلاحية (تعديل؟)</th>
+      <th>تغيير الصلاحية</th>
+      <th>حذف المستخدم</th>
+    </tr>
+  </thead>
+  <tbody id="usersBody"></tbody>
+</table>
 
-</div>
+
+  <!-- ** زر حذف البيانات المتقدمة هنا ** -->
+  <button id="btnDeleteData" 
+          style="background-color:#dc3545; color:white; font-size:12px; padding:5px 10px; margin-top:15px; cursor:pointer;">
+    🗑️ حذف بيانات متقدمة
+  </button>
+
+</div> <!-- نهاية adminPanel -->
+
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -559,25 +620,87 @@
   }
 
   // تحميل جدول الموظفين للوحة التحكم
-  function loadEmployeesTable() {
-    const tbody = document.getElementById("employeesBody");
-    tbody.innerHTML = "";
-    employees.forEach((emp, idx) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${emp}</td><td><button class='small-button btn-delete' onclick='deleteEmployee(${idx})'>حذف</button></td>`;
-      tbody.appendChild(tr);
-    });
-  }
+ function loadEmployeesTable() {
+  const tbody = document.getElementById("employeesBody");
+  tbody.innerHTML = "";
 
-  function deleteEmployee(index) {
-    if (confirm("هل أنت متأكد من حذف هذا الموظف؟")) {
-      employees.splice(index, 1);
-      db.ref("employees").set(employees).then(() => {
-        loadEmployeesTable();
-        generateTable();
-      });
+  employees.forEach((emp, idx) => {
+    const tr = document.createElement("tr");
+
+    // عمود الاسم مع معرف (id) لسهولة التعديل
+    const nameTd = document.createElement("td");
+    nameTd.textContent = emp;
+    nameTd.id = `employeeName_${idx}`;
+
+    // عمود الأزرار (تعديل + حذف)
+    const actionsTd = document.createElement("td");
+
+    // زر تعديل
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "✏️ تعديل";
+    editBtn.className = "small-button btn-edit";
+    editBtn.onclick = () => enableEmployeeEdit(idx);
+
+    // زر حذف (موجود أصلاً)
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "حذف";
+    deleteBtn.className = "small-button btn-delete";
+    deleteBtn.onclick = () => deleteEmployee(idx);
+
+    actionsTd.appendChild(editBtn);
+    actionsTd.appendChild(deleteBtn);
+
+    tr.appendChild(nameTd);
+    tr.appendChild(actionsTd);
+
+    tbody.appendChild(tr);
+  });
+}
+
+// تفعيل وضع التعديل على اسم الموظف
+function enableEmployeeEdit(index) {
+  const nameTd = document.getElementById(`employeeName_${index}`);
+  const oldName = nameTd.textContent;
+
+  // استبدال النص بحقل إدخال
+  nameTd.innerHTML = "";
+  const input = document.createElement("input");
+  input.type = "text";
+  input.value = oldName;
+  input.style.width = "80%";
+  nameTd.appendChild(input);
+
+  // زر حفظ التعديل
+  const saveBtn = document.createElement("button");
+  saveBtn.textContent = "💾 حفظ";
+  saveBtn.className = "small-button btn-edit";
+  saveBtn.style.marginLeft = "5px";
+
+  saveBtn.onclick = () => {
+    const newName = input.value.trim();
+    if (!newName) {
+      alert("❌ اسم الموظف لا يمكن أن يكون فارغاً");
+      return;
     }
-  }
+    if (employees.includes(newName)) {
+      alert("❌ اسم الموظف موجود مسبقاً");
+      return;
+    }
+    // تحديث الاسم في المصفوفة والقاعدة
+    employees[index] = newName;
+    db.ref("employees").set(employees).then(() => {
+      alert("✅ تم تعديل اسم الموظف بنجاح");
+      loadEmployeesTable();
+      generateTable();
+    }).catch(err => {
+      console.error(err);
+      alert("❌ حدث خطأ أثناء تعديل اسم الموظف");
+    });
+  };
+
+  nameTd.appendChild(saveBtn);
+}
+
 
   // NEW: تحويل الجدول إلى PDF
   async function downloadPDF() {
@@ -715,6 +838,126 @@ toggleMonthsBtn.onclick = () => {
     monthTabsDiv.style.display = "none";
   }
 };
+// ✅✅✅ زر فتح/إغلاق لوحة التحكم ✅✅✅
+
+// إنشاء الزر
+const toggleAdminBtn = document.createElement("button");
+toggleAdminBtn.id = "toggleAdminBtn";  // أضفت هذا
+toggleAdminBtn.textContent = "⚙️ لوحة التحكم";
+toggleAdminBtn.style.backgroundColor = "#6c757d";
+toggleAdminBtn.style.color = "white";
+toggleAdminBtn.style.border = "none";
+toggleAdminBtn.style.width = "100%";
+toggleAdminBtn.style.padding = "10px";
+toggleAdminBtn.style.marginTop = "15px";
+toggleAdminBtn.style.fontSize = "16px";
+toggleAdminBtn.style.borderRadius = "5px";
+toggleAdminBtn.style.cursor = "pointer";
+toggleAdminBtn.style.transition = "background 0.2s ease";
+toggleAdminBtn.onmouseover = () => { toggleAdminBtn.style.backgroundColor = "#5a6268"; };
+toggleAdminBtn.onmouseout = () => { 
+  if (adminPanel.style.maxHeight === "0px") {
+    toggleAdminBtn.style.backgroundColor = "#6c757d"; 
+  }
+};
+
+// إضافة الزر قبل زر تسجيل الخروج
+const logoutBtn = document.querySelector("button[onclick='logout()']");
+logoutBtn.parentNode.insertBefore(toggleAdminBtn, logoutBtn);
+
+// إعداد الـ adminPanel ليكون قابل للطي بانسيابية
+const adminPanel = document.getElementById("adminPanel");
+adminPanel.style.maxHeight = "0px";
+adminPanel.style.overflow = "hidden";
+adminPanel.style.transition = "max-height 0.4s ease";
+
+// تبديل الإظهار عند الضغط
+toggleAdminBtn.onclick = () => {
+  if (adminPanel.style.maxHeight === "0px") {
+    adminPanel.style.maxHeight = adminPanel.scrollHeight + "px";
+    toggleAdminBtn.style.backgroundColor = "green";
+  } else {
+    adminPanel.style.maxHeight = "0px";
+    toggleAdminBtn.style.backgroundColor = "#6c757d";
+  }
+};
+
+// دالة تنفيذ حذف متقدم
+function advancedDelete() {
+  const choice = prompt(
+    "اختر رقم العملية:\n1 - حذف الموظفين فقط\n2 - حذف حسابات المستخدمين\n3 - حذف التاشيرات (شفت، نص، ❌)"
+  );
+
+  if (!choice || !["1","2","3","4"].includes(choice.trim())) {
+    alert("تم إلغاء العملية أو اختيار غير صحيح.");
+    return;
+  }
+
+  const adminPass = prompt("يرجى إدخال كلمة مرور المدير للتأكيد:");
+
+  if (adminPass !== "123456") {  // استبدلها بكلمة السر الحقيقية
+    alert("❌ كلمة المرور غير صحيحة!");
+    return;
+  }
+
+  if (!confirm("هل أنت متأكد من تنفيذ هذا الإجراء؟ لا يمكن التراجع عنه!")) {
+    return;
+  }
+
+  switch(choice.trim()) {
+    case "1":
+      // حذف الموظفين فقط من قاعدة البيانات
+      db.ref("employees").remove()
+        .then(() => alert("✅ تم حذف الموظفين فقط."))
+        .catch(e => alert("❌ خطأ في حذف الموظفين: " + e.message));
+      break;
+
+    case "2":
+      // حذف حسابات المستخدمين (users)
+      db.ref("users").remove()
+        .then(() => alert("✅ تم حذف حسابات المستخدمين."))
+        .catch(e => alert("❌ خطأ في حذف حسابات المستخدمين: " + e.message));
+      break;
+
+    case "3":
+      // حذف التاشيرات فقط (attendance)
+      db.ref("attendance").remove()
+        .then(() => alert("✅ تم حذف التاشيرات."))
+        .catch(e => alert("❌ خطأ في حذف التاشيرات: " + e.message));
+      break;
+
+
+}
+}
+// ربط الزر بالوظيفة بعد تحميل الصفحة
+document.addEventListener("DOMContentLoaded", () => {
+  const btnDeleteData = document.getElementById("btnDeleteData");
+  if (btnDeleteData) {
+    btnDeleteData.addEventListener("click", advancedDelete);
+  }
+});
+
+
+function toggleTooltip(el) {
+  el.classList.add("show");
+  setTimeout(() => {
+    el.classList.remove("show");
+  }, 3000); // يظهر 3 ثواني ثم يختفي تلقائيًا
+}
+
+
+function toggleAdminPanel() {
+  const panel = document.getElementById('adminPanel');
+  const btn = document.getElementById('toggleAdminBtn');
+  if (panel.style.display === 'block') {
+    panel.style.display = 'none';
+    btn.style.backgroundColor = ''; // يرجع اللون الافتراضي
+  } else {
+    panel.style.display = 'block';
+    btn.style.backgroundColor = 'green'; // يصير لونه أخضر عند الفتح
+  }
+}
+
 
 </script>
 </body>
