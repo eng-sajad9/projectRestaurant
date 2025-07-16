@@ -315,6 +315,11 @@
           showMessage("❌ كلمة المرور غير صحيحة", true);
           throw new Error("Wrong password");
         }
+        if (userData.forceLogout) {
+          showMessage("❌ تم طردك من قبل المدير. يرجى إعادة تسجيل الدخول.", true);
+          db.ref("users/" + userKey + "/forceLogout").set(false); // clear flag
+          throw new Error("Force logout");
+        }
 
         currentUser = userKey;
         currentUserRole = userData.role || "user";
@@ -346,7 +351,7 @@
       })
       .catch(error => {
         console.error("Login error:", error);
-        if (!error.message.startsWith("User not found") && !error.message.startsWith("Wrong password")) {
+        if (!error.message.startsWith("User not found") && !error.message.startsWith("Wrong password") && !error.message.startsWith("Force logout")) {
           showMessage("❌ خطأ في الاتصال: " + error.message, true);
         }
       });
@@ -533,6 +538,9 @@
           </td>
           <td>
             ${username === currentUser ? "لا يمكن حذف نفسك" : `<button class="small-button btn-delete" onclick="deleteUser('${username}')">حذف</button>`}
+          </td>
+          <td>
+            ${username === currentUser ? "-" : `<button class='small-button btn-delete' style='background:#ff9800;' onclick=\"forceLogoutUser('${username}')\">طرد</button>`}
           </td>
         `;
         tbody.appendChild(tr);
@@ -958,6 +966,28 @@ function toggleAdminPanel() {
   }
 }
 
+function forceLogoutUser(username) {
+  if (username === currentUser) {
+    alert("❌ لا يمكنك طرد نفسك.");
+    return;
+  }
+  if (confirm(`هل أنت متأكد من طرد المستخدم ${username}؟ سيتم تسجيل خروجه فوراً!`)) {
+    db.ref("users/" + username + "/forceLogout").set(true).then(() => {
+      alert("✅ تم طرد المستخدم بنجاح.");
+    });
+  }
+}
+
+function startForceLogoutWatcher() {
+  if (!currentUser) return;
+  db.ref("users/" + currentUser + "/forceLogout").on('value', function(snapshot) {
+    if (snapshot.val()) {
+      alert("❌ تم طردك من قبل المدير!");
+      db.ref("users/" + currentUser + "/forceLogout").set(false); // clear flag
+      logout();
+    }
+  });
+}
 
 </script>
 </body>
