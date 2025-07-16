@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>نظام تسجيل الحضور</title>
+  <!--
+    تمت إضافة @media للاستجابة لجميع أحجام الشاشات بدون حذف أي سطر من الـ CSS الأصلي.
+    كل الإضافات موضحة بتعليق // NEW
+  -->
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      direction: rtl;
+      background-color: #f4f4f4;
+      margin: 0; padding: 0;
+    }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      padding: 20px;
+      background: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      margin-top: 30px;
+    }
+    h2 { text-align: center; color: #333; }
+    input, button, select {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover { background-color: #0056b3; }
+    #mainContent, #adminPanel {
+      display: none;
+    }
+    #attendanceTable {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    #attendanceTable th, #attendanceTable td {
+      border: 1px solid #ccc;
+      padding: 5px;
+      text-align: center;
+    }
+    .editor-tag {
+      font-size: 12px;
+      color: #555;
+    }
+    .error {
+      color: red;
+      text-align: center;
+      margin: 10px 0;
+    }
+    .loading {
+      text-align: center;
+      color: #666;
+      margin: 10px 0;
+    }
+    #adminPanel {
+      margin-top: 20px;
+      border-top: 1px solid #ccc;
+      padding-top: 10px;
+    }
+    #adminPanel h3 {
+      margin-top: 0;
+      text-align: center;
+    }
+    table#usersTable, table#employeesTable {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    table#usersTable th, table#usersTable td,
+    table#employeesTable th, table#employeesTable td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+    .small-button {
+      padding: 5px 10px;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+    .btn-edit { background-color: #28a745; color: white; border: none; }
+    .btn-delete { background-color: #dc3545; color: white; border: none; }
+    .btn-toggle { background-color: #ffc107; color: black; border: none; }
+
+    /* NEW: استجابة الهواتف */
+    @media (max-width: 767px) {
+      .container { padding: 10px; }
+      input, button, select { font-size: 14px; padding: 8px; }
+      #attendanceTable th, #attendanceTable td { font-size: 18px; padding: 3px; }
+    }
+    .tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+  cursor: help;
+}
+
+.tooltip-wrapper .tooltip-text {
+  visibility: hidden;
+  width: 200px;
+  background-color: #361fa7;
+  color: #fff;
+  text-align: right;
+  padding: 8px;
+  border-radius: 6px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  right: 50%;
+  transform: translateX(50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.tooltip-wrapper.show .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+
+.checkbox-label {
+  display: inline-flex;
+  align-items: center; /* يثبّتهم على نفس الخط عمودياً */
+  gap: 5px;            /* مسافة بين مربع الصح والنص */
+  margin-top: 5px;
+}
+
+.checkbox-label input[type="checkbox"] {
+  transform: none;     /* نلغي أي تعديل في الارتفاع */
+  vertical-align: middle; /* للتأكد من المحاذاة الوسطية */
+  margin: 0;           /* إزالة أي هوامش */
+}
+
+/* NEW: Force Logout Button Style */
+.btn-force-logout { 
+  background-color: #fd7e14; 
+  color: white; 
+  border: none; 
+  margin: 0 2px;
+}
+.btn-force-logout:hover { 
+  background-color: #dc6502; 
+}
+
+/* NEW: Online Status Indicator */
+.status-indicator {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-left: 5px;
+}
+.status-online { background-color: #28a745; }
+.status-offline { background-color: #6c757d; }
+
+
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- تسجيل الدخول -->
+  <div id="loginBox">
+    <h2>تسجيل الدخول</h2>
+    <input type="text" id="username" placeholder="اسم المستخدم" autocomplete="off" />
+    <input type="password" id="password" placeholder="كلمة المرور" autocomplete="off" />
+    <button onclick="login()">دخول</button>
+    <div id="loginMessage"></div>
+    <div style="text-align:center; margin-top:10px; font-size:14px; color:#555; font-style:italic; line-height:1.3;">
+  بتصميم المهندس سجاد رشيد<br />
+  insta: e ._ mg
+
+</div>
+  </div>
+
+  <!-- المحتوى الرئيسي وجدول الحضور -->
+  <div id="mainContent">
+    <h2>📋 جدول الحضور - تموز</h2>
+    <button id="btnDownloadPDF" style="margin-bottom:10px;" onclick="downloadPDF()">⬇️ تحميل PDF</button> <!-- NEW -->
+    <table id="attendanceTable">
+      <thead>
+        <tr>
+          <th>التاريخ</th>
+          <!-- أسماء الموظفين سيتم تحميلها ديناميكياً -->
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+    <button onclick="saveData()">💾 حفظ التعديلات</button>
+    <button onclick="logout()" style="background-color: #dc3545; margin-top: 10px;">🚪 تسجيل خروج</button>
+
+    <!-- NEW: إحصائيات -->
+    <h3 style="margin-top:20px;">📊 الإحصائيات</h3>
+    <div id="statsBox">—</div>
+  </div>
+
+  <!-- لوحة تحكم الـ Admin -->
+<div id="adminPanel" style="display:none">  <!-- تأكد انه مخفي بالبداية -->
+  <h3>لوحة تحكم المدير</h3>
+
+  <!-- إدارة الموظفين -->
+  <h4>إدارة الموظفين</h4>
+  <input type="text" id="newEmployeeName" placeholder="اسم الموظف الجديد" />
+  <button onclick="addEmployee()">➕ إضافة موظف</button>
+  <table id="employeesTable">
+    <thead>
+      <tr><th>اسم الموظف</th><th>حذف</th></tr>
+    </thead>
+    <tbody id="employeesBody"></tbody>
+  </table>
+
+  <hr />
+
+ <h4>إدارة المستخدمين</h4>
+<input type="text" id="newUserName" placeholder="اسم المستخدم الجديد" />
+<input type="password" id="newUserPass" placeholder="كلمة المرور" />
+
+<!-- ✅ رتبنا التسمية والـ label -->
+<label class="checkbox-label">
+  <input type="checkbox" id="newUserCanEdit" checked />صلاحية تعديل الجدول
+</label>
+
+<button onclick="addUser()">➕ إنشاء مستخدم</button>
+
+<table id="usersTable">
+  <thead>
+    <tr>
+      <th>اسم المستخدم</th>
+      <th>الحالة</th>
+      <th>الصلاحية (تعديل؟)</th>
+      <th>تغيير الصلاحية</th>
+      <th>إجراءات</th>
+    </tr>
+  </thead>
+  <tbody id="usersBody"></tbody>
+</table>
+
+
+  <!-- ** زر حذف البيانات المتقدمة هنا ** -->
+  <button id="btnDeleteData" 
+          style="background-color:#dc3545; color:white; font-size:12px; padding:5px 10px; margin-top:15px; cursor:pointer;">
+    🗑️ حذف بيانات متقدمة
+  </button>
+
+</div> <!-- نهاية adminPanel -->
+
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<!-- NEW: مكتبات PDF -->
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+  // إعداد Firebase (لم يتم حذف أي سطر)
+  const firebaseConfig = {
+    apiKey: "AIzaSyDh8KquT-8Slr6B5SAGoyGj2zOEusyiEg4",
+    authDomain: "sjad-b3946.firebaseapp.com",
+    databaseURL: "https://sjad-b3946-default-rtdb.firebaseio.com",
+    projectId: "sjad-b3946",
+    storageBucket: "sjad-b3946.appspot.com", // NEW: تصحيح فقط بدون حذف الأصل
+    messagingSenderId: "1001672753514",
+    appId: "1:1001672753514:web:eac813b6e25621f5d16513",
+    measurementId: "G-EV0NVW2036"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  let employees = [];
+  const statuses = ["", "شفت", "نص", "❌"];
+  const month = new Date().getMonth(); // الشهر الحالي تلقائيًا
+  const year = new Date().getFullYear();
+
+  let currentUser = "";
+  let currentUserRole = "";
+  let currentUserCanEdit = false;
+
+  // NEW: Session tracking variables
+  let currentSessionId = "";
+  let sessionCheckInterval = null;
+
+  // NEW: حفظ الجلسة في localStorage
+  if (localStorage.getItem('loggedUser')) {
+    const savedUser = JSON.parse(localStorage.getItem('loggedUser'));
+    currentUser = savedUser.user;
+    currentUserRole = savedUser.role;
+    currentUserCanEdit = savedUser.canEdit;
+    currentSessionId = savedUser.sessionId || "";
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("mainContent").style.display = "block";
+    if (currentUserRole === "admin") document.getElementById("adminPanel").style.display = "block";
+    loadEmployees().then(()=>{ generateTable(); });
+    if (currentUserRole === "admin") { loadUsers(); loadEmployeesTable(); }
+    // NEW: Start session monitoring
+    startSessionMonitoring();
+  }
+
+  function showMessage(message, isError = false) {
+    const messageDiv = document.getElementById("loginMessage");
+    messageDiv.innerHTML = message;
+    messageDiv.className = isError ? "error" : "loading";
+  }
+
+  // NEW: Function to generate unique session ID
+  function generateSessionId() {
+    return Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  }
+
+  // NEW: Function to create active session
+  async function createActiveSession(username) {
+    currentSessionId = generateSessionId();
+    const sessionData = {
+      sessionId: currentSessionId,
+      loginTime: new Date().toISOString(),
+      lastActivity: new Date().toISOString(),
+      active: true
+    };
+    await db.ref(`activeSessions/${username}`).set(sessionData);
+    return currentSessionId;
+  }
+
+  // NEW: Function to update session activity
+  function updateSessionActivity() {
+    if (currentUser && currentSessionId) {
+      db.ref(`activeSessions/${currentUser}/lastActivity`).set(new Date().toISOString());
+    }
+  }
+
+  // NEW: Function to check if current session is still valid
+  async function checkSessionValidity() {
+    if (!currentUser || !currentSessionId) return;
+    
+    try {
+      const snapshot = await db.ref(`activeSessions/${currentUser}`).once('value');
+      const sessionData = snapshot.val();
+      
+      if (!sessionData || !sessionData.active || sessionData.sessionId !== currentSessionId) {
+        // Session has been terminated, force logout
+        alert("⚠️ تم إنهاء جلستك من قبل المدير. سيتم تسجيل خروجك تلقائياً.");
+        forceLogoutCurrentUser();
+      } else {
+        // Update activity timestamp
+        updateSessionActivity();
+      }
+    } catch (error) {
+      console.error("Error checking session validity:", error);
+    }
+  }
+
+  // NEW: Function to start session monitoring
+  function startSessionMonitoring() {
+    if (sessionCheckInterval) clearInterval(sessionCheckInterval);
+    
+    // Check session validity every 10 seconds
+    sessionCheckInterval = setInterval(() => {
+      checkSessionValidity();
+    }, 10000);
+    
+    // Also update activity on user interactions
+    document.addEventListener('click', updateSessionActivity);
+    document.addEventListener('keypress', updateSessionActivity);
+  }
+
+  // NEW: Function to stop session monitoring
+  function stopSessionMonitoring() {
+    if (sessionCheckInterval) {
+      clearInterval(sessionCheckInterval);
+      sessionCheckInterval = null;
+    }
+    document.removeEventListener('click', updateSessionActivity);
+    document.removeEventListener('keypress', updateSessionActivity);
+  }
+
+  // NEW: Function to force logout current user (called when session terminated)
+  function forceLogoutCurrentUser() {
+    stopSessionMonitoring();
+    currentUser = "";
+    currentUserRole = "";
+    currentUserCanEdit = false;
+    currentSessionId = "";
+    localStorage.removeItem('loggedUser');
+
+    document.getElementById("loginBox").style.display = "block";
+    document.getElementById("mainContent").style.display = "none";
+    document.getElementById("adminPanel").style.display = "none";
+
+    document.getElementById("username").value = "";
+    document.getElementById("password").value = "";
+    showMessage("");
+  }
+
+  // --- تسجيل الدخول مع التحقق من canEdit وصلاحية admin ---
+  async function login() {
+    const usernameInput = document.getElementById("username");
+    const passwordInput = document.getElementById("password");
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value.trim();
+
+    if (!username || !password) {
+      showMessage("❌ يرجى إدخال اسم المستخدم وكلمة المرور", true);
+      return;
+    }
+
+    showMessage("🔄 جاري تسجيل الدخول...");
+
+    const userKey = username.toLowerCase();
+
+    try {
+      const snapshot = await db.ref("users/" + userKey).once("value");
+      if (!snapshot.exists()) {
+        showMessage("❌ اسم المستخدم غير موجود", true);
+        return;
+      }
+      
+      const userData = snapshot.val();
+      if (userData.password !== password) {
+        showMessage("❌ كلمة المرور غير صحيحة", true);
+        return;
+      }
+
+      currentUser = userKey;
+      currentUserRole = userData.role || "user";
+      currentUserCanEdit = userData.canEdit !== undefined ? userData.canEdit : true;
+
+      // NEW: Create active session
+      await createActiveSession(currentUser);
+
+      // NEW: حفظ بالمتصفح مع معرف الجلسة
+      localStorage.setItem('loggedUser', JSON.stringify({
+        user: currentUser, 
+        role: currentUserRole, 
+        canEdit: currentUserCanEdit,
+        sessionId: currentSessionId
+      }));
+
+      showMessage("");
+      usernameInput.value = "";
+      passwordInput.value = "";
+
+      document.getElementById("loginBox").style.display = "none";
+      document.getElementById("mainContent").style.display = "block";
+
+      // تحميل الموظفين من قاعدة البيانات
+      await loadEmployees();
+      generateTable();
+
+      if (currentUserRole === "admin") {
+        document.getElementById("adminPanel").style.display = "block";
+        loadUsers();
+        loadEmployeesTable();
+      } else {
+        document.getElementById("adminPanel").style.display = "none";
+      }
+
+      // NEW: Start session monitoring
+      startSessionMonitoring();
+
+    } catch (error) {
+      console.error("Login error:", error);
+      showMessage("❌ خطأ في الاتصال: " + error.message, true);
+    }
+  }
+
+  async function logout() {
+    // NEW: Remove active session
+    if (currentUser) {
+      try {
+        await db.ref(`activeSessions/${currentUser}`).remove();
+      } catch (error) {
+        console.error("Error removing session:", error);
+      }
+    }
+
+    stopSessionMonitoring();
+    currentUser = "";
+    currentUserRole = "";
+    currentUserCanEdit = false;
+    currentSessionId = "";
+    localStorage.removeItem('loggedUser'); // NEW
+
+    document.getElementById("loginBox").style.display = "block";
+    document.getElementById("mainContent").style.display = "none";
+    document.getElementById("adminPanel").style.display = "none";
+
+    document.getElementById("username").value = "";
+    document.getElementById("password").value = "";
+    showMessage("");
+  }
+
+  // تحميل الموظفين من Firebase
+  function loadEmployees() {
+    return db.ref("employees").once("value").then(snapshot => {
+      if (snapshot.exists()) {
+        employees = Object.values(snapshot.val()); // NEW: يضمن Array نظيف
+      } else {
+        employees = [];
+      }
+      // تحديث ترويسة الجدول بأسماء الموظفين
+      const theadRow = document.querySelector("#attendanceTable thead tr");
+      // حذف كل الأعمدة ما عدا العمود الأول (التاريخ)
+      while (theadRow.children.length > 1) {
+        theadRow.removeChild(theadRow.lastChild);
+      }
+      employees.forEach(emp => {
+        const th = document.createElement("th");
+        th.textContent = emp;
+        theadRow.appendChild(th);
+      });
+      loadEmployeesTable();
+    });
+  }
+
+  // إنشاء أيام الشهر
+  function getDays() {
+    const days = [];
+    let date = new Date(year, month, 1);
+    while (date.getMonth() === month) {
+      const dayKey = `${year}-${month + 1}-${date.getDate()}`;
+      const dayLabel = `${date.getDate()} تموز (${date.toLocaleDateString('ar-EG', {weekday: 'long'})})`;
+      days.push({key: dayKey, label: dayLabel});
+      date.setDate(date.getDate() + 1);
+    }
+    return days;
+  }
+
+  // توليد جدول الحضور مع التحكم بصلاحيات التعديل (readonly إذا canEdit = false)
+  function generateTable() {
+    const days = getDays();
+    const tbody = document.getElementById("tableBody");
+    tbody.innerHTML = "";
+
+    db.ref("attendance").once("value").then(snapshot => {
+      const savedData = snapshot.val() || {};
+
+      days.forEach((day, dayIndex) => {
+        const row = document.createElement("tr");
+
+        // عمود التاريخ مع اسم المحرر وتاريخ التعديل الكامل
+        const dateCell = document.createElement("td");
+        let dateContent = day.label;
+        if (savedData[day.key] && savedData[day.key].__editor) {
+          const ts = savedData[day.key].__editedAt || "";
+          dateContent += `<div class='editor-tag'>🖊️ ${savedData[day.key].__editor}${ts ? ' - '+ts:''}</div>`; // NEW
+        }
+        dateCell.innerHTML = dateContent;
+        row.appendChild(dateCell);
+
+        employees.forEach((employee, empIndex) => {
+          const cell = document.createElement("td");
+          const select = document.createElement("select");
+          select.id = `d${dayIndex}e${empIndex}`;
+
+          statuses.forEach(status => {
+            const option = document.createElement("option");
+            option.value = status;
+            option.textContent = status;
+            select.appendChild(option);
+          });
+
+          // تعيين القيمة المحفوظة إذا وجدت
+          if (savedData[day.key] && savedData[day.key][employee] !== undefined) {
+            select.value = savedData[day.key][employee];
+          }
+
+          // NEW: فرض منع التغيير تماماً عند عدم امتلاك الصلاحية
+          if (!currentUserCanEdit) {
+            select.setAttribute('disabled','disabled');
+            select.addEventListener('change', (e)=>{ e.target.value = savedData[day.key] ? savedData[day.key][employee] : ""; });
+          }
+
+          cell.appendChild(select);
+          row.appendChild(cell);
+        });
+
+        tbody.appendChild(row);
+      });
+
+      // NEW: حساب الإحصائيات بعد رسم الجدول
+      calculateStats(savedData);
+    });
+  }
+
+  // حفظ البيانات مع تسجيل اسم المحرر والتوقيت الكامل
+  async function saveData() {
+    if (!currentUserCanEdit) {
+      alert("❌ ليس لديك صلاحية تعديل الجدول.");
+      return;
+    }
+
+    const days = getDays();
+
+    try {
+      const attendanceSnapshot = await db.ref("attendance").once("value");
+      const savedData = attendanceSnapshot.val() || {};
+      const updatedData = {...savedData}; // ننسخ البيانات الموجودة
+
+      let anyChange = false; // NEW
+      days.forEach((day, dayIndex) => {
+        if (!updatedData[day.key]) updatedData[day.key] = {};
+
+        let dayChanged = false;
+
+        employees.forEach((employee, empIndex) => {
+          const selectElement = document.getElementById(`d${dayIndex}e${empIndex}`);
+          if (selectElement) {
+            const newValue = selectElement.value;
+            const oldValue = savedData[day.key] ? savedData[day.key][employee] : undefined;
+
+            if (newValue !== oldValue) {
+              updatedData[day.key][employee] = newValue;
+              dayChanged = true;
+              anyChange = true;
+            }
+          }
+        });
+
+        if (dayChanged) {
+          updatedData[day.key].__editor = currentUser; // اسم المحرر
+          const now = new Date();
+          const ts = now.toLocaleDateString('ar-EG') + ' ' + now.toLocaleTimeString('ar-EG');
+          updatedData[day.key].__editedAt = ts; // NEW
+        }
+      });
+
+      if (!anyChange) { alert('لا توجد تغييرات لحفظها'); return; }
+
+      await db.ref("attendance").set(updatedData);
+      alert("✅ تم حفظ التعديلات بنجاح");
+      generateTable(); // تحديث الجدول
+    } catch (error) {
+      console.error("خطأ في حفظ البيانات:", error);
+      alert("❌ خطأ في حفظ البيانات");
+    }
+  }
+
+  // ---- لوحة تحكم الـ admin ----
+
+  // NEW: Function to get user online status
+  async function getUserOnlineStatus(username) {
+    try {
+      const snapshot = await db.ref(`activeSessions/${username}`).once('value');
+      const sessionData = snapshot.val();
+      
+      if (!sessionData || !sessionData.active) {
+        return { online: false, lastActivity: null };
+      }
+      
+      const lastActivity = new Date(sessionData.lastActivity);
+      const now = new Date();
+      const timeDiff = (now - lastActivity) / 1000; // seconds
+      
+      // Consider user online if active within last 30 seconds
+      return { 
+        online: timeDiff < 30, 
+        lastActivity: sessionData.lastActivity,
+        sessionId: sessionData.sessionId
+      };
+    } catch (error) {
+      console.error("Error getting user status:", error);
+      return { online: false, lastActivity: null };
+    }
+  }
+
+  // NEW: Function to force logout a specific user
+  async function forceLogoutUser(username) {
+    if (username === currentUser) {
+      alert("❌ لا يمكنك إنهاء جلستك الخاصة. استخدم زر تسجيل الخروج العادي.");
+      return;
+    }
+    
+    if (!confirm(`هل أنت متأكد من إنهاء جلسة المستخدم "${username}"؟`)) {
+      return;
+    }
+    
+    try {
+      // Remove the user's active session
+      await db.ref(`activeSessions/${username}`).remove();
+      alert(`✅ تم إنهاء جلسة المستخدم "${username}" بنجاح.`);
+      
+      // Refresh the users table to update status
+      setTimeout(() => {
+        loadUsers();
+      }, 1000);
+      
+    } catch (error) {
+      console.error("Error forcing logout:", error);
+      alert("❌ حدث خطأ أثناء إنهاء الجلسة.");
+    }
+  }
+
+  async function loadUsers() {
+    try {
+      const snapshot = await db.ref("users").once("value");
+      const users = snapshot.val() || {};
+      const tbody = document.getElementById("usersBody");
+      tbody.innerHTML = "";
+
+      for (const [username, data] of Object.entries(users)) {
+        const userStatus = await getUserOnlineStatus(username);
+        
+        const tr = document.createElement("tr");
+        
+        // Username column
+        const usernameCell = document.createElement("td");
+        usernameCell.textContent = username;
+        tr.appendChild(usernameCell);
+        
+        // Status column with indicator
+        const statusCell = document.createElement("td");
+        const statusIndicator = document.createElement("span");
+        statusIndicator.className = `status-indicator ${userStatus.online ? 'status-online' : 'status-offline'}`;
+        statusIndicator.title = userStatus.online ? 'متصل الآن' : `آخر نشاط: ${userStatus.lastActivity ? new Date(userStatus.lastActivity).toLocaleString('ar-EG') : 'غير محدد'}`;
+        
+        const statusText = document.createElement("span");
+        statusText.textContent = userStatus.online ? " متصل" : " غير متصل";
+        
+        statusCell.appendChild(statusIndicator);
+        statusCell.appendChild(statusText);
+        tr.appendChild(statusCell);
+        
+        // Can edit column
+        const canEditCell = document.createElement("td");
+        canEditCell.textContent = data.canEdit ? "نعم" : "لا";
+        tr.appendChild(canEditCell);
+        
+        // Toggle permission column
+        const toggleCell = document.createElement("td");
+        const toggleBtn = document.createElement("button");
+        toggleBtn.className = "small-button btn-toggle";
+        toggleBtn.textContent = data.canEdit ? "قفل التعديل" : "فتح التعديل";
+        toggleBtn.onclick = () => toggleUserEdit(username, data.canEdit);
+        toggleCell.appendChild(toggleBtn);
+        tr.appendChild(toggleCell);
+        
+        // Actions column
+        const actionsCell = document.createElement("td");
+        
+        if (username === currentUser) {
+          actionsCell.textContent = "لا يمكن حذف نفسك";
+        } else {
+          // Delete button
+          const deleteBtn = document.createElement("button");
+          deleteBtn.className = "small-button btn-delete";
+          deleteBtn.textContent = "حذف";
+          deleteBtn.onclick = () => deleteUser(username);
+          deleteBtn.style.marginRight = "5px";
+          actionsCell.appendChild(deleteBtn);
+          
+          // Force logout button (only show if user is online)
+          if (userStatus.online) {
+            const forceLogoutBtn = document.createElement("button");
+            forceLogoutBtn.className = "small-button btn-force-logout";
+            forceLogoutBtn.textContent = "⏹️ إنهاء الجلسة";
+            forceLogoutBtn.onclick = () => forceLogoutUser(username);
+            forceLogoutBtn.title = "إنهاء جلسة المستخدم فوراً";
+            actionsCell.appendChild(forceLogoutBtn);
+          }
+        }
+        
+        tr.appendChild(actionsCell);
+        tbody.appendChild(tr);
+      }
+    } catch (error) {
+      console.error("Error loading users:", error);
+    }
+  }
+
+  function toggleUserEdit(username, currentCanEdit) {
+    if (username === currentUser) {
+      alert("❌ لا يمكنك تغيير صلاحيتك الخاصة.");
+      return;
+    }
+    db.ref("users/" + username + "/canEdit").set(!currentCanEdit).then(() => {
+      loadUsers();
+      alert(`✅ تم ${!currentCanEdit ? "فتح" : "قفل"} صلاحية التعديل للمستخدم ${username}`);
+    });
+  }
+
+  function deleteUser(username) {
+    if (username === currentUser) {
+      alert("❌ لا يمكن حذف نفسك.");
+      return;
+    }
+    if (confirm(`هل أنت متأكد من حذف المستخدم ${username}؟`)) {
+      db.ref("users/" + username).remove().then(() => {
+        // NEW: Also remove active session if exists
+        db.ref(`activeSessions/${username}`).remove();
+        loadUsers();
+        alert("✅ تم حذف المستخدم بنجاح.");
+      });
+    }
+  }
+
+  function addUser() {
+    const username = document.getElementById("newUserName").value.trim().toLowerCase();
+    const password = document.getElementById("newUserPass").value.trim();
+    const canEdit = document.getElementById("newUserCanEdit").checked;
+
+    if (!username || !password) {
+      alert("❌ يرجى إدخال اسم المستخدم وكلمة المرور");
+      return;
+    }
+
+    db.ref("users/" + username).once("value").then(snapshot => {
+      if (snapshot.exists()) {
+        alert("❌ اسم المستخدم موجود مسبقاً");
+        return;
+      }
+      const newUserData = {
+        password: password,
+        role: "user",
+        canEdit: canEdit
+      };
+      return db.ref("users/" + username).set(newUserData);
+    }).then(() => {
+      alert("✅ تم إنشاء المستخدم بنجاح");
+      document.getElementById("newUserName").value = "";
+      document.getElementById("newUserPass").value = "";
+      document.getElementById("newUserCanEdit").checked = true;
+      loadUsers();
+    }).catch(err => {
+      console.error(err);
+      alert("❌ حدث خطأ أثناء إنشاء المستخدم");
+    });
+  }
+
+  function addEmployee() {
+    const name = document.getElementById("newEmployeeName").value.trim();
+    if (!name) {
+      alert("❌ يرجى إدخال اسم الموظف");
+      return;
+    }
+    if (employees.includes(name)) {
+      alert("❌ الموظف موجود مسبقاً");
+      return;
+    }
+    employees.push(name);
+    db.ref("employees").set(employees).then(() => {
+      alert("✅ تم إضافة الموظف بنجاح");
+      document.getElementById("newEmployeeName").value = "";
+      loadEmployeesTable();
+      generateTable();
+    }).catch(err => {
+      console.error(err);
+      alert("❌ حدث خطأ أثناء إضافة الموظف");
+    });
+  }
+
+  // تحميل جدول الموظفين للوحة التحكم
+ function loadEmployeesTable() {
+  const tbody = document.getElementById("employeesBody");
+  tbody.innerHTML = "";
+
+  employees.forEach((emp, idx) => {
+    const tr = document.createElement("tr");
+
+    // عمود الاسم مع معرف (id) لسهولة التعديل
+    const nameTd = document.createElement("td");
+    nameTd.textContent = emp;
+    nameTd.id = `employeeName_${idx}`;
+
+    // عمود الأزرار (تعديل + حذف)
+    const actionsTd = document.createElement("td");
+
+    // زر تعديل
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "✏️ تعديل";
+    editBtn.className = "small-button btn-edit";
+    editBtn.onclick = () => enableEmployeeEdit(idx);
+
+    // زر حذف (موجود أصلاً)
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "حذف";
+    deleteBtn.className = "small-button btn-delete";
+    deleteBtn.onclick = () => deleteEmployee(idx);
+
+    actionsTd.appendChild(editBtn);
+    actionsTd.appendChild(deleteBtn);
+
+    tr.appendChild(nameTd);
+    tr.appendChild(actionsTd);
+
+    tbody.appendChild(tr);
+  });
+}
+
+// تفعيل وضع التعديل على اسم الموظف
+function enableEmployeeEdit(index) {
+  const nameTd = document.getElementById(`employeeName_${index}`);
+  const oldName = nameTd.textContent;
+
+  // استبدال النص بحقل إدخال
+  nameTd.innerHTML = "";
+  const input = document.createElement("input");
+  input.type = "text";
+  input.value = oldName;
+  input.style.width = "80%";
+  nameTd.appendChild(input);
+
+  // زر حفظ التعديل
+  const saveBtn = document.createElement("button");
+  saveBtn.textContent = "💾 حفظ";
+  saveBtn.className = "small-button btn-edit";
+  saveBtn.style.marginLeft = "5px";
+
+  saveBtn.onclick = () => {
+    const newName = input.value.trim();
+    if (!newName) {
+      alert("❌ اسم الموظف لا يمكن أن يكون فارغاً");
+      return;
+    }
+    if (employees.includes(newName)) {
+      alert("❌ اسم الموظف موجود مسبقاً");
+      return;
+    }
+    // تحديث الاسم في المصفوفة والقاعدة
+    employees[index] = newName;
+    db.ref("employees").set(employees).then(() => {
+      alert("✅ تم تعديل اسم الموظف بنجاح");
+      loadEmployeesTable();
+      generateTable();
+    }).catch(err => {
+      console.error(err);
+      alert("❌ حدث خطأ أثناء تعديل اسم الموظف");
+    });
+  };
+
+  nameTd.appendChild(saveBtn);
+}
+
+  function deleteEmployee(index) {
+    if (confirm(`هل أنت متأكد من حذف الموظف "${employees[index]}"؟`)) {
+      employees.splice(index, 1);
+      db.ref("employees").set(employees).then(() => {
+        alert("✅ تم حذف الموظف بنجاح");
+        loadEmployeesTable();
+        generateTable();
+      }).catch(err => {
+        console.error(err);
+        alert("❌ حدث خطأ أثناء حذف الموظف");
+      });
+    }
+  }
+
+  // NEW: تحويل الجدول إلى PDF
+  async function downloadPDF() {
+    const element = document.getElementById('attendanceTable');
+    const canvas = await html2canvas(element, {scale:2});
+    const imgData = canvas.toDataURL('image/png');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('l', 'pt', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const imgProps = pdf.getImageProperties(imgData);
+    const ratio = Math.min(pageWidth / imgProps.width, pageHeight / imgProps.height);
+    const imgWidth = imgProps.width * ratio;
+    const imgHeight = imgProps.height * ratio;
+    pdf.addImage(imgData, 'PNG', (pageWidth - imgWidth)/2, 20, imgWidth, imgHeight);
+    pdf.save('attendance.pdf');
+  }
+
+  // NEW: حساب الإحصائيات
+  function calculateStats(savedData) {
+    const counts = {};
+    employees.forEach(e=>{ counts[e]={"شفت":0,"نص":0,"❌":0}; });
+
+    Object.values(savedData).forEach(day=>{
+      employees.forEach(e=>{
+        const val = day[e];
+        if (val && counts[e][val] !== undefined) counts[e][val] += 1;
+      });
+    });
+
+    // إيجاد الأكثر بكل فئة
+    const bestShift = Object.entries(counts).sort((a,b)=>b[1]["شفت"]-a[1]["شفت"])[0];
+    const bestHalf  = Object.entries(counts).sort((a,b)=>b[1]["نص"]-a[1]["نص"])[0];
+    const mostX     = Object.entries(counts).sort((a,b)=>b[1]["❌"]-a[1]["❌"])[0];
+
+    const statsDiv = document.getElementById('statsBox');
+    statsDiv.innerHTML = `
+      <p>أكثر موظف شفت: <b>${bestShift ? bestShift[0]+` (${bestShift[1]["شفت"]})` : '—'}</b></p>
+      <p>أكثر موظف نص: <b>${bestHalf ? bestHalf[0]+` (${bestHalf[1]["نص"]})` : '—'}</b></p>
+      <p>أكثر موظف ❌: <b>${mostX ? mostX[0]+` (${mostX[1]["❌"]})` : '—'}</b></p>`;
+  }
+// ✅✅✅ ميزة Tabs للأشهر + زر إخفاء/إظهار ✅✅✅
+
+// 1️⃣ إضافة مكان الأزرار في HTML بعد جدول الحضور
+const monthTabsDiv = document.createElement("div");
+monthTabsDiv.id = "monthsTabs";
+monthTabsDiv.style.marginTop = "20px";
+document.getElementById("mainContent").appendChild(monthTabsDiv);
+
+// 2️⃣ حمّل جميع الأشهر المحفوظة عند بدء التشغيل
+function loadAvailableMonths() {
+  db.ref("attendance").once("value").then(snapshot => {
+    const data = snapshot.val() || {};
+    const monthsSet = new Set();
+    Object.keys(data).forEach(key => {
+      const parts = key.split("-");
+      if (parts.length === 3) {
+        const m = parseInt(parts[1]) - 1; // month index 0-based
+        monthsSet.add(m);
+      }
+    });
+    const monthsArr = Array.from(monthsSet).sort((a,b)=>a-b);
+    renderMonthTabs(monthsArr);
+  });
+}
+
+// 3️⃣ رسم الأزرار أسفل الجدول
+function renderMonthTabs(months) {
+  const div = document.getElementById("monthsTabs");
+  div.innerHTML = "<b>📅 الأشهر:</b> ";
+  months.forEach(m => {
+    const btn = document.createElement("button");
+    btn.textContent = m + 1; // إظهار الشهر 1-based
+    btn.style.padding = "6px 10px";
+    btn.style.margin = "2px";
+    btn.style.fontSize = "12px";
+    btn.style.border = "1px solid #007bff";
+    btn.style.background = "#f0f8ff";
+    btn.style.color = "#007bff";
+    btn.style.borderRadius = "5px";
+    btn.style.cursor = "pointer";
+    btn.style.transition = "all 0.2s ease";
+    btn.onmouseover = () => { btn.style.background = "#007bff"; btn.style.color = "white"; };
+    btn.onmouseout  = () => { btn.style.background = "#f0f8ff"; btn.style.color = "#007bff"; };
+    btn.onclick = () => {
+      month = m;
+      generateTable();
+    };
+    div.appendChild(btn);
+  });
+}
+
+// 4️⃣ استدعِ تحميل الأشهر عند تسجيل الدخول
+if (localStorage.getItem('loggedUser')) {
+  loadAvailableMonths();
+}
+
+// ✅✅✅ زر 📅 ثابت لإخفاء/إظهار التابس ✅✅✅
+
+// إنشاء الزر الصغير الناعم
+const toggleMonthsBtn = document.createElement("button");
+toggleMonthsBtn.textContent = "📅";
+toggleMonthsBtn.style.position = "fixed";
+toggleMonthsBtn.style.bottom = "25px";
+toggleMonthsBtn.style.left = "25px";
+toggleMonthsBtn.style.width = "45px";
+toggleMonthsBtn.style.height = "45px";
+toggleMonthsBtn.style.borderRadius = "50%";
+toggleMonthsBtn.style.background = "#007bff";
+toggleMonthsBtn.style.color = "white";
+toggleMonthsBtn.style.border = "none";
+toggleMonthsBtn.style.boxShadow = "0 2px 8px rgba(0,0,0,0.2)";
+toggleMonthsBtn.style.cursor = "pointer";
+toggleMonthsBtn.style.fontSize = "18px";
+toggleMonthsBtn.style.transition = "transform 0.2s ease, background 0.2s ease";
+toggleMonthsBtn.onmouseover = () => {
+  toggleMonthsBtn.style.transform = "scale(1.1)";
+  toggleMonthsBtn.style.background = "#0056b3";
+};
+toggleMonthsBtn.onmouseout = () => {
+  toggleMonthsBtn.style.transform = "scale(1)";
+  toggleMonthsBtn.style.background = "#007bff";
+};
+toggleMonthsBtn.style.zIndex = "1000";
+document.body.appendChild(toggleMonthsBtn);
+
+// إخفاء التابس في البداية
+monthTabsDiv.style.display = "none";
+
+// التبديل بين الإظهار والإخفاء عند الضغط
+toggleMonthsBtn.onclick = () => {
+  if (monthTabsDiv.style.display === "none") {
+    monthTabsDiv.style.display = "block";
+  } else {
+    monthTabsDiv.style.display = "none";
+  }
+};
+// ✅✅✅ زر فتح/إغلاق لوحة التحكم ✅✅✅
+
+// إنشاء الزر
+const toggleAdminBtn = document.createElement("button");
+toggleAdminBtn.id = "toggleAdminBtn";  // أضفت هذا
+toggleAdminBtn.textContent = "⚙️ لوحة التحكم";
+toggleAdminBtn.style.backgroundColor = "#6c757d";
+toggleAdminBtn.style.color = "white";
+toggleAdminBtn.style.border = "none";
+toggleAdminBtn.style.width = "100%";
+toggleAdminBtn.style.padding = "10px";
+toggleAdminBtn.style.marginTop = "15px";
+toggleAdminBtn.style.fontSize = "16px";
+toggleAdminBtn.style.borderRadius = "5px";
+toggleAdminBtn.style.cursor = "pointer";
+toggleAdminBtn.style.transition = "background 0.2s ease";
+toggleAdminBtn.onmouseover = () => { toggleAdminBtn.style.backgroundColor = "#5a6268"; };
+toggleAdminBtn.onmouseout = () => { 
+  if (adminPanel.style.maxHeight === "0px") {
+    toggleAdminBtn.style.backgroundColor = "#6c757d"; 
+  }
+};
+
+// إضافة الزر قبل زر تسجيل الخروج
+const logoutBtn = document.querySelector("button[onclick='logout()']");
+logoutBtn.parentNode.insertBefore(toggleAdminBtn, logoutBtn);
+
+// إعداد الـ adminPanel ليكون قابل للطي بانسيابية
+const adminPanel = document.getElementById("adminPanel");
+adminPanel.style.maxHeight = "0px";
+adminPanel.style.overflow = "hidden";
+adminPanel.style.transition = "max-height 0.4s ease";
+
+// تبديل الإظهار عند الضغط
+toggleAdminBtn.onclick = () => {
+  if (adminPanel.style.maxHeight === "0px") {
+    adminPanel.style.maxHeight = adminPanel.scrollHeight + "px";
+    toggleAdminBtn.style.backgroundColor = "green";
+  } else {
+    adminPanel.style.maxHeight = "0px";
+    toggleAdminBtn.style.backgroundColor = "#6c757d";
+  }
+};
+
+// دالة تنفيذ حذف متقدم
+function advancedDelete() {
+  const choice = prompt(
+    "اختر رقم العملية:\n1 - حذف الموظفين فقط\n2 - حذف حسابات المستخدمين\n3 - حذف التاشيرات (شفت، نص، ❌)"
+  );
+
+  if (!choice || !["1","2","3","4"].includes(choice.trim())) {
+    alert("تم إلغاء العملية أو اختيار غير صحيح.");
+    return;
+  }
+
+  const adminPass = prompt("يرجى إدخال كلمة مرور المدير للتأكيد:");
+
+  if (adminPass !== "123456") {  // استبدلها بكلمة السر الحقيقية
+    alert("❌ كلمة المرور غير صحيحة!");
+    return;
+  }
+
+  if (!confirm("هل أنت متأكد من تنفيذ هذا الإجراء؟ لا يمكن التراجع عنه!")) {
+    return;
+  }
+
+  switch(choice.trim()) {
+    case "1":
+      // حذف الموظفين فقط من قاعدة البيانات
+      db.ref("employees").remove()
+        .then(() => alert("✅ تم حذف الموظفين فقط."))
+        .catch(e => alert("❌ خطأ في حذف الموظفين: " + e.message));
+      break;
+
+    case "2":
+      // حذف حسابات المستخدمين (users)
+      db.ref("users").remove()
+        .then(() => alert("✅ تم حذف حسابات المستخدمين."))
+        .catch(e => alert("❌ خطأ في حذف حسابات المستخدمين: " + e.message));
+      break;
+
+    case "3":
+      // حذف التاشيرات فقط (attendance)
+      db.ref("attendance").remove()
+        .then(() => alert("✅ تم حذف التاشيرات."))
+        .catch(e => alert("❌ خطأ في حذف التاشيرات: " + e.message));
+      break;
+
+
+}
+}
+// ربط الزر بالوظيفة بعد تحميل الصفحة
+document.addEventListener("DOMContentLoaded", () => {
+  const btnDeleteData = document.getElementById("btnDeleteData");
+  if (btnDeleteData) {
+    btnDeleteData.addEventListener("click", advancedDelete);
+  }
+});
+
+
+function toggleTooltip(el) {
+  el.classList.add("show");
+  setTimeout(() => {
+    el.classList.remove("show");
+  }, 3000); // يظهر 3 ثواني ثم يختفي تلقائيًا
+}
+
+
+function toggleAdminPanel() {
+  const panel = document.getElementById('adminPanel');
+  const btn = document.getElementById('toggleAdminBtn');
+  if (panel.style.display === 'block') {
+    panel.style.display = 'none';
+    btn.style.backgroundColor = ''; // يرجع اللون الافتراضي
+  } else {
+    panel.style.display = 'block';
+    btn.style.backgroundColor = 'green'; // يصير لونه أخضر عند الفتح
+  }
+}
+
+
+</script>
+</body>
+</html>
