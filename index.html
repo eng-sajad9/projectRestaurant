@@ -268,6 +268,7 @@
   let currentUser = "";
   let currentUserRole = "";
   let currentUserCanEdit = false;
+  let forceLogoutListener = null; // مرجع لمستمع الطرد
 
   // NEW: حفظ الجلسة في localStorage
   if (localStorage.getItem('loggedUser')) {
@@ -348,6 +349,9 @@
           document.getElementById("adminPanel").style.display = "none";
         }
 
+        // تشغيل مراقب الطرد للمستخدم الحالي
+        startForceLogoutWatcher();
+
       })
       .catch(error => {
         console.error("Login error:", error);
@@ -358,6 +362,12 @@
   }
 
   function logout() {
+    // إزالة مستمع الطرد
+    if (forceLogoutListener && currentUser) {
+      db.ref("users/" + currentUser + "/forceLogout").off('value', forceLogoutListener);
+      forceLogoutListener = null;
+    }
+
     currentUser = "";
     currentUserRole = "";
     currentUserCanEdit = false;
@@ -980,13 +990,22 @@ function forceLogoutUser(username) {
 
 function startForceLogoutWatcher() {
   if (!currentUser) return;
-  db.ref("users/" + currentUser + "/forceLogout").on('value', function(snapshot) {
+  
+  // إزالة المستمع السابق إن وجد
+  if (forceLogoutListener) {
+    db.ref("users/" + currentUser + "/forceLogout").off('value', forceLogoutListener);
+  }
+  
+  // إنشاء مستمع جديد وحفظ مرجعه
+  forceLogoutListener = function(snapshot) {
     if (snapshot.val()) {
       alert("❌ تم طردك من قبل المدير!");
       db.ref("users/" + currentUser + "/forceLogout").set(false); // clear flag
       logout();
     }
-  });
+  };
+  
+  db.ref("users/" + currentUser + "/forceLogout").on('value', forceLogoutListener);
 }
 
 </script>
