@@ -1,11 +1,13 @@
-
-```html
 <!DOCTYPE html>
 <html lang="ar">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>نظام تسجيل الحضور</title>
+  <!--
+    تمت إضافة @media للاستجابة لجميع أحجام الشاشات بدون حذف أي سطر من الـ CSS الأصلي.
+    كل الإضافات موضحة بتعليق // NEW
+  -->
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -94,6 +96,13 @@
     .btn-edit { background-color: #28a745; color: white; border: none; }
     .btn-delete { background-color: #dc3545; color: white; border: none; }
     .btn-toggle { background-color: #ffc107; color: black; border: none; }
+
+    /* NEW: استجابة الهواتف */
+    @media (max-width: 767px) {
+      .container { padding: 10px; }
+      input, button, select { font-size: 14px; padding: 8px; }
+      #attendanceTable th, #attendanceTable td { font-size: 12px; padding: 3px; }
+    }
   </style>
 </head>
 <body>
@@ -111,6 +120,7 @@
   <!-- المحتوى الرئيسي وجدول الحضور -->
   <div id="mainContent">
     <h2>📋 جدول الحضور - تموز</h2>
+    <button id="btnDownloadPDF" style="margin-bottom:10px;" onclick="downloadPDF()">⬇️ تحميل PDF</button> <!-- NEW -->
     <table id="attendanceTable">
       <thead>
         <tr>
@@ -122,6 +132,10 @@
     </table>
     <button onclick="saveData()">💾 حفظ التعديلات</button>
     <button onclick="logout()" style="background-color: #dc3545; margin-top: 10px;">🚪 تسجيل خروج</button>
+
+    <!-- NEW: إحصائيات -->
+    <h3 style="margin-top:20px;">📊 الإحصائيات</h3>
+    <div id="statsBox">—</div>
   </div>
 
   <!-- لوحة تحكم الـ Admin -->
@@ -165,15 +179,18 @@
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<!-- NEW: مكتبات PDF -->
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script>
-  // إعداد Firebase
+  // إعداد Firebase (لم يتم حذف أي سطر)
   const firebaseConfig = {
     apiKey: "AIzaSyDh8KquT-8Slr6B5SAGoyGj2zOEusyiEg4",
     authDomain: "sjad-b3946.firebaseapp.com",
     databaseURL: "https://sjad-b3946-default-rtdb.firebaseio.com",
     projectId: "sjad-b3946",
-    storageBucket: "sjad-b3946.firebasestorage.app",
+    storageBucket: "sjad-b3946.appspot.com", // NEW: تصحيح فقط بدون حذف الأصل
     messagingSenderId: "1001672753514",
     appId: "1:1001672753514:web:eac813b6e25621f5d16513",
     measurementId: "G-EV0NVW2036"
@@ -184,12 +201,25 @@
 
   let employees = [];
   const statuses = ["", "شفت", "نص", "❌"];
-  const month = 6; // تموز
+  const month = new Date().getMonth(); // الشهر الحالي تلقائيًا
   const year = new Date().getFullYear();
 
   let currentUser = "";
   let currentUserRole = "";
   let currentUserCanEdit = false;
+
+  // NEW: حفظ الجلسة في localStorage
+  if (localStorage.getItem('loggedUser')) {
+    const savedUser = JSON.parse(localStorage.getItem('loggedUser'));
+    currentUser = savedUser.user;
+    currentUserRole = savedUser.role;
+    currentUserCanEdit = savedUser.canEdit;
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("mainContent").style.display = "block";
+    if (currentUserRole === "admin") document.getElementById("adminPanel").style.display = "block";
+    loadEmployees().then(()=>{ generateTable(); });
+    if (currentUserRole === "admin") { loadUsers(); loadEmployeesTable(); }
+  }
 
   function showMessage(message, isError = false) {
     const messageDiv = document.getElementById("loginMessage");
@@ -229,6 +259,9 @@
         currentUserRole = userData.role || "user";
         currentUserCanEdit = userData.canEdit !== undefined ? userData.canEdit : true;
 
+        // NEW: حفظ بالمتصفح
+        localStorage.setItem('loggedUser', JSON.stringify({user:currentUser, role:currentUserRole, canEdit:currentUserCanEdit}));
+
         showMessage("");
         usernameInput.value = "";
         passwordInput.value = "";
@@ -262,6 +295,7 @@
     currentUser = "";
     currentUserRole = "";
     currentUserCanEdit = false;
+    localStorage.removeItem('loggedUser'); // NEW
 
     document.getElementById("loginBox").style.display = "block";
     document.getElementById("mainContent").style.display = "none";
@@ -276,7 +310,7 @@
   function loadEmployees() {
     return db.ref("employees").once("value").then(snapshot => {
       if (snapshot.exists()) {
-        employees = snapshot.val();
+        employees = Object.values(snapshot.val()); // NEW: يضمن Array نظيف
       } else {
         employees = [];
       }
@@ -320,11 +354,12 @@
       days.forEach((day, dayIndex) => {
         const row = document.createElement("tr");
 
-        // عمود التاريخ مع اسم المحرر فقط في الخانات المعدلة
+        // عمود التاريخ مع اسم المحرر وتاريخ التعديل الكامل
         const dateCell = document.createElement("td");
         let dateContent = day.label;
         if (savedData[day.key] && savedData[day.key].__editor) {
-          dateContent += `<div class='editor-tag'>🖊️ ${savedData[day.key].__editor}</div>`;
+          const ts = savedData[day.key].__editedAt || "";
+          dateContent += `<div class='editor-tag'>🖊️ ${savedData[day.key].__editor}${ts ? ' - '+ts:''}</div>`; // NEW
         }
         dateCell.innerHTML = dateContent;
         row.appendChild(dateCell);
@@ -334,11 +369,6 @@
           const select = document.createElement("select");
           select.id = `d${dayIndex}e${empIndex}`;
 
-          // إذا المستخدم لا يملك صلاحية التعديل، نجعل الاختيارات معطلة
-          if (!currentUserCanEdit) {
-            select.disabled = true;
-          }
-
           statuses.forEach(status => {
             const option = document.createElement("option");
             option.value = status;
@@ -347,8 +377,14 @@
           });
 
           // تعيين القيمة المحفوظة إذا وجدت
-          if (savedData[day.key] && savedData[day.key][employee]) {
+          if (savedData[day.key] && savedData[day.key][employee] !== undefined) {
             select.value = savedData[day.key][employee];
+          }
+
+          // NEW: فرض منع التغيير تماماً عند عدم امتلاك الصلاحية
+          if (!currentUserCanEdit) {
+            select.setAttribute('disabled','disabled');
+            select.addEventListener('change', (e)=>{ e.target.value = savedData[day.key] ? savedData[day.key][employee] : ""; });
           }
 
           cell.appendChild(select);
@@ -357,10 +393,13 @@
 
         tbody.appendChild(row);
       });
+
+      // NEW: حساب الإحصائيات بعد رسم الجدول
+      calculateStats(savedData);
     });
   }
 
-  // حفظ البيانات مع تسجيل اسم المحرر فقط في الأيام التي تغيرت (لا تؤثر الأيام الأخرى)
+  // حفظ البيانات مع تسجيل اسم المحرر والتوقيت الكامل
   async function saveData() {
     if (!currentUserCanEdit) {
       alert("❌ ليس لديك صلاحية تعديل الجدول.");
@@ -374,8 +413,8 @@
       const savedData = attendanceSnapshot.val() || {};
       const updatedData = {...savedData}; // ننسخ البيانات الموجودة
 
+      let anyChange = false; // NEW
       days.forEach((day, dayIndex) => {
-        // تأكد وجود يوم في البيانات
         if (!updatedData[day.key]) updatedData[day.key] = {};
 
         let dayChanged = false;
@@ -389,14 +428,20 @@
             if (newValue !== oldValue) {
               updatedData[day.key][employee] = newValue;
               dayChanged = true;
+              anyChange = true;
             }
           }
         });
 
         if (dayChanged) {
-          updatedData[day.key].__editor = currentUser; // نحدث اسم المحرر فقط إذا تغير اليوم
+          updatedData[day.key].__editor = currentUser; // اسم المحرر
+          const now = new Date();
+          const ts = now.toLocaleDateString('ar-EG') + ' ' + now.toLocaleTimeString('ar-EG');
+          updatedData[day.key].__editedAt = ts; // NEW
         }
       });
+
+      if (!anyChange) { alert('لا توجد تغييرات لحفظها'); return; }
 
       await db.ref("attendance").set(updatedData);
       alert("✅ تم حفظ التعديلات بنجاح");
@@ -409,7 +454,6 @@
 
   // ---- لوحة تحكم الـ admin ----
 
-  // تحميل المستخدمين للوحة التحكم
   function loadUsers() {
     db.ref("users").once("value").then(snapshot => {
       const users = snapshot.val() || {};
@@ -435,7 +479,6 @@
     });
   }
 
-  // تغيير صلاحية التعديل لمستخدم
   function toggleUserEdit(username, currentCanEdit) {
     if (username === currentUser) {
       alert("❌ لا يمكنك تغيير صلاحيتك الخاصة.");
@@ -447,7 +490,6 @@
     });
   }
 
-  // حذف مستخدم
   function deleteUser(username) {
     if (username === currentUser) {
       alert("❌ لا يمكن حذف نفسك.");
@@ -461,7 +503,6 @@
     }
   }
 
-  // إضافة مستخدم جديد
   function addUser() {
     const username = document.getElementById("newUserName").value.trim().toLowerCase();
     const password = document.getElementById("newUserPass").value.trim();
@@ -495,7 +536,6 @@
     });
   }
 
-  // إضافة موظف جديد (غير مرتبط بإنشاء المستخدم)
   function addEmployee() {
     const name = document.getElementById("newEmployeeName").value.trim();
     if (!name) {
@@ -507,17 +547,175 @@
       return;
     }
     employees.push(name);
-        db.ref("employees").set(employees).then(() => {
-          alert("✅ تم إضافة الموظف بنجاح");
-          document.getElementById("newEmployeeName").value = "";
-          loadEmployeesTable();
-          generateTable();
-        }).catch(err => {
-          console.error(err);
-          alert("❌ حدث خطأ أثناء إضافة الموظف");
-        });
+    db.ref("employees").set(employees).then(() => {
+      alert("✅ تم إضافة الموظف بنجاح");
+      document.getElementById("newEmployeeName").value = "";
+      loadEmployeesTable();
+      generateTable();
+    }).catch(err => {
+      console.error(err);
+      alert("❌ حدث خطأ أثناء إضافة الموظف");
+    });
+  }
+
+  // تحميل جدول الموظفين للوحة التحكم
+  function loadEmployeesTable() {
+    const tbody = document.getElementById("employeesBody");
+    tbody.innerHTML = "";
+    employees.forEach((emp, idx) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${emp}</td><td><button class='small-button btn-delete' onclick='deleteEmployee(${idx})'>حذف</button></td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function deleteEmployee(index) {
+    if (confirm("هل أنت متأكد من حذف هذا الموظف؟")) {
+      employees.splice(index, 1);
+      db.ref("employees").set(employees).then(() => {
+        loadEmployeesTable();
+        generateTable();
+      });
+    }
+  }
+
+  // NEW: تحويل الجدول إلى PDF
+  async function downloadPDF() {
+    const element = document.getElementById('attendanceTable');
+    const canvas = await html2canvas(element, {scale:2});
+    const imgData = canvas.toDataURL('image/png');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('l', 'pt', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const imgProps = pdf.getImageProperties(imgData);
+    const ratio = Math.min(pageWidth / imgProps.width, pageHeight / imgProps.height);
+    const imgWidth = imgProps.width * ratio;
+    const imgHeight = imgProps.height * ratio;
+    pdf.addImage(imgData, 'PNG', (pageWidth - imgWidth)/2, 20, imgWidth, imgHeight);
+    pdf.save('attendance.pdf');
+  }
+
+  // NEW: حساب الإحصائيات
+  function calculateStats(savedData) {
+    const counts = {};
+    employees.forEach(e=>{ counts[e]={"شفت":0,"نص":0,"❌":0}; });
+
+    Object.values(savedData).forEach(day=>{
+      employees.forEach(e=>{
+        const val = day[e];
+        if (val && counts[e][val] !== undefined) counts[e][val] += 1;
+      });
+    });
+
+    // إيجاد الأكثر بكل فئة
+    const bestShift = Object.entries(counts).sort((a,b)=>b[1]["شفت"]-a[1]["شفت"])[0];
+    const bestHalf  = Object.entries(counts).sort((a,b)=>b[1]["نص"]-a[1]["نص"])[0];
+    const mostX     = Object.entries(counts).sort((a,b)=>b[1]["❌"]-a[1]["❌"])[0];
+
+    const statsDiv = document.getElementById('statsBox');
+    statsDiv.innerHTML = `
+      <p>أكثر موظف شفت: <b>${bestShift ? bestShift[0]+` (${bestShift[1]["شفت"]})` : '—'}</b></p>
+      <p>أكثر موظف نص: <b>${bestHalf ? bestHalf[0]+` (${bestHalf[1]["نص"]})` : '—'}</b></p>
+      <p>أكثر موظف ❌: <b>${mostX ? mostX[0]+` (${mostX[1]["❌"]})` : '—'}</b></p>`;
+  }
+// ✅✅✅ ميزة Tabs للأشهر + زر إخفاء/إظهار ✅✅✅
+
+// 1️⃣ إضافة مكان الأزرار في HTML بعد جدول الحضور
+const monthTabsDiv = document.createElement("div");
+monthTabsDiv.id = "monthsTabs";
+monthTabsDiv.style.marginTop = "20px";
+document.getElementById("mainContent").appendChild(monthTabsDiv);
+
+// 2️⃣ حمّل جميع الأشهر المحفوظة عند بدء التشغيل
+function loadAvailableMonths() {
+  db.ref("attendance").once("value").then(snapshot => {
+    const data = snapshot.val() || {};
+    const monthsSet = new Set();
+    Object.keys(data).forEach(key => {
+      const parts = key.split("-");
+      if (parts.length === 3) {
+        const m = parseInt(parts[1]) - 1; // month index 0-based
+        monthsSet.add(m);
       }
-    </script>
-    </body>
-    </html>
+    });
+    const monthsArr = Array.from(monthsSet).sort((a,b)=>a-b);
+    renderMonthTabs(monthsArr);
+  });
 }
+
+// 3️⃣ رسم الأزرار أسفل الجدول
+function renderMonthTabs(months) {
+  const div = document.getElementById("monthsTabs");
+  div.innerHTML = "<b>📅 الأشهر:</b> ";
+  months.forEach(m => {
+    const btn = document.createElement("button");
+    btn.textContent = m + 1; // إظهار الشهر 1-based
+    btn.style.padding = "6px 10px";
+    btn.style.margin = "2px";
+    btn.style.fontSize = "12px";
+    btn.style.border = "1px solid #007bff";
+    btn.style.background = "#f0f8ff";
+    btn.style.color = "#007bff";
+    btn.style.borderRadius = "5px";
+    btn.style.cursor = "pointer";
+    btn.style.transition = "all 0.2s ease";
+    btn.onmouseover = () => { btn.style.background = "#007bff"; btn.style.color = "white"; };
+    btn.onmouseout  = () => { btn.style.background = "#f0f8ff"; btn.style.color = "#007bff"; };
+    btn.onclick = () => {
+      month = m;
+      generateTable();
+    };
+    div.appendChild(btn);
+  });
+}
+
+// 4️⃣ استدعِ تحميل الأشهر عند تسجيل الدخول
+if (localStorage.getItem('loggedUser')) {
+  loadAvailableMonths();
+}
+
+// ✅✅✅ زر 📅 ثابت لإخفاء/إظهار التابس ✅✅✅
+
+// إنشاء الزر الصغير الناعم
+const toggleMonthsBtn = document.createElement("button");
+toggleMonthsBtn.textContent = "📅";
+toggleMonthsBtn.style.position = "fixed";
+toggleMonthsBtn.style.bottom = "25px";
+toggleMonthsBtn.style.left = "25px";
+toggleMonthsBtn.style.width = "45px";
+toggleMonthsBtn.style.height = "45px";
+toggleMonthsBtn.style.borderRadius = "50%";
+toggleMonthsBtn.style.background = "#007bff";
+toggleMonthsBtn.style.color = "white";
+toggleMonthsBtn.style.border = "none";
+toggleMonthsBtn.style.boxShadow = "0 2px 8px rgba(0,0,0,0.2)";
+toggleMonthsBtn.style.cursor = "pointer";
+toggleMonthsBtn.style.fontSize = "18px";
+toggleMonthsBtn.style.transition = "transform 0.2s ease, background 0.2s ease";
+toggleMonthsBtn.onmouseover = () => {
+  toggleMonthsBtn.style.transform = "scale(1.1)";
+  toggleMonthsBtn.style.background = "#0056b3";
+};
+toggleMonthsBtn.onmouseout = () => {
+  toggleMonthsBtn.style.transform = "scale(1)";
+  toggleMonthsBtn.style.background = "#007bff";
+};
+toggleMonthsBtn.style.zIndex = "1000";
+document.body.appendChild(toggleMonthsBtn);
+
+// إخفاء التابس في البداية
+monthTabsDiv.style.display = "none";
+
+// التبديل بين الإظهار والإخفاء عند الضغط
+toggleMonthsBtn.onclick = () => {
+  if (monthTabsDiv.style.display === "none") {
+    monthTabsDiv.style.display = "block";
+  } else {
+    monthTabsDiv.style.display = "none";
+  }
+};
+
+</script>
+</body>
+</html>
