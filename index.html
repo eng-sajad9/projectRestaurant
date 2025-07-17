@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar">
+<htm lang="ar">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -189,6 +189,53 @@
     <button id="btnDeleteData" style="background-color:#dc3545; color:white; font-size:12px; padding:5px 10px; margin-top:15px; cursor:pointer;">
       🗑️ حذف بيانات متقدمة
     </button>
+    <!-- أضف زر الميزات المتقدمة بعد زر حذف البيانات المتقدمة في لوحة التحكم -->
+    <button id="btnFeaturesTab" style="background:#673ab7;color:white;font-size:13px;padding:7px 12px;margin-bottom:10px;cursor:pointer;">
+      ⭐️ ميزات متقدمة
+    </button>
+    <div id="featuresTab" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.45);z-index:3000;align-items:center;justify-content:center;">
+      <div style="background:#fff;max-width:520px;width:97vw;max-height:92vh;overflow:auto;border-radius:14px;box-shadow:0 8px 32px #0002;padding:25px 18px 18px 18px;position:relative;">
+        <button id="closeFeaturesTab" style="position:absolute;top:10px;left:10px;background:#dc3545;color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;">✖</button>
+        <h3 style="text-align:center;margin-bottom:18px;color:#673ab7;">⭐️ الميزات المتقدمة</h3>
+        <div id="featuresTabContent"></div>
+      </div>
+    </div>
+    <style>
+      @media (max-width: 600px) {
+        #featuresTab > div {
+          max-width: 99vw !important;
+          padding: 10px 2vw 10px 2vw !important;
+        }
+        #featuresTab h3 { font-size: 18px !important; }
+      }
+      .feature-section {
+        background: #f6f8fa;
+        border-radius: 10px;
+        margin-bottom: 18px;
+        padding: 13px 12px;
+        box-shadow: 0 1px 6px #0001;
+      }
+      .feature-section h4 {
+        margin: 0 0 7px 0;
+        color: #3f51b5;
+        font-size: 16px;
+      }
+      .activity-log-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 7px;
+        font-size: 14px;
+      }
+      .activity-log-table th, .activity-log-table td {
+        border: 1px solid #ccc;
+        padding: 5px 4px;
+        text-align: center;
+      }
+      .activity-log-table th {
+        background: #ede7f6;
+        color: #673ab7;
+      }
+    </style>
   </div>
 </div>
 
@@ -364,10 +411,26 @@ function generateTable() {
         if (savedData[day.key] && savedData[day.key][employee] !== undefined) {
           select.value = savedData[day.key][employee];
         }
+        // إضافة تلوين الخلية حسب القيمة
+        if (select.value === "شفت") {
+          cell.style.background = "#d4edda"; // أخضر فاتح
+        } else if (select.value === "نص") {
+          cell.style.background = "#fff9db"; // أصفر فاتح
+        }
         if (!currentUserCanEdit) {
           select.setAttribute('disabled','disabled');
           select.addEventListener('change', (e)=>{ e.target.value = savedData[day.key] ? savedData[day.key][employee] : ""; });
         }
+        // تحديث اللون عند تغيير القيمة
+        select.addEventListener('change', function() {
+          if (this.value === "شفت") {
+            cell.style.background = "#d4edda";
+          } else if (this.value === "نص") {
+            cell.style.background = "#fff9db";
+          } else {
+            cell.style.background = "";
+          }
+        });
         cell.appendChild(select);
         row.appendChild(cell);
       });
@@ -415,6 +478,7 @@ async function saveData() {
     await db.ref("attendance").set(updatedData);
     alert("✅ تم حفظ التعديلات بنجاح");
     generateTable();
+    logActivity("حفظ الجدول", "تم حفظ جدول الحضور");
   } catch (error) {
     console.error("خطأ في حفظ البيانات:", error);
     alert("❌ خطأ في حفظ البيانات");
@@ -495,6 +559,7 @@ function deleteUser(username) {
     db.ref("users/" + username).remove().then(() => {
       loadUsers();
       alert("✅ تم حذف المستخدم بنجاح.");
+      logActivity("حذف مستخدم", username); // <-- سجل النشاط هنا
     });
   }
 }
@@ -746,46 +811,49 @@ function advancedDelete() {
     return;
   }
   const adminPass = prompt("يرجى إدخال كلمة مرور المدير للتأكيد:");
-  if (adminPass !== "123456") {
-    alert("❌ كلمة المرور غير صحيحة!");
-    return;
-  }
-  if (!confirm("هل أنت متأكد من تنفيذ هذا الإجراء؟ لا يمكن التراجع عنه!")) return;
-  switch(choice.trim()) {
-    case "1":
-      db.ref("employees").remove()
-        .then(() => alert("✅ تم حذف الموظفين فقط."))
-        .catch(e => alert("❌ خطأ في حذف الموظفين: " + e.message));
-      break;
-    case "2":
-      db.ref("users").remove()
-        .then(() => alert("✅ تم حذف حسابات المستخدمين."))
-        .catch(e => alert("❌ خطأ في حذف حسابات المستخدمين: " + e.message));
-      break;
-    case "3":
-      db.ref("attendance").remove()
-        .then(() => alert("✅ تم حذف التاشيرات."))
-        .catch(e => alert("❌ خطأ في حذف التاشيرات: " + e.message));
-      break;
-    case "4":
-      Promise.all([
-        db.ref("employees").remove(),
-        db.ref("attendance").remove(),
-        db.ref("users").once("value").then(snapshot => {
-          const users = snapshot.val() || {};
-          const updates = {};
-          Object.keys(users).forEach(username => {
-            if (username !== currentUser) updates[username] = null;
-          });
-          return db.ref("users").update(updates);
-        })
-      ]).then(() => {
-        alert("✅ تم حذف كل البيانات ما عدا حسابك الحالي.");
-      }).catch(e => {
-        alert("❌ خطأ في حذف البيانات: " + e.message);
-      });
-      break;
-  }
+  db.ref("users/admin/password").once("value").then(snapshot => {
+    const realAdminPass = snapshot.val();
+    if (adminPass !== realAdminPass) {
+      alert("❌ كلمة المرور غير صحيحة!");
+      return;
+    }
+    if (!confirm("هل أنت متأكد من تنفيذ هذا الإجراء؟ لا يمكن التراجع عنه!")) return;
+    switch(choice.trim()) {
+      case "1":
+        db.ref("employees").remove()
+          .then(() => alert("✅ تم حذف الموظفين فقط."))
+          .catch(e => alert("❌ خطأ في حذف الموظفين: " + e.message));
+        break;
+      case "2":
+        db.ref("users").remove()
+          .then(() => alert("✅ تم حذف حسابات المستخدمين."))
+          .catch(e => alert("❌ خطأ في حذف حسابات المستخدمين: " + e.message));
+        break;
+      case "3":
+        db.ref("attendance").remove()
+          .then(() => alert("✅ تم حذف التاشيرات."))
+          .catch(e => alert("❌ خطأ في حذف التاشيرات: " + e.message));
+        break;
+      case "4":
+        Promise.all([
+          db.ref("employees").remove(),
+          db.ref("attendance").remove(),
+          db.ref("users").once("value").then(snapshot => {
+            const users = snapshot.val() || {};
+            const updates = {};
+            Object.keys(users).forEach(username => {
+              if (username !== currentUser) updates[username] = null;
+            });
+            return db.ref("users").update(updates);
+          })
+        ]).then(() => {
+          alert("✅ تم حذف كل البيانات ما عدا حسابك الحالي.");
+        }).catch(e => {
+          alert("❌ خطأ في حذف البيانات: " + e.message);
+        });
+        break;
+    }
+  });
 }
 document.addEventListener("DOMContentLoaded", () => {
   const btnDeleteData = document.getElementById("btnDeleteData");
@@ -1026,6 +1094,7 @@ function deleteEmployee(index) {
         alert("✅ تم حذف الموظف وجميع بيانات حضوره بنجاح.");
         loadEmployeesTable();
         generateTable();
+        logActivity("حذف موظف", empName); // <-- سجل النشاط هنا
       });
     })
     .catch(err => {
@@ -1033,6 +1102,172 @@ function deleteEmployee(index) {
       alert("❌ حدث خطأ أثناء حذف الموظف.");
     });
 }
+
+// زر فتح الميزات المتقدمة
+document.getElementById("btnFeaturesTab").onclick = function() {
+  document.getElementById("featuresTab").style.display = "flex";
+  renderFeaturesTab();
+};
+document.getElementById("closeFeaturesTab").onclick = function() {
+  document.getElementById("featuresTab").style.display = "none";
+};
+
+// ========== دالة عرض الميزات المتقدمة ==========
+function renderFeaturesTab() {
+  let html = `
+    <div class="feature-section">
+      <h4>📜 سجل النشاطات</h4>
+      <div id="activityLogBox" style="min-height:40px;text-align:center;">جاري التحميل...</div>
+    </div>
+    <div class="feature-section">
+      <h4>🔔 إرسال إشعار للمستخدمين</h4>
+      <input type="text" id="notifyMsg" placeholder="اكتب رسالة الإشعار هنا" style="width:100%;margin-bottom:7px;" maxlength="120"/>
+      <button id="sendNotifyBtn" style="background:#2196f3;color:white;padding:7px 15px;border-radius:5px;">إرسال الإشعار</button>
+      <div id="notifyStatus" style="margin-top:7px;font-size:13px;color:#388e3c;"></div>
+    </div>
+    <div class="feature-section">
+      <h4>🔄 تغيير كلمة مرور المدير</h4>
+      <input type="password" id="adminOldPass" placeholder="كلمة المرور الحالية" style="width:100%;margin-bottom:7px;" />
+      <input type="password" id="adminNewPass" placeholder="كلمة المرور الجديدة" style="width:100%;margin-bottom:7px;" />
+      <button id="changeAdminPassBtn" style="background:#ff9800;color:white;padding:7px 15px;border-radius:5px;">تغيير كلمة المرور</button>
+      <div id="adminPassStatus" style="margin-top:7px;font-size:13px;color:#388e3c;"></div>
+    </div>
+    <div class="feature-section">
+      <h4>🗂️ نسخ احتياطي للبيانات</h4>
+      <button onclick="backupData()" style="background:#4caf50;color:white;padding:7px 15px;border-radius:5px;">تحميل نسخة احتياطية</button>
+      <div id="backupStatus" style="margin-top:7px;font-size:13px;color:#388e3c;"></div>
+    </div>
+  `;
+  document.getElementById("featuresTabContent").innerHTML = html;
+  loadActivityLog();
+
+  // إصلاح زر إرسال الإشعار
+  document.getElementById("sendNotifyBtn").onclick = sendNotification;
+
+  // إصلاح زر تغيير كلمة مرور المدير
+  document.getElementById("changeAdminPassBtn").onclick = changeAdminPassword;
+}
+
+// ========== سجل النشاطات ==========
+function logActivity(action, details) {
+  if (!currentUser) return; // إصلاح: لا تسجل إذا لم يوجد مستخدم
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('ar-EG');
+  const timeStr = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute:'2-digit', second:'2-digit' });
+  const log = {
+    user: currentUser,
+    action,
+    details,
+    date: dateStr,
+    time: timeStr
+  };
+  db.ref("activityLog").push(log);
+}
+
+function loadActivityLog() {
+  db.ref("activityLog").limitToLast(30).once("value").then(snapshot => {
+    const logs = [];
+    snapshot.forEach(child => logs.push(child.val()));
+    logs.reverse();
+    let html = `<table class="activity-log-table">
+      <tr>
+        <th>المستخدم</th>
+        <th>العملية</th>
+        <th>تفاصيل</th>
+        <th>التاريخ</th>
+        <th>الوقت</th>
+      </tr>`;
+    if (logs.length === 0) {
+      html += `<tr><td colspan="5">لا يوجد نشاطات بعد.</td></tr>`;
+    } else {
+      logs.forEach(log => {
+        html += `<tr>
+          <td>${log.user || ""}</td>
+          <td>${log.action || ""}</td>
+          <td>${log.details || ""}</td>
+          <td>${log.date || ""}</td>
+          <td>${log.time || ""}</td>
+        </tr>`;
+      });
+    }
+    html += `</table>`;
+    const box = document.getElementById("activityLogBox");
+    if (box) box.innerHTML = html;
+  });
+}
+
+// ========== إرسال إشعار للمستخدمين ==========
+function sendNotification() {
+  const msgInput = document.getElementById("notifyMsg");
+  const statusDiv = document.getElementById("notifyStatus");
+  const msg = msgInput.value.trim();
+  if (!msg) {
+    statusDiv.textContent = "يرجى كتابة رسالة.";
+    return;
+  }
+  db.ref("notifications").push({
+    msg,
+    date: new Date().toLocaleString('ar-EG'),
+    from: currentUser
+  }).then(() => {
+    statusDiv.textContent = "✅ تم إرسال الإشعار لجميع المستخدمين.";
+    msgInput.value = "";
+    logActivity("إرسال إشعار", msg);
+  }).catch(() => {
+    statusDiv.textContent = "❌ حدث خطأ أثناء إرسال الإشعار.";
+  });
+}
+
+// ========== تغيير كلمة مرور المدير ==========
+function changeAdminPassword() {
+  const oldPass = document.getElementById("adminOldPass").value;
+  const newPass = document.getElementById("adminNewPass").value;
+  const statusDiv = document.getElementById("adminPassStatus");
+  if (!oldPass || !newPass) {
+    statusDiv.textContent = "يرجى إدخال جميع الحقول.";
+    return;
+  }
+  db.ref("users/admin/password").once("value").then(snapshot => {
+    if (!snapshot.exists() || snapshot.val() !== oldPass) {
+      statusDiv.textContent = "كلمة المرور الحالية غير صحيحة.";
+      return;
+    }
+    db.ref("users/admin/password").set(newPass).then(() => {
+      statusDiv.textContent = "✅ تم تغيير كلمة المرور بنجاح.";
+      document.getElementById("adminOldPass").value = "";
+      document.getElementById("adminNewPass").value = "";
+      logActivity("تغيير كلمة مرور المدير", "تم تغيير كلمة المرور");
+    });
+  }).catch(() => {
+    statusDiv.textContent = "❌ حدث خطأ أثناء تغيير كلمة المرور.";
+  });
+}
+
+// ========== نسخ احتياطي للبيانات ==========
+function backupData() {
+  document.getElementById("backupStatus").textContent = "جاري تجهيز النسخة...";
+  Promise.all([
+    db.ref("employees").once("value"),
+    db.ref("attendance").once("value"),
+    db.ref("users").once("value")
+  ]).then(([empSnap, attSnap, usersSnap]) => {
+    const data = {
+      employees: empSnap.val() || {},
+      attendance: attSnap.val() || {},
+      users: usersSnap.val() || {}
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "backup-" + new Date().toISOString().slice(0,10) + ".json";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
+    document.getElementById("backupStatus").textContent = "✅ تم تحميل النسخة الاحتياطية.";
+    logActivity("تحميل نسخة احتياطية", "تم تحميل نسخة احتياطية من البيانات");
+  });
+}
 </script>
 </body>
-</html>
+</htm
