@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<htm lang="ar">
+<html lang="ar">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -107,6 +107,92 @@
       transform: none;
       vertical-align: middle;
       margin: 0;
+    }
+    #sidebarMenu {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 0;
+      height: 100vh;
+      background: #fff;
+      box-shadow: -2px 0 12px #0002;
+      overflow-x: hidden;
+      transition: 0.3s;
+      z-index: 5000;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding-top: 0;
+    }
+    #sidebarMenu.open {
+      width: 210px;
+      padding-top: 30px;
+    }
+    #sidebarMenu .sidebar-header {
+      width: 100%;
+      padding: 14px 18px 8px 18px;
+      background: #007bff;
+      color: #fff;
+      font-size: 16px;
+      font-weight: bold;
+      text-align: right;
+      border-bottom: 1px solid #eee;
+      letter-spacing: 0.5px;
+    }
+    #sidebarMenu button {
+      width: 88%;
+      margin: 8px 6%;
+      padding: 8px;
+      font-size: 15px;
+      border-radius: 6px;
+      border: none;
+      background: #f4f4f4;
+      color: #333;
+      cursor: pointer;
+      text-align: right;
+      transition: background 0.2s;
+    }
+    #sidebarMenu button:hover {
+      background: #e0e0e0;
+    }
+    #sidebarToggleBtn, #sidebarCloseBtn {
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      width: 34px;
+      height: 34px;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      font-size: 20px;
+      cursor: pointer;
+      z-index: 5100;
+      box-shadow: 0 2px 8px #0002;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+    #sidebarCloseBtn {
+      background: rgba(0,0,0,0.08);
+      color: #333;
+      font-size: 18px;
+      border: none;
+      box-shadow: none;
+      width: 30px;
+      height: 30px;
+      right: 18px;
+      top: 18px;
+      opacity: 0.7;
+    }
+    #sidebarCloseBtn:hover {
+      background: #f4f4f4;
+      opacity: 1;
+    }
+    @media (max-width: 600px) {
+      #sidebarMenu.open { width: 90vw; }
+      #sidebarToggleBtn, #sidebarCloseBtn { right: 8px; top: 8px; }
     }
   </style>
 </head>
@@ -239,6 +325,504 @@
   </div>
 </div>
 
+<!-- أضف هذا قبل نهاية </body> -->
+<style>
+  #sidebarMenu {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 100vh;
+    background: #fff;
+    box-shadow: -2px 0 12px #0002;
+    overflow-x: hidden;
+    transition: 0.3s;
+    z-index: 5000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding-top: 0;
+  }
+  #sidebarMenu.open {
+    width: 210px;
+    padding-top: 30px;
+  }
+  #sidebarMenu .sidebar-header {
+    width: 100%;
+    padding: 14px 18px 8px 18px;
+    background: #007bff;
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: right;
+    border-bottom: 1px solid #eee;
+    letter-spacing: 0.5px;
+  }
+  #sidebarMenu button {
+    width: 88%;
+    margin: 8px 6%;
+    padding: 8px;
+    font-size: 15px;
+    border-radius: 6px;
+    border: none;
+    background: #f4f4f4;
+    color: #333;
+    cursor: pointer;
+    text-align: right;
+    transition: background 0.2s;
+  }
+  #sidebarMenu button:hover {
+    background: #e0e0e0;
+  }
+  #sidebarToggleBtn, #sidebarCloseBtn {
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    width: 34px;
+    height: 34px;
+    background: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 5100;
+    box-shadow: 0 2px 8px #0002;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+  }
+  #sidebarCloseBtn {
+    background: rgba(0,0,0,0.08);
+    color: #333;
+    font-size: 18px;
+    border: none;
+    box-shadow: none;
+    width: 30px;
+    height: 30px;
+    right: 18px;
+    top: 18px;
+    opacity: 0.7;
+  }
+  #sidebarCloseBtn:hover {
+    background: #f4f4f4;
+    opacity: 1;
+  }
+  @media (max-width: 600px) {
+    #sidebarMenu.open { width: 90vw; }
+    #sidebarToggleBtn, #sidebarCloseBtn { right: 8px; top: 8px; }
+  }
+</style>
+<button id="sidebarToggleBtn" style="display:none;">☰</button>
+<button id="sidebarCloseBtn" style="display:none;">✖</button>
+<div id="sidebarMenu">
+  <div class="sidebar-header" id="sidebarUserName"></div>
+  <button onclick="downloadPDF()">⬇️ تحميل PDF</button>
+  <button onclick="saveData()">💾 حفظ التعديلات</button>
+  <button onclick="logout()" style="background:#dc3545;color:white;">🚪 تسجيل خروج</button>
+  <button id="sidebarAdminBtn" style="background:#6c757d;color:white;display:none;">⚙️ لوحة التحكم</button>
+  <button id="sidebarEmpStatsBtn" style="background:#17a2b8;color:white;display:none;">📊 تفاصيل إحصائيات الموظفين</button>
+  <button id="sidebarDeleteDataBtn" style="background:#dc3545;color:white;display:none;">🗑️ حذف بيانات متقدمة</button>
+  <button id="sidebarFeaturesTabBtn" style="background:#673ab7;color:white;display:none;">⭐️ ميزات متقدمة</button>
+  <button id="sidebarChangePassBtn" style="background:#2196f3;color:white;">🔑 تغيير كلمة المرور</button>
+  <!-- أضف زر التحكم في صلاحيات سجل النشاطات للمدير في القائمة الجانبية -->
+  <button id="sidebarUserControlBtn" style="background:#009688;color:white;display:none;">👥 صلاحيات سجل النشاطات</button>
+</div>
+<script>
+  // تحديث ظهور الأزرار حسب الدور وصلاحية المستخدم
+  function updateSidebarVisibility() {
+    const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
+    const sidebarMenu = document.getElementById("sidebarMenu");
+    const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
+    const isAdmin = currentUserRole === "admin";
+    // أزرار المدير فقط
+    ["sidebarAdminBtn","sidebarEmpStatsBtn","sidebarDeleteDataBtn","sidebarFeaturesTabBtn","sidebarChangePassBtn","sidebarUserControlBtn"].forEach(id=>{
+      const el = document.getElementById(id);
+      if (el) el.style.display = isAdmin ? "block" : "none";
+    });
+
+    // زر سجل النشاطات يظهر فقط إذا كان للمستخدم صلاحية
+    db.ref("users/" + currentUser).once("value").then(snapshot => {
+      const data = snapshot.val() || {};
+      let logBtn = document.getElementById("sidebarUserLogBtn");
+      if (data.canViewLog) {
+        if (!logBtn) {
+          logBtn = document.createElement("button");
+          logBtn.id = "sidebarUserLogBtn";
+          logBtn.style = "background:#673ab7;color:white;";
+          logBtn.textContent = "📋 سجل النشاطات";
+          logBtn.onclick = function() {
+            document.getElementById("sidebarMenu").classList.remove("open");
+            // نافذة سجل النشاطات للمستخدم
+            let modal = document.getElementById("userLogModal");
+            if (!modal) {
+              modal = document.createElement("div");
+              modal.id = "userLogModal";
+              modal.style.position = "fixed";
+              modal.style.top = "0";
+              modal.style.left = "0";
+              modal.style.width = "100vw";
+              modal.style.height = "100vh";
+              modal.style.background = "rgba(0,0,0,0.35)";
+              modal.style.zIndex = "7000";
+              modal.style.display = "flex";
+              modal.style.alignItems = "center";
+              modal.style.justifyContent = "center";
+              modal.innerHTML = `
+                <div style="background:#fff;max-width:400px;width:95vw;border-radius:12px;box-shadow:0 8px 32px #0002;padding:22px 18px 18px 18px;position:relative;">
+                  <button id="closeUserLogModal" style="position:absolute;top:10px;left:10px;background:#dc3545;color:white;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;">✖</button>
+                  <h3 style="text-align:center;margin-bottom:18px;color:#673ab7;">📋 سجل النشاطات</h3>
+                  <div id="userLogContent">جاري التحميل...</div>
+                </div>
+              `;
+              document.body.appendChild(modal);
+              document.getElementById("closeUserLogModal").onclick = function() {
+                modal.style.display = "none";
+              };
+            } else {
+              modal.style.display = "flex";
+            }
+            // تحميل سجل النشاطات لهذا المستخدم فقط
+            db.ref("activityLog").orderByChild("user").equalTo(currentUser).limitToLast(30).once("value").then(snapshot => {
+              const log = snapshot.val() || {};
+              let html = `<table class="activity-log-table">
+                <tr>
+                  <th>الوقت</th>
+                  <th>النشاط</th>
+                  <th>الوصف</th>
+                </tr>`;
+              Object.values(log).reverse().forEach(item => {
+                html += `<tr>
+                  <td>${toEnglishNumbers(item.time || "")}</td>
+                  <td>${item.action || ""}</td>
+                  <td>${item.details || ""}</td>
+                </tr>`;
+              });
+              html += `</table>`;
+              document.getElementById("userLogContent").innerHTML = html;
+            });
+          };
+          sidebarMenu.appendChild(logBtn);
+        } else {
+          logBtn.style.display = "block";
+        }
+      } else {
+        if (logBtn) logBtn.style.display = "none";
+      }
+    });
+
+    if (localStorage.getItem('loggedUser')) {
+      sidebarToggleBtn.style.display = sidebarMenu.classList.contains("open") ? "none" : "flex";
+      sidebarCloseBtn.style.display = sidebarMenu.classList.contains("open") ? "flex" : "none";
+    } else {
+      sidebarToggleBtn.style.display = "none";
+      sidebarCloseBtn.style.display = "none";
+      sidebarMenu.classList.remove("open");
+    }
+  }
+  // زر فتح القائمة الجانبية
+  document.getElementById("sidebarToggleBtn").onclick = () => {
+    document.getElementById("sidebarMenu").classList.add("open");
+    document.getElementById("sidebarToggleBtn").style.display = "none";
+    document.getElementById("sidebarCloseBtn").style.display = "flex";
+    // عرض اسم المستخدم أعلى القائمة
+    const sidebarUserName = document.getElementById("sidebarUserName");
+    sidebarUserName.textContent = currentUser ? "👤 " + currentUser : "غير مسجل";
+    updateSidebarVisibility();
+  };
+  // زر إغلاق القائمة الجانبية
+  document.getElementById("sidebarCloseBtn").onclick = () => {
+    document.getElementById("sidebarMenu").classList.remove("open");
+    document.getElementById("sidebarCloseBtn").style.display = "none";
+    document.getElementById("sidebarToggleBtn").style.display = "flex";
+    updateSidebarVisibility();
+  };
+  // ربط أزرار القائمة الجانبية بأزرار الموقع الأصلية
+  document.getElementById("sidebarAdminBtn").onclick = () => {
+    document.getElementById("sidebarMenu").classList.remove("open");
+    document.getElementById("toggleAdminBtn").click();
+  };
+  document.getElementById("sidebarEmpStatsBtn").onclick = () => {
+    document.getElementById("sidebarMenu").classList.remove("open");
+    document.getElementById("toggleEmpStatsBtn").click();
+  };
+  document.getElementById("sidebarDeleteDataBtn").onclick = () => {
+    document.getElementById("sidebarMenu").classList.remove("open");
+    document.getElementById("btnDeleteData").click();
+  };
+  document.getElementById("sidebarFeaturesTabBtn").onclick = () => {
+    document.getElementById("sidebarMenu").classList.remove("open");
+    document.getElementById("btnFeaturesTab").click();
+    document.getElementById("featuresTab").style.display = "flex";
+    const featuresTabContent = document.getElementById("featuresTabContent");
+    featuresTabContent.innerHTML = `
+      <div class="feature-section">
+        <h4>سجل النشاطات</h4>
+        <div id="activityLogBox">جاري التحميل...</div>
+      </div>
+      <div class="feature-section">
+        <h4>معلومات النظام</h4>
+        <ul style="margin:0;padding:0 0 0 15px;">
+          <li>عدد الموظفين الحالي: <b>${employees.length}</b></li>
+          <li>اسم المستخدم الحالي: <b>${currentUser}</b></li>
+          <li>الدور: <b>${currentUserRole}</b></li>
+        </ul>
+      </div>
+    `;
+    db.ref("activityLog").limitToLast(30).once("value").then(snapshot => {
+      const log = snapshot.val() || {};
+      let html = `<table class="activity-log-table">
+        <tr>
+          <th>الوقت</th>
+          <th>المستخدم</th>
+          <th>النشاط</th>
+          <th>الوصف</th>
+        </tr>`;
+      Object.values(log).reverse().forEach(item => {
+        html += `<tr>
+          <td>${toEnglishNumbers(item.time || "")}</td>
+          <td>${item.user || ""}</td>
+          <td>${item.action || ""}</td>
+          <td>${item.details || ""}</td>
+        </tr>`;
+      });
+      html += `</table>`;
+      document.getElementById("activityLogBox").innerHTML = html;
+    });
+    // زر إغلاق التبويبة
+    const closeBtn = document.getElementById("closeFeaturesTab");
+    if (closeBtn) {
+      closeBtn.onclick = () => {
+        document.getElementById("featuresTab").style.display = "none";
+      };
+    }
+  };
+  // إخفاء جميع الأزرار الخارجية
+  document.addEventListener("DOMContentLoaded", () => {
+    ["btnDownloadPDF", "toggleAdminBtn", "toggleEmpStatsBtn", "btnDeleteData", "btnFeaturesTab"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = "none";
+    });
+    updateSidebarVisibility();
+  });
+  window.addEventListener("storage", updateSidebarVisibility);
+  window.addEventListener("focus", updateSidebarVisibility);
+  setInterval(updateSidebarVisibility, 1000);
+</script>
+<!-- نهاية الإضافة -->
+
+<!-- سجل النشاطات - تحسين التفاصيل -->
+<script>
+// سجل النشاطات
+function logActivity(action, details, extra = {}) {
+  const now = new Date();
+  const time = toEnglishNumbers(now.toLocaleDateString('ar-EG')) + ' ' + toEnglishNumbers(now.toLocaleTimeString('ar-EG'));
+  db.ref("activityLog").push({
+    time,
+    action,
+    details,
+    user: currentUser,
+    ...extra
+  });
+}
+
+// تحويل الأرقام العربية إلى إنجليزية
+function toEnglishNumbers(str) {
+  return str.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
+}
+
+// حفظ التعديلات فقط عند وجود تغيير فعلي
+async function saveData() {
+  if (!currentUserCanEdit) {
+    alert("❌ ليس لديك صلاحية تعديل الجدول.");
+    return;
+  }
+  const days = getDays();
+  try {
+    const attendanceSnapshot = await db.ref("attendance").once("value");
+    const savedData = attendanceSnapshot.val() || {};
+    const updatedData = {...savedData};
+    let changes = [];
+    let anyChange = false;
+    days.forEach((day, dayIndex) => {
+      if (!updatedData[day.key]) updatedData[day.key] = {};
+      let dayChanged = false;
+      employees.forEach((employee, empIndex) => {
+        const selectElement = document.getElementById(`d${dayIndex}e${empIndex}`);
+        if (selectElement) {
+          const newValue = selectElement.value;
+          const oldValue = savedData[day.key] ? savedData[day.key][employee] : "";
+          if (newValue !== oldValue) {
+            updatedData[day.key][employee] = newValue;
+            dayChanged = true;
+            anyChange = true;
+            changes.push({
+              user: currentUser,
+              day: day.key,
+              employee,
+              old: oldValue,
+              new: newValue,
+              time: new Date().toLocaleString('ar-EG')
+            });
+          }
+        }
+      });
+      if (dayChanged) {
+        updatedData[day.key].__editor = currentUser;
+        const now = new Date();
+        const ts = now.toLocaleDateString('ar-EG') + ' ' + now.toLocaleTimeString('ar-EG');
+        updatedData[day.key].__editedAt = ts;
+      }
+    });
+    if (!anyChange) {
+      alert("لا يوجد أي تعديل لحفظه.");
+      return;
+    }
+    await db.ref("attendance").set(updatedData);
+    alert("✅ تم حفظ التعديلات بنجاح");
+    generateTable();
+    changes.forEach(change => {
+      logActivity(
+        "تعديل جدول الحضور",
+        `
+          <span style="color:#007bff;font-weight:bold;">${change.user}</span>
+          قام بتعديل حضور الموظف
+          <span style="color:#673ab7;font-weight:bold;">${change.employee}</span>
+          في اليوم
+          <span style="color:#009688;font-weight:bold;">${change.day}</span>
+          من
+          <span style="background:#d4edda;padding:2px 6px;border-radius:5px;">${change.old || "بدون"}</span>
+          إلى
+          <span style="background:#fff9db;padding:2px 6px;border-radius:5px;">${change.new || "بدون"}</span>
+        `,
+        { time: change.time, user: change.user }
+      );
+    });
+  } catch (error) {
+    console.error("خطأ في حفظ البيانات:", error);
+    alert("❌ خطأ في حفظ البيانات");
+  }
+}
+
+// زر ميزات متقدمة + زر الإغلاق
+document.getElementById("sidebarFeaturesTabBtn").onclick = () => {
+  document.getElementById("sidebarMenu").classList.remove("open");
+  document.getElementById("btnFeaturesTab").click();
+  document.getElementById("featuresTab").style.display = "flex";
+  const featuresTabContent = document.getElementById("featuresTabContent");
+  featuresTabContent.innerHTML = `
+    <div class="feature-section">
+      <h4>سجل النشاطات</h4>
+      <div id="activityLogBox">جاري التحميل...</div>
+    </div>
+    <div class="feature-section">
+      <h4>معلومات النظام</h4>
+      <ul style="margin:0;padding:0 0 0 15px;">
+        <li>عدد الموظفين الحالي: <b>${employees.length}</b></li>
+        <li>اسم المستخدم الحالي: <b>${currentUser}</b></li>
+        <li>الدور: <b>${currentUserRole}</b></li>
+      </ul>
+    </div>
+  `;
+  db.ref("activityLog").limitToLast(30).once("value").then(snapshot => {
+    const log = snapshot.val() || {};
+    let html = `<table class="activity-log-table">
+      <tr>
+        <th>الوقت</th>
+        <th>المستخدم</th>
+        <th>النشاط</th>
+        <th>الوصف</th>
+      </tr>`;
+    Object.values(log).reverse().forEach(item => {
+      html += `<tr>
+        <td>${toEnglishNumbers(item.time || "")}</td>
+        <td>${item.user || ""}</td>
+        <td>${item.action || ""}</td>
+        <td>${item.details || ""}</td>
+      </tr>`;
+    });
+    html += `</table>`;
+    document.getElementById("activityLogBox").innerHTML = html;
+  });
+  // زر إغلاق التبويبة
+  const closeBtn = document.getElementById("closeFeaturesTab");
+  if (closeBtn) {
+    closeBtn.onclick = () => {
+      document.getElementById("featuresTab").style.display = "none";
+    };
+  }
+};
+
+
+// نافذة تحكم صلاحيات سجل النشاطات للمدير
+document.getElementById("sidebarUserControlBtn").onclick = function() {
+  // إنشاء نافذة منبثقة احترافية
+  let modal = document.getElementById("userLogControlModal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "userLogControlModal";
+    modal.style.position = "fixed";
+    modal.style.top = "0";
+    modal.style.left = "0";
+    modal.style.width = "100vw";
+    modal.style.height = "100vh";
+    modal.style.background = "rgba(0,0,0,0.35)";
+    modal.style.zIndex = "8000";
+    modal.style.display = "flex";
+    modal.style.alignItems = "center";
+    modal.style.justifyContent = "center";
+    modal.innerHTML = `
+      <div style="background:#fff;max-width:420px;width:95vw;border-radius:14px;box-shadow:0 8px 32px #0002;padding:28px 20px 20px 20px;position:relative;">
+        <button id="closeUserLogControlModal" style="position:absolute;top:10px;left:10px;background:#dc3545;color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;">✖</button>
+        <h3 style="text-align:center;margin-bottom:18px;color:#009688;">👥 إدارة صلاحيات سجل النشاطات</h3>
+        <div id="userLogControlContent" style="min-height:70px;">جاري التحميل...</div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    document.getElementById("closeUserLogControlModal").onclick = function() {
+      modal.style.display = "none";
+    };
+  } else {
+    modal.style.display = "flex";
+  }
+
+  // تحميل المستخدمين وصلاحياتهم
+  db.ref("users").once("value").then(snapshot => {
+    const users = snapshot.val() || {};
+    let html = `<table style="width:100%;border-collapse:collapse;margin-bottom:10px;">
+      <tr>
+        <th style="background:#f6f6f6;">المستخدم</th>
+        <th style="background:#f6f6f6;">الوصول لسجل النشاطات</th>
+      </tr>`;
+    Object.entries(users).forEach(([username, data]) => {
+      if (username === "admin") return; // لا تظهر للمدير نفسه
+      html += `<tr>
+        <td style="padding:7px 4px;">${username}</td>
+        <td style="padding:7px 4px;">
+          <label style="display:inline-flex;align-items:center;gap:6px;">
+            <input type="checkbox" ${data.canViewLog ? "checked" : ""} onchange="window.setUserLogAccess('${username}', this.checked)">
+            <span style="font-size:13px;color:${data.canViewLog ? '#28a745':'#dc3545'};">${data.canViewLog ? 'مفعل':'معطل'}</span>
+          </label>
+        </td>
+      </tr>`;
+    });
+    html += `</table>
+      <div style="margin-top:10px;font-size:13px;color:#555;">
+        عند تفعيل الصلاحية يظهر زر سجل النشاطات للمستخدم في القائمة الجانبية.<br>
+        عند التعطيل يختفي الزر مباشرة من عند المستخدم.
+      </div>`;
+    document.getElementById("userLogControlContent").innerHTML = html;
+    window.setUserLogAccess = function(username, enabled) {
+      db.ref("users/" + username + "/canViewLog").set(enabled).then(() => {
+        logActivity("تغيير صلاحية سجل النشاطات", `تم ${enabled ? 'تفعيل' : 'تعطيل'} سجل النشاطات للمستخدم: ${username}`);
+        updateSidebarVisibility();
+      });
+    };
+  });
+}
+</script>
+
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -266,17 +850,25 @@ let currentUser = "";
 let currentUserRole = "";
 let currentUserCanEdit = false;
 
+// ========== سجل النشاطات ==========
+function logActivity(action, details, extra = {}) {
+  const now = new Date();
+  const time = toEnglishNumbers(now.toLocaleDateString('ar-EG')) + ' ' + toEnglishNumbers(now.toLocaleTimeString('ar-EG'));
+  db.ref("activityLog").push({ time, action, details, user: currentUser, ...extra });
+}
+
 // ========== جلسة المستخدم ==========
-if (localStorage.getItem('loggedUser')) {
-  const savedUser = JSON.parse(localStorage.getItem('loggedUser'));
-  currentUser = savedUser.user;
-  currentUserRole = savedUser.role;
-  currentUserCanEdit = savedUser.canEdit;
-  document.getElementById("loginBox").style.display = "none";
-  document.getElementById("mainContent").style.display = "block";
-  if (currentUserRole === "admin") document.getElementById("adminPanel").style.display = "block";
-  loadEmployees().then(()=>{ generateTable(); });
-  if (currentUserRole === "admin") { loadUsers(); loadEmployeesTable(); }
+function setSession(userObj) {
+  currentUser = userObj.user;
+  currentUserRole = userObj.role;
+  currentUserCanEdit = userObj.canEdit;
+  localStorage.setItem('loggedUser', JSON.stringify(userObj));
+}
+function clearSession() {
+  currentUser = "";
+  currentUserRole = "";
+  currentUserCanEdit = false;
+  localStorage.removeItem('loggedUser');
 }
 
 // ========== رسائل واجهة المستخدم ==========
@@ -288,59 +880,34 @@ function showMessage(message, isError = false) {
 
 // ========== تسجيل الدخول ==========
 function login() {
-  const usernameInput = document.getElementById("username");
-  const passwordInput = document.getElementById("password");
-  const username = usernameInput.value.trim();
-  const password = passwordInput.value.trim();
-  if (!username || !password) {
-    showMessage("❌ يرجى إدخال اسم المستخدم وكلمة المرور", true);
-    return;
-  }
+  const username = document.getElementById("username").value.trim().toLowerCase();
+  const password = document.getElementById("password").value.trim();
+  if (!username || !password) return showMessage("❌ يرجى إدخال اسم المستخدم وكلمة المرور", true);
   showMessage("🔄 جاري تسجيل الدخول...");
-  const userKey = username.toLowerCase();
-  db.ref("users/" + userKey).once("value")
-    .then(snapshot => {
-      if (!snapshot.exists()) {
-        showMessage("❌ اسم المستخدم غير موجود", true);
-        throw new Error("User not found");
-      }
-      const userData = snapshot.val();
-      if (userData.password !== password) {
-        showMessage("❌ كلمة المرور غير صحيحة", true);
-        throw new Error("Wrong password");
-      }
-      currentUser = userKey;
-      currentUserRole = userData.role || "user";
-      currentUserCanEdit = userData.canEdit !== undefined ? userData.canEdit : true;
-      localStorage.setItem('loggedUser', JSON.stringify({user:currentUser, role:currentUserRole, canEdit:currentUserCanEdit}));
-      showMessage("");
-      usernameInput.value = "";
-      passwordInput.value = "";
-      document.getElementById("loginBox").style.display = "none";
-      document.getElementById("mainContent").style.display = "block";
-      loadEmployees().then(() => { generateTable(); });
-      if (currentUserRole === "admin") {
-        document.getElementById("adminPanel").style.display = "block";
-        loadUsers();
-        loadEmployeesTable();
-      } else {
-        document.getElementById("adminPanel").style.display = "none";
-      }
-      checkForcedLogoutOnLogin(userKey);
-    })
-    .catch(error => {
-      console.error("Login error:", error);
-      if (!error.message.startsWith("User not found") && !error.message.startsWith("Wrong password")) {
-        showMessage("❌ خطأ في الاتصال: " + error.message, true);
-      }
-    });
+  db.ref("users/" + username).once("value").then(snapshot => {
+    if (!snapshot.exists()) throw new Error("User not found");
+    const userData = snapshot.val();
+    if (userData.password !== password) throw new Error("Wrong password");
+    setSession({user: username, role: userData.role || "user", canEdit: userData.canEdit !== undefined ? userData.canEdit : true});
+    showMessage("");
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("mainContent").style.display = "block";
+    loadEmployees().then(generateTable);
+    if (currentUserRole === "admin") {
+      document.getElementById("adminPanel").style.display = "block";
+      loadUsers();
+      loadEmployeesTable();
+    } else {
+      document.getElementById("adminPanel").style.display = "none";
+    }
+    checkForcedLogoutOnLogin(username);
+  }).catch(error => {
+    showMessage(error.message === "User not found" ? "❌ اسم المستخدم غير موجود" : "❌ كلمة المرور غير صحيحة", true);
+  });
 }
 
 function logout() {
-  currentUser = "";
-  currentUserRole = "";
-  currentUserCanEdit = false;
-  localStorage.removeItem('loggedUser');
+  clearSession();
   document.getElementById("loginBox").style.display = "block";
   document.getElementById("mainContent").style.display = "none";
   document.getElementById("adminPanel").style.display = "none";
@@ -386,14 +953,13 @@ function generateTable() {
     days.forEach((day, dayIndex) => {
       const row = document.createElement("tr");
       const dateCell = document.createElement("td");
-      let dateContent = day.label;
+      let dateContent = toEnglishNumbers(day.label);
       if (savedData[day.key] && savedData[day.key].__editor) {
         const ts = savedData[day.key].__editedAt || "";
         const editor = savedData[day.key].__editor;
-        // لون أخضر إذا admin، أحمر إذا غير ذلك
         const color = (editor === "admin") ? "#1fa745" : "#dc3545";
         dateContent += `<div class='editor-tag' style="color:${color};font-weight:bold;">
-          🖊️ ${editor}${ts ? ' - ' + ts : ''}
+          🖊️ ${editor}${ts ? ' - ' + toEnglishNumbers(ts) : ''}
         </div>`;
       }
       dateCell.innerHTML = dateContent;
@@ -451,6 +1017,7 @@ async function saveData() {
     const attendanceSnapshot = await db.ref("attendance").once("value");
     const savedData = attendanceSnapshot.val() || {};
     const updatedData = {...savedData};
+    let changes = [];
     let anyChange = false;
     days.forEach((day, dayIndex) => {
       if (!updatedData[day.key]) updatedData[day.key] = {};
@@ -459,11 +1026,19 @@ async function saveData() {
         const selectElement = document.getElementById(`d${dayIndex}e${empIndex}`);
         if (selectElement) {
           const newValue = selectElement.value;
-          const oldValue = savedData[day.key] ? savedData[day.key][employee] : undefined;
+          const oldValue = savedData[day.key] ? savedData[day.key][employee] : "";
           if (newValue !== oldValue) {
             updatedData[day.key][employee] = newValue;
             dayChanged = true;
             anyChange = true;
+            changes.push({
+              user: currentUser,
+              day: day.key,
+              employee,
+              old: oldValue,
+              new: newValue,
+              time: new Date().toLocaleString('ar-EG')
+            });
           }
         }
       });
@@ -474,11 +1049,30 @@ async function saveData() {
         updatedData[day.key].__editedAt = ts;
       }
     });
-    if (!anyChange) { alert('لا توجد تغييرات لحفظها'); return; }
+    if (!anyChange) {
+      alert("لا يوجد أي تعديل لحفظه.");
+      return;
+    }
     await db.ref("attendance").set(updatedData);
     alert("✅ تم حفظ التعديلات بنجاح");
     generateTable();
-    logActivity("حفظ الجدول", "تم حفظ جدول الحضور");
+    changes.forEach(change => {
+      logActivity(
+        "تعديل جدول الحضور",
+        `
+          <span style="color:#007bff;font-weight:bold;">${change.user}</span>
+          قام بتعديل حضور الموظف
+          <span style="color:#673ab7;font-weight:bold;">${change.employee}</span>
+          في اليوم
+          <span style="color:#009688;font-weight:bold;">${change.day}</span>
+          من
+          <span style="background:#d4edda;padding:2px 6px;border-radius:5px;">${change.old || "بدون"}</span>
+          إلى
+          <span style="background:#fff9db;padding:2px 6px;border-radius:5px;">${change.new || "بدون"}</span>
+        `,
+        { time: change.time, user: change.user }
+      );
+    });
   } catch (error) {
     console.error("خطأ في حفظ البيانات:", error);
     alert("❌ خطأ في حفظ البيانات");
@@ -486,58 +1080,30 @@ async function saveData() {
 }
 
 // ========== إدارة المستخدمين والموظفين ==========
-let forcedLogoutUsers = [];
-function loadForcedLogoutUsers() {
-  return db.ref("forcedLogout").once("value").then(snapshot => {
-    forcedLogoutUsers = snapshot.val() ? Object.keys(snapshot.val()) : [];
-  });
-}
 function loadUsers() {
-  loadForcedLogoutUsers().then(() => {
-    db.ref("users").once("value").then(snapshot => {
-      const users = snapshot.val() || {};
-      const tbody = document.getElementById("usersBody");
-      tbody.innerHTML = "";
-      Object.entries(users).forEach(([username, data]) => {
-        const isForced = forcedLogoutUsers.includes(username);
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${username}</td>
-          <td>${data.canEdit ? "نعم" : "لا"}</td>
-          <td>
-            <button class="small-button btn-toggle" onclick="toggleUserEdit('${username}', ${data.canEdit})">
-              ${data.canEdit ? "قفل التعديل" : "فتح التعديل"}
-            </button>
-          </td>
-          <td>
-            ${username === currentUser ? "لا يمكن حذف نفسك" : `<button class="small-button btn-delete" onclick="deleteUser('${username}')">حذف</button>`}
-          </td>
-          <td>
-            ${username === currentUser ? "—" : `
-              <button class="small-button btn-delete" style="background:#ff9800;" onclick="forceLogoutUser('${username}')" ${isForced ? "disabled" : ""}>
-                ${isForced ? "تم تسجيل الخروج" : "تسجيل خروج"}
-              </button>
-            `}
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
+  db.ref("users").once("value").then(snapshot => {
+    const users = snapshot.val() || {};
+    const tbody = document.getElementById("usersBody");
+    tbody.innerHTML = "";
+    Object.entries(users).forEach(([username, data]) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${username}</td>
+        <td>${data.canEdit ? "نعم" : "لا"}</td>
+        <td>
+          <button class="small-button btn-toggle" onclick="toggleUserEdit('${username}', ${data.canEdit})">
+            ${data.canEdit ? "قفل التعديل" : "فتح التعديل"}
+          </button>
+        </td>
+        <td>
+          ${username === currentUser ? "لا يمكن حذف نفسك" : `<button class="small-button btn-delete" onclick="deleteUser('${username}')">حذف</button>`}
+        </td>
+        <td>
+          ${username === currentUser ? "—" : `<button class="small-button btn-delete" style="background:#ff9800;" onclick="forceLogoutUser('${username}')">تسجيل خروج</button>`}
+        </td>
+      `;
+      tbody.appendChild(tr);
     });
-  });
-}
-function forceLogoutUser(username) {
-  if (!confirm(`هل تريد تسجيل خروج المستخدم ${username} فوراً؟`)) return;
-  db.ref("forcedLogout/" + username).set(Date.now()).then(() => {
-    alert("✅ تم إجبار المستخدم على تسجيل الخروج.");
-    loadUsers();
-    if (currentUser === username) {
-      localStorage.removeItem('loggedUser');
-      alert("❌ تم تسجيل خروجك من قبل المدير.");
-      db.ref("forcedLogout/" + username).remove();
-      location.reload();
-    }
-  }).catch(e => {
-    alert("❌ حدث خطأ أثناء تنفيذ العملية: " + e.message);
   });
 }
 function toggleUserEdit(username, currentCanEdit) {
@@ -545,10 +1111,7 @@ function toggleUserEdit(username, currentCanEdit) {
     alert("❌ لا يمكنك تغيير صلاحيتك الخاصة.");
     return;
   }
-  db.ref("users/" + username + "/canEdit").set(!currentCanEdit).then(() => {
-    loadUsers();
-    alert(`✅ تم ${!currentCanEdit ? "فتح" : "قفل"} صلاحية التعديل للمستخدم ${username}`);
-  });
+  db.ref("users/" + username + "/canEdit").set(!currentCanEdit).then(loadUsers);
 }
 function deleteUser(username) {
   if (username === currentUser) {
@@ -558,8 +1121,7 @@ function deleteUser(username) {
   if (confirm(`هل أنت متأكد من حذف المستخدم ${username}؟`)) {
     db.ref("users/" + username).remove().then(() => {
       loadUsers();
-      alert("✅ تم حذف المستخدم بنجاح.");
-      logActivity("حذف مستخدم", username); // <-- سجل النشاط هنا
+      logActivity("حذف مستخدم", username);
     });
   }
 }
@@ -576,8 +1138,7 @@ function addUser() {
       alert("❌ اسم المستخدم موجود مسبقاً");
       return;
     }
-    const newUserData = { password, role: "user", canEdit };
-    return db.ref("users/" + username).set(newUserData);
+    return db.ref("users/" + username).set({ password, role: "user", canEdit });
   }).then(() => {
     alert("✅ تم إنشاء المستخدم بنجاح");
     document.getElementById("newUserName").value = "";
@@ -589,6 +1150,8 @@ function addUser() {
     alert("❌ حدث خطأ أثناء إنشاء المستخدم");
   });
 }
+
+// ========== إدارة الموظفين ==========
 function addEmployee() {
   const name = document.getElementById("newEmployeeName").value.trim();
   if (!name) { alert("❌ يرجى إدخال اسم الموظف"); return; }
@@ -645,9 +1208,23 @@ function enableEmployeeEdit(index) {
     const newName = input.value.trim();
     if (!newName) { alert("❌ اسم الموظف لا يمكن أن يكون فارغاً"); return; }
     if (employees.includes(newName)) { alert("❌ اسم الموظف موجود مسبقاً"); return; }
-    employees[index] = newName;
-    db.ref("employees").set(employees).then(() => {
-      alert("✅ تم تعديل اسم الموظف بنجاح");
+    // نقل بيانات الحضور من الاسم القديم إلى الاسم الجديد
+    db.ref("attendance").once("value").then(snapshot => {
+      const attendance = snapshot.val() || {};
+      Object.keys(attendance).forEach(dayKey => {
+        if (attendance[dayKey][oldName] !== undefined) {
+          attendance[dayKey][newName] = attendance[dayKey][oldName];
+          delete attendance[dayKey][oldName];
+        }
+      });
+      employees[index] = newName;
+      // حفظ التغييرات في الموظفين والحضور
+      return Promise.all([
+        db.ref("employees").set(employees),
+        db.ref("attendance").set(attendance)
+      ]);
+    }).then(() => {
+      alert("✅ تم تعديل اسم الموظف ونقل جميع بيانات حضوره بنجاح");
       loadEmployeesTable();
       generateTable();
     }).catch(err => {
@@ -804,9 +1381,9 @@ toggleAdminBtn.onclick = () => {
 // ========== حذف متقدم ==========
 function advancedDelete() {
   const choice = prompt(
-    "اختر رقم العملية:\n1 - حذف الموظفين فقط\n2 - حذف حسابات المستخدمين\n3 - حذف التاشيرات (شفت، نص، ❌)\n4 - حذف كل البيانات"
+    "اختر رقم العملية:\n1 - حذف الموظفين فقط\n2 - حذف حسابات المستخدمين\n3 - حذف التاشيرات (شفت، نص، ❌)\n4 - حذف سجل النشاطات\n5 - حذف كل البيانات"
   );
-  if (!choice || !["1","2","3","4"].includes(choice.trim())) {
+  if (!choice || !["1","2","3","4","5"].includes(choice.trim())) {
     alert("تم إلغاء العملية أو اختيار غير صحيح.");
     return;
   }
@@ -835,9 +1412,15 @@ function advancedDelete() {
           .catch(e => alert("❌ خطأ في حذف التاشيرات: " + e.message));
         break;
       case "4":
+        db.ref("activityLog").remove()
+          .then(() => alert("✅ تم حذف سجل النشاطات."))
+          .catch(e => alert("❌ خطأ في حذف سجل النشاطات: " + e.message));
+        break;
+      case "5":
         Promise.all([
           db.ref("employees").remove(),
           db.ref("attendance").remove(),
+          db.ref("activityLog").remove(),
           db.ref("users").once("value").then(snapshot => {
             const users = snapshot.val() || {};
             const updates = {};
@@ -1072,157 +1655,16 @@ loadEmployees = function() {
 if (localStorage.getItem('loggedUser')) tryShowUserEmpStats();
 db.ref("settings/empStatsMode").on("value", () => renderUserEmpStats());
 
-// أضف هذه الدالة أو استبدلها إذا كانت موجودة
-function deleteEmployee(index) {
-  const empName = employees[index];
-  if (!confirm(`هل أنت متأكد من حذف الموظف "${empName}"؟ سيتم حذف جميع بيانات حضوره أيضا.`)) return;
-  // احذف الموظف من القائمة
-  employees.splice(index, 1);
-  // حدث قائمة الموظفين في قاعدة البيانات
-  db.ref("employees").set(employees)
-    .then(() => {
-      // احذف بيانات الحضور الخاصة بالموظف من جميع الأيام
-      db.ref("attendance").once("value").then(snapshot => {
-        const attendance = snapshot.val() || {};
-        Object.keys(attendance).forEach(dayKey => {
-          if (attendance[dayKey][empName] !== undefined) {
-            delete attendance[dayKey][empName];
-          }
-        });
-        return db.ref("attendance").set(attendance);
-      }).then(() => {
-        alert("✅ تم حذف الموظف وجميع بيانات حضوره بنجاح.");
-        loadEmployeesTable();
-        generateTable();
-        logActivity("حذف موظف", empName); // <-- سجل النشاط هنا
-      });
-    })
-    .catch(err => {
-      console.error(err);
-      alert("❌ حدث خطأ أثناء حذف الموظف.");
-    });
-}
-
-// زر فتح الميزات المتقدمة
-document.getElementById("btnFeaturesTab").onclick = function() {
-  document.getElementById("featuresTab").style.display = "flex";
-  renderFeaturesTab();
-};
-document.getElementById("closeFeaturesTab").onclick = function() {
-  document.getElementById("featuresTab").style.display = "none";
-};
-
-// ========== دالة عرض الميزات المتقدمة ==========
-function renderFeaturesTab() {
-  let html = `
-    <div class="feature-section">
-      <h4>📜 سجل النشاطات</h4>
-      <div id="activityLogBox" style="min-height:40px;text-align:center;">جاري التحميل...</div>
-    </div>
-    <div class="feature-section">
-      <h4>🔔 إرسال إشعار للمستخدمين</h4>
-      <input type="text" id="notifyMsg" placeholder="اكتب رسالة الإشعار هنا" style="width:100%;margin-bottom:7px;" maxlength="120"/>
-      <button id="sendNotifyBtn" style="background:#2196f3;color:white;padding:7px 15px;border-radius:5px;">إرسال الإشعار</button>
-      <div id="notifyStatus" style="margin-top:7px;font-size:13px;color:#388e3c;"></div>
-    </div>
-    <div class="feature-section">
-      <h4>🔄 تغيير كلمة مرور المدير</h4>
-      <input type="password" id="adminOldPass" placeholder="كلمة المرور الحالية" style="width:100%;margin-bottom:7px;" />
-      <input type="password" id="adminNewPass" placeholder="كلمة المرور الجديدة" style="width:100%;margin-bottom:7px;" />
-      <button id="changeAdminPassBtn" style="background:#ff9800;color:white;padding:7px 15px;border-radius:5px;">تغيير كلمة المرور</button>
-      <div id="adminPassStatus" style="margin-top:7px;font-size:13px;color:#388e3c;"></div>
-    </div>
-    <div class="feature-section">
-      <h4>🗂️ نسخ احتياطي للبيانات</h4>
-      <button onclick="backupData()" style="background:#4caf50;color:white;padding:7px 15px;border-radius:5px;">تحميل نسخة احتياطية</button>
-      <div id="backupStatus" style="margin-top:7px;font-size:13px;color:#388e3c;"></div>
-    </div>
-  `;
-  document.getElementById("featuresTabContent").innerHTML = html;
-  loadActivityLog();
-
-  // إصلاح زر إرسال الإشعار
-  document.getElementById("sendNotifyBtn").onclick = sendNotification;
-
-  // إصلاح زر تغيير كلمة مرور المدير
-  document.getElementById("changeAdminPassBtn").onclick = changeAdminPassword;
-}
-
-// ========== سجل النشاطات ==========
-function logActivity(action, details) {
-  if (!currentUser) return; // إصلاح: لا تسجل إذا لم يوجد مستخدم
-  const now = new Date();
-  const dateStr = now.toLocaleDateString('ar-EG');
-  const timeStr = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute:'2-digit', second:'2-digit' });
-  const log = {
-    user: currentUser,
-    action,
-    details,
-    date: dateStr,
-    time: timeStr
-  };
-  db.ref("activityLog").push(log);
-}
-
-function loadActivityLog() {
-  db.ref("activityLog").limitToLast(30).once("value").then(snapshot => {
-    const logs = [];
-    snapshot.forEach(child => logs.push(child.val()));
-    logs.reverse();
-    let html = `<table class="activity-log-table">
-      <tr>
-        <th>المستخدم</th>
-        <th>العملية</th>
-        <th>تفاصيل</th>
-        <th>التاريخ</th>
-        <th>الوقت</th>
-      </tr>`;
-    if (logs.length === 0) {
-      html += `<tr><td colspan="5">لا يوجد نشاطات بعد.</td></tr>`;
-    } else {
-      logs.forEach(log => {
-        html += `<tr>
-          <td>${log.user || ""}</td>
-          <td>${log.action || ""}</td>
-          <td>${log.details || ""}</td>
-          <td>${log.date || ""}</td>
-          <td>${log.time || ""}</td>
-        </tr>`;
-      });
-    }
-    html += `</table>`;
-    const box = document.getElementById("activityLogBox");
-    if (box) box.innerHTML = html;
-  });
-}
-
-// ========== إرسال إشعار للمستخدمين ==========
-function sendNotification() {
-  const msgInput = document.getElementById("notifyMsg");
-  const statusDiv = document.getElementById("notifyStatus");
-  const msg = msgInput.value.trim();
-  if (!msg) {
-    statusDiv.textContent = "يرجى كتابة رسالة.";
-    return;
-  }
-  db.ref("notifications").push({
-    msg,
-    date: new Date().toLocaleString('ar-EG'),
-    from: currentUser
-  }).then(() => {
-    statusDiv.textContent = "✅ تم إرسال الإشعار لجميع المستخدمين.";
-    msgInput.value = "";
-    logActivity("إرسال إشعار", msg);
-  }).catch(() => {
-    statusDiv.textContent = "❌ حدث خطأ أثناء إرسال الإشعار.";
-  });
-}
-
 // ========== تغيير كلمة مرور المدير ==========
+// تعديل: السماح فقط للمدير بتغيير كلمة المرور
 function changeAdminPassword() {
   const oldPass = document.getElementById("adminOldPass").value;
   const newPass = document.getElementById("adminNewPass").value;
   const statusDiv = document.getElementById("adminPassStatus");
+  if (currentUserRole !== "admin") {
+    statusDiv.textContent = "❌ فقط المدير يمكنه تغيير كلمة المرور.";
+    return;
+  }
   if (!oldPass || !newPass) {
     statusDiv.textContent = "يرجى إدخال جميع الحقول.";
     return;
@@ -1236,14 +1678,52 @@ function changeAdminPassword() {
       statusDiv.textContent = "✅ تم تغيير كلمة المرور بنجاح.";
       document.getElementById("adminOldPass").value = "";
       document.getElementById("adminNewPass").value = "";
-      logActivity("تغيير كلمة مرور المدير", "تم تغيير كلمة المرور");
+      logActivity("تغيير كلمة مرور المدير", `تم تغيير كلمة المرور من قبل: ${currentUser}`);
     });
   }).catch(() => {
     statusDiv.textContent = "❌ حدث خطأ أثناء تغيير كلمة المرور.";
   });
 }
 
+// ========== حذف موظف ==========
+// تعديل: السماح فقط للمدير بالحذف والتحقق من وجود الموظف
+function deleteEmployee(index) {
+  if (currentUserRole !== "admin") {
+    alert("❌ فقط المدير يمكنه حذف الموظفين.");
+    return;
+  }
+  const empName = employees[index];
+  if (!empName) {
+    alert("❌ الموظف غير موجود.");
+    return;
+  }
+  if (!confirm(`هل أنت متأكد من حذف الموظف "${empName}"؟ سيتم حذف جميع بيانات حضوره أيضا.`)) return;
+  employees.splice(index, 1);
+  db.ref("employees").set(employees)
+    .then(() => {
+      db.ref("attendance").once("value").then(snapshot => {
+        const attendance = snapshot.val() || {};
+        Object.keys(attendance).forEach(dayKey => {
+          if (attendance[dayKey][empName] !== undefined) {
+            delete attendance[dayKey][empName];
+          }
+        });
+        return db.ref("attendance").set(attendance);
+      }).then(() => {
+        alert("✅ تم حذف الموظف وجميع بيانات حضوره بنجاح.");
+        loadEmployeesTable();
+        generateTable();
+        logActivity("حذف موظف", `تم حذف الموظف: ${empName} وجميع بيانات حضوره`); // <-- سجل النشاط هنا
+      });
+    })
+    .catch(err => {
+      console.error(err);
+      alert("❌ حدث خطأ أثناء حذف الموظف.");
+    });
+}
+
 // ========== نسخ احتياطي للبيانات ==========
+// تعديل: التعامل مع الأخطاء بشكل أفضل
 function backupData() {
   document.getElementById("backupStatus").textContent = "جاري تجهيز النسخة...";
   Promise.all([
@@ -1266,8 +1746,329 @@ function backupData() {
     setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
     document.getElementById("backupStatus").textContent = "✅ تم تحميل النسخة الاحتياطية.";
     logActivity("تحميل نسخة احتياطية", "تم تحميل نسخة احتياطية من البيانات");
+  }).catch((err) => {
+    document.getElementById("backupStatus").textContent = "❌ حدث خطأ أثناء النسخ الاحتياطي.";
+    console.error("Backup error:", err);
   });
 }
 </script>
+
+<!-- إضافة: نافذة تغيير كلمة المرور -->
+<div id="changePassModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.35);z-index:6000;align-items:center;justify-content:center;">
+  <div style="background:#fff;max-width:340px;width:95vw;border-radius:12px;box-shadow:0 8px 32px #0002;padding:22px 18px 18px 18px;position:relative;">
+    <button id="closeChangePassModal" style="position:absolute;top:10px;left:10px;background:#dc3545;color:white;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;">✖</button>
+    <h3 style="text-align:center;margin-bottom:18px;color:#2196f3;">🔑 تغيير كلمة المرور</h3>
+    <div id="changePassForm"></div>
+    <div id="changePassStatus" style="margin-top:10px;font-size:14px;text-align:center;"></div>
+  </div>
+</div>
+<script>
+// فتح نافذة تغيير كلمة المرور
+document.getElementById("sidebarChangePassBtn").onclick = function() {
+  document.getElementById("sidebarMenu").classList.remove("open");
+  showChangePassForm();
+};
+
+function showChangePassForm() {
+  const modal = document.getElementById("changePassModal");
+  const formDiv = document.getElementById("changePassForm");
+  const statusDiv = document.getElementById("changePassStatus");
+  statusDiv.textContent = "";
+  // إذا المدير، يمكنه اختيار أي مستخدم أو نفسه
+  if (currentUserRole === "admin") {
+    db.ref("users").once("value").then(snapshot => {
+      const users = snapshot.val() || {};
+      let html = `<label>اختر المستخدم:</label>
+        <select id="changePassUser" style="width:100%;margin-bottom:10px;">`;
+      Object.keys(users).forEach(u => {
+        html += `<option value="${u}" ${u===currentUser?'selected':''}>${u}${u==='admin'?' (مدير)':''}</option>`;
+      });
+      html += `</select>
+        <input type="password" id="changePassOld" placeholder="كلمة المرور الحالية" style="margin-bottom:8px;" />
+        <input type="password" id="changePassNew" placeholder="كلمة المرور الجديدة" style="margin-bottom:8px;" />
+        <button id="changePassSubmit" style="background:#2196f3;color:white;width:100%;margin-top:8px;">تغيير كلمة المرور</button>`;
+      formDiv.innerHTML = html;
+      modal.style.display = "flex";
+      document.getElementById("changePassSubmit").onclick = function() {
+        const user = document.getElementById("changePassUser").value;
+        const oldPass = document.getElementById("changePassOld").value;
+        const newPass = document.getElementById("changePassNew").value;
+        if (!oldPass || !newPass) return statusDiv.textContent = "يرجى إدخال جميع الحقول.";
+        db.ref("users/" + user + "/password").once("value").then(snapshot => {
+          if (!snapshot.exists() || snapshot.val() !== oldPass) return statusDiv.textContent = "كلمة المرور الحالية غير صحيحة.";
+          db.ref("users/" + user + "/password").set(newPass).then(() => {
+            statusDiv.textContent = "✅ تم تغيير كلمة المرور بنجاح.";
+            logActivity("تغيير كلمة مرور", `تم تغيير كلمة المرور للمستخدم: ${user} بواسطة: ${currentUser}`);
+            document.getElementById("changePassOld").value = "";
+            document.getElementById("changePassNew").value = "";
+          });
+        });
+      };
+    });
+  } else {
+    let html = `
+      <input type="password" id="changePassOld" placeholder="كلمة المرور الحالية" style="margin-bottom:8px;" />
+      <input type="password" id="changePassNew" placeholder="كلمة المرور الجديدة" style="margin-bottom:8px;" />
+      <button id="changePassSubmit" style="background:#2196f3;color:white;width:100%;margin-top:8px;">تغيير كلمة المرور</button>`;
+    formDiv.innerHTML = html;
+    modal.style.display = "flex";
+    document.getElementById("changePassSubmit").onclick = function() {
+      const oldPass = document.getElementById("changePassOld").value;
+      const newPass = document.getElementById("changePassNew").value;
+      if (!oldPass || !newPass) return statusDiv.textContent = "يرجى إدخال جميع الحقول.";
+      db.ref("users/" + currentUser + "/password").once("value").then(snapshot => {
+        if (!snapshot.exists() || snapshot.val() !== oldPass) return statusDiv.textContent = "كلمة المرور الحالية غير صحيحة.";
+        db.ref("users/" + currentUser + "/password").set(newPass).then(() => {
+          statusDiv.textContent = "✅ تم تغيير كلمة المرور بنجاح.";
+          logActivity("تغيير كلمة مرور", `تم تغيير كلمة المرور للمستخدم: ${currentUser}`);
+          document.getElementById("changePassOld").value = "";
+          document.getElementById("changePassNew").value = "";
+        });
+      });
+    };
+  }
+}
+document.getElementById("closeChangePassModal").onclick = function() {
+  document.getElementById("changePassModal").style.display = "none";
+};
+
+// ========== تحديث ظهور الأزرار حسب الدور ==========
+function updateSidebarVisibility() {
+  const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
+  const sidebarMenu = document.getElementById("sidebarMenu");
+  const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
+  const isAdmin = currentUserRole === "admin";
+  // أزرار المدير فقط
+  ["sidebarAdminBtn","sidebarEmpStatsBtn","sidebarDeleteDataBtn","sidebarFeaturesTabBtn","sidebarChangePassBtn","sidebarUserControlBtn"].forEach(id=>{
+    const el = document.getElementById(id);
+    if (el) el.style.display = isAdmin ? "block" : "none";
+  });
+
+  // زر سجل النشاطات يظهر فقط إذا كان للمستخدم صلاحية
+  db.ref("users/" + currentUser).once("value").then(snapshot => {
+    const data = snapshot.val() || {};
+    let logBtn = document.getElementById("sidebarUserLogBtn");
+    if (data.canViewLog) {
+      if (!logBtn) {
+        logBtn = document.createElement("button");
+        logBtn.id = "sidebarUserLogBtn";
+        logBtn.style = "background:#673ab7;color:white;";
+        logBtn.textContent = "📋 سجل النشاطات";
+        logBtn.onclick = function() {
+          document.getElementById("sidebarMenu").classList.remove("open");
+          // نافذة سجل النشاطات للمستخدم
+          let modal = document.getElementById("userLogModal");
+          if (!modal) {
+            modal = document.createElement("div");
+            modal.id = "userLogModal";
+            modal.style.position = "fixed";
+            modal.style.top = "0";
+            modal.style.left = "0";
+            modal.style.width = "100vw";
+            modal.style.height = "100vh";
+            modal.style.background = "rgba(0,0,0,0.35)";
+            modal.style.zIndex = "7000";
+            modal.style.display = "flex";
+            modal.style.alignItems = "center";
+            modal.style.justifyContent = "center";
+            modal.innerHTML = `
+              <div style="background:#fff;max-width:400px;width:95vw;border-radius:12px;box-shadow:0 8px 32px #0002;padding:22px 18px 18px 18px;position:relative;">
+                <button id="closeUserLogModal" style="position:absolute;top:10px;left:10px;background:#dc3545;color:white;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;">✖</button>
+                <h3 style="text-align:center;margin-bottom:18px;color:#673ab7;">📋 سجل النشاطات</h3>
+                <div id="userLogContent">جاري التحميل...</div>
+              </div>
+            `;
+            document.body.appendChild(modal);
+            document.getElementById("closeUserLogModal").onclick = function() {
+              modal.style.display = "none";
+            };
+          } else {
+            modal.style.display = "flex";
+          }
+          // تحميل سجل النشاطات لهذا المستخدم فقط
+          db.ref("activityLog").orderByChild("user").equalTo(currentUser).limitToLast(30).once("value").then(snapshot => {
+            const log = snapshot.val() || {};
+            let html = `<table class="activity-log-table">
+              <tr>
+                <th>الوقت</th>
+                <th>النشاط</th>
+                <th>الوصف</th>
+              </tr>`;
+            Object.values(log).reverse().forEach(item => {
+              html += `<tr>
+                <td>${toEnglishNumbers(item.time || "")}</td>
+                <td>${item.action || ""}</td>
+                <td>${item.details || ""}</td>
+              </tr>`;
+            });
+            html += `</table>`;
+            document.getElementById("userLogContent").innerHTML = html;
+          });
+        };
+        sidebarMenu.appendChild(logBtn);
+      } else {
+        logBtn.style.display = "block";
+      }
+    } else {
+      if (logBtn) logBtn.style.display = "none";
+    }
+  });
+
+  if (localStorage.getItem('loggedUser')) {
+    sidebarToggleBtn.style.display = sidebarMenu.classList.contains("open") ? "none" : "flex";
+    sidebarCloseBtn.style.display = sidebarMenu.classList.contains("open") ? "flex" : "none";
+  } else {
+    sidebarToggleBtn.style.display = "none";
+    sidebarCloseBtn.style.display = "none";
+    sidebarMenu.classList.remove("open");
+  }
+}
+
+// ========== فتح وإغلاق القائمة الجانبية ==========
+document.getElementById("sidebarToggleBtn").onclick = () => {
+  document.getElementById("sidebarMenu").classList.add("open");
+  document.getElementById("sidebarToggleBtn").style.display = "none";
+  document.getElementById("sidebarCloseBtn").style.display = "flex";
+  // عرض اسم المستخدم أعلى القائمة
+  const sidebarUserName = document.getElementById("sidebarUserName");
+  sidebarUserName.textContent = currentUser ? "👤 " + currentUser : "غير مسجل";
+  updateSidebarVisibility();
+};
+document.getElementById("sidebarCloseBtn").onclick = () => {
+  document.getElementById("sidebarMenu").classList.remove("open");
+  document.getElementById("sidebarCloseBtn").style.display = "none";
+  document.getElementById("sidebarToggleBtn").style.display = "flex";
+  updateSidebarVisibility();
+};
+
+// ========== ربط أزرار القائمة الجانبية بأزرار الموقع الأصلية ==========
+document.getElementById("sidebarAdminBtn").onclick = () => {
+  document.getElementById("sidebarMenu").classList.remove("open");
+  document.getElementById("toggleAdminBtn").click();
+};
+document.getElementById("sidebarEmpStatsBtn").onclick = () => {
+  document.getElementById("sidebarMenu").classList.remove("open");
+  document.getElementById("toggleEmpStatsBtn").click();
+};
+document.getElementById("sidebarDeleteDataBtn").onclick = () => {
+  document.getElementById("sidebarMenu").classList.remove("open");
+  document.getElementById("btnDeleteData").click();
+};
+document.getElementById("sidebarFeaturesTabBtn").onclick = () => {
+  document.getElementById("sidebarMenu").classList.remove("open");
+  document.getElementById("btnFeaturesTab").click();
+  document.getElementById("featuresTab").style.display = "flex";
+  const featuresTabContent = document.getElementById("featuresTabContent");
+  featuresTabContent.innerHTML = `
+    <div class="feature-section">
+      <h4>سجل النشاطات</h4>
+      <div id="activityLogBox">جاري التحميل...</div>
+    </div>
+    <div class="feature-section">
+      <h4>معلومات النظام</h4>
+      <ul style="margin:0;padding:0 0 0 15px;">
+        <li>عدد الموظفين الحالي: <b>${employees.length}</b></li>
+        <li>اسم المستخدم الحالي: <b>${currentUser}</b></li>
+        <li>الدور: <b>${currentUserRole}</b></li>
+      </ul>
+    </div>
+  `;
+  db.ref("activityLog").limitToLast(30).once("value").then(snapshot => {
+    const log = snapshot.val() || {};
+    let html = `<table class="activity-log-table">
+      <tr>
+        <th>الوقت</th>
+        <th>المستخدم</th>
+        <th>النشاط</th>
+        <th>الوصف</th>
+      </tr>`;
+    Object.values(log).reverse().forEach(item => {
+      html += `<tr>
+        <td>${toEnglishNumbers(item.time || "")}</td>
+        <td>${item.user || ""}</td>
+        <td>${item.action || ""}</td>
+        <td>${item.details || ""}</td>
+      </tr>`;
+    });
+    html += `</table>`;
+    document.getElementById("activityLogBox").innerHTML = html;
+  });
+  // زر إغلاق التبويبة
+  const closeBtn = document.getElementById("closeFeaturesTab");
+  if (closeBtn) {
+    closeBtn.onclick = () => {
+      document.getElementById("featuresTab").style.display = "none";
+    };
+  }
+};
+
+// نافذة تحكم صلاحيات سجل النشاطات للمدير
+document.getElementById("sidebarUserControlBtn").onclick = function() {
+  // إنشاء نافذة منبثقة احترافية
+  let modal = document.getElementById("userLogControlModal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "userLogControlModal";
+    modal.style.position = "fixed";
+    modal.style.top = "0";
+    modal.style.left = "0";
+    modal.style.width = "100vw";
+    modal.style.height = "100vh";
+    modal.style.background = "rgba(0,0,0,0.35)";
+    modal.style.zIndex = "8000";
+    modal.style.display = "flex";
+    modal.style.alignItems = "center";
+    modal.style.justifyContent = "center";
+    modal.innerHTML = `
+      <div style="background:#fff;max-width:420px;width:95vw;border-radius:14px;box-shadow:0 8px 32px #0002;padding:28px 20px 20px 20px;position:relative;">
+        <button id="closeUserLogControlModal" style="position:absolute;top:10px;left:10px;background:#dc3545;color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;">✖</button>
+        <h3 style="text-align:center;margin-bottom:18px;color:#009688;">👥 إدارة صلاحيات سجل النشاطات</h3>
+        <div id="userLogControlContent" style="min-height:70px;">جاري التحميل...</div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    document.getElementById("closeUserLogControlModal").onclick = function() {
+      modal.style.display = "none";
+    };
+  } else {
+    modal.style.display = "flex";
+  }
+
+  // تحميل المستخدمين وصلاحياتهم
+  db.ref("users").once("value").then(snapshot => {
+    const users = snapshot.val() || {};
+    let html = `<table style="width:100%;border-collapse:collapse;margin-bottom:10px;">
+      <tr>
+        <th style="background:#f6f6f6;">المستخدم</th>
+        <th style="background:#f6f6f6;">الوصول لسجل النشاطات</th>
+      </tr>`;
+    Object.entries(users).forEach(([username, data]) => {
+      if (username === "admin") return; // لا تظهر للمدير نفسه
+      html += `<tr>
+        <td style="padding:7px 4px;">${username}</td>
+        <td style="padding:7px 4px;">
+          <label style="display:inline-flex;align-items:center;gap:6px;">
+            <input type="checkbox" ${data.canViewLog ? "checked" : ""} onchange="window.setUserLogAccess('${username}', this.checked)">
+            <span style="font-size:13px;color:${data.canViewLog ? '#28a745':'#dc3545'};">${data.canViewLog ? 'مفعل':'معطل'}</span>
+          </label>
+        </td>
+      </tr>`;
+    });
+    html += `</table>
+      <div style="margin-top:10px;font-size:13px;color:#555;">
+        عند تفعيل الصلاحية يظهر زر سجل النشاطات للمستخدم في القائمة الجانبية.<br>
+        عند التعطيل يختفي الزر مباشرة من عند المستخدم.
+      </div>`;
+    document.getElementById("userLogControlContent").innerHTML = html;
+    window.setUserLogAccess = function(username, enabled) {
+      db.ref("users/" + username + "/canViewLog").set(enabled).then(() => {
+        logActivity("تغيير صلاحية سجل النشاطات", `تم ${enabled ? 'تفعيل' : 'تعطيل'} سجل النشاطات للمستخدم: ${username}`);
+        updateSidebarVisibility();
+      });
+    };
+  });
+}
+</script>
+
 </body>
-</htm
+</html>
