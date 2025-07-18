@@ -277,12 +277,12 @@
     </button>
     <!-- أضف زر الميزات المتقدمة بعد زر حذف البيانات المتقدمة في لوحة التحكم -->
     <button id="btnFeaturesTab" style="background:#673ab7;color:white;font-size:13px;padding:7px 12px;margin-bottom:10px;cursor:pointer;">
-      ⭐️ ميزات متقدمة
+      ⭐️سجل النشاطات
     </button>
     <div id="featuresTab" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.45);z-index:3000;align-items:center;justify-content:center;">
       <div style="background:#fff;max-width:520px;width:97vw;max-height:92vh;overflow:auto;border-radius:14px;box-shadow:0 8px 32px #0002;padding:25px 18px 18px 18px;position:relative;">
         <button id="closeFeaturesTab" style="position:absolute;top:10px;left:10px;background:#dc3545;color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;">✖</button>
-        <h3 style="text-align:center;margin-bottom:18px;color:#673ab7;">⭐️ الميزات المتقدمة</h3>
+        <h3 style="text-align:center;margin-bottom:18px;color:#673ab7;">⭐️ تفاصيل السجلات</h3>
         <div id="featuresTabContent"></div>
       </div>
     </div>
@@ -418,13 +418,13 @@
 <button id="sidebarCloseBtn" style="display:none;">✖</button>
 <div id="sidebarMenu">
   <div class="sidebar-header" id="sidebarUserName"></div>
-  <button onclick="downloadPDF()">⬇️ تحميل PDF</button>
-  <button onclick="saveData()">💾 حفظ التعديلات</button>
+  <button onclick="downloadPDF()" style="background:#0dc149;color:rgb(255, 255, 255);">⬇️ تحميل PDF</button>
+  <button onclick="saveData()" style="background:#2196f3;color:white;"> 💾 حفظ التعديلات</button>
   <button onclick="logout()" style="background:#dc3545;color:white;">🚪 تسجيل خروج</button>
-  <button id="sidebarAdminBtn" style="background:#6c757d;color:white;display:none;">⚙️ لوحة التحكم</button>
+  <button id="sidebarAdminBtn" style="background:#000000;color:white;display:none;">⚙️ لوحة التحكم</button>
   <button id="sidebarEmpStatsBtn" style="background:#17a2b8;color:white;display:none;">📊 تفاصيل إحصائيات الموظفين</button>
   <button id="sidebarDeleteDataBtn" style="background:#dc3545;color:white;display:none;">🗑️ حذف بيانات متقدمة</button>
-  <button id="sidebarFeaturesTabBtn" style="background:#673ab7;color:white;display:none;">⭐️ ميزات متقدمة</button>
+  <button id="sidebarFeaturesTabBtn" style="background:#673ab7;color:white;display:none;">⭐️سجل النشاطات</button>
   <button id="sidebarChangePassBtn" style="background:#2196f3;color:white;">🔑 تغيير كلمة المرور</button>
   <!-- أضف زر التحكم في صلاحيات سجل النشاطات للمدير في القائمة الجانبية -->
   <button id="sidebarUserControlBtn" style="background:#009688;color:white;display:none;">👥 صلاحيات سجل النشاطات</button>
@@ -843,6 +843,31 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 let employees = [];
+// ========== استرجاع الجلسة عند تحديث الصفحة ==========
+document.addEventListener("DOMContentLoaded", function() {
+  if (localStorage.getItem('loggedUser')) {
+    const userObj = JSON.parse(localStorage.getItem('loggedUser'));
+    currentUser = userObj.user;
+    currentUserRole = userObj.role;
+    currentUserCanEdit = userObj.canEdit;
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("mainContent").style.display = "block";
+    if (currentUserRole === "admin") {
+      document.getElementById("adminPanel").style.display = "block";
+      loadUsers();
+      loadEmployeesTable();
+    } else {
+      document.getElementById("adminPanel").style.display = "none";
+    }
+    loadEmployees().then(() => {
+      generateTable();
+      if (typeof tryShowUserEmpStats === "function") tryShowUserEmpStats();
+    });
+    if (typeof checkForcedLogoutOnLogin === "function") checkForcedLogoutOnLogin(currentUser);
+    if (typeof updateSidebarVisibility === "function") updateSidebarVisibility();
+    if (typeof loadAvailableMonths === "function") loadAvailableMonths();
+  }
+});
 const statuses = ["", "شفت", "نص", "❌"];
 let month = new Date().getMonth();
 const year = new Date().getFullYear();
@@ -1885,23 +1910,45 @@ function updateSidebarVisibility() {
           } else {
             modal.style.display = "flex";
           }
-          // تحميل سجل النشاطات لهذا المستخدم فقط
-          db.ref("activityLog").orderByChild("user").equalTo(currentUser).limitToLast(30).once("value").then(snapshot => {
+          // منطق عرض السجل حسب نوع الصلاحية
+          let logType = data.logViewType || "all"; // "all" أو "self"
+          let logQuery;
+          if (logType === "all") {
+            // كل السجل
+            logQuery = db.ref("activityLog").limitToLast(30).once("value");
+          } else {
+            // فقط سجل المستخدم
+            logQuery = db.ref("activityLog").orderByChild("user").equalTo(currentUser).limitToLast(30).once("value");
+          }
+          logQuery.then(snapshot => {
             const log = snapshot.val() || {};
-            let html = `<table class="activity-log-table">
-              <tr>
-                <th>الوقت</th>
-                <th>النشاط</th>
-                <th>الوصف</th>
-              </tr>`;
-            Object.values(log).reverse().forEach(item => {
-              html += `<tr>
-                <td>${toEnglishNumbers(item.time || "")}</td>
-                <td>${item.action || ""}</td>
-                <td>${item.details || ""}</td>
-              </tr>`;
+            let html = `<div style='max-width:99vw;overflow-x:auto;'>`;
+            html += `<table class=\"activity-log-table\" style='width:100%;border-collapse:collapse;font-size:15px;'>`;
+            html += `<thead><tr style='background:#f6f6f6;'>`;
+            if (logType === "all") {
+              html += `<th style='padding:7px 4px;border:1px solid #eee;'>الوقت</th><th style='padding:7px 4px;border:1px solid #eee;'>المستخدم</th><th style='padding:7px 4px;border:1px solid #eee;'>النشاط</th><th style='padding:7px 4px;border:1px solid #eee;'>الوصف</th>`;
+            } else {
+              html += `<th style='padding:7px 4px;border:1px solid #eee;'>الوقت</th><th style='padding:7px 4px;border:1px solid #eee;'>النشاط</th><th style='padding:7px 4px;border:1px solid #eee;'>الوصف</th>`;
+            }
+            html += `</tr></thead><tbody>`;
+            // ترتيب حسب الوقت تنازليًا
+            Object.values(log).sort((a,b)=>{
+              const ta = a.time || "";
+              const tb = b.time || "";
+              return tb.localeCompare(ta,'ar');
+            }).forEach(item => {
+              // إبراز تغييرات جدول الحضور
+              let rowStyle = "";
+              if ((item.action||"").includes("تعديل جدول الحضور") || (item.action||"").includes("حذف موظف")) {
+                rowStyle = "background:#fff9db;";
+              }
+              if (logType === "all") {
+                html += `<tr style='${rowStyle}'>\n<td>${toEnglishNumbers(item.time || "")}</td>\n<td>${item.user || ""}</td>\n<td>${item.action || ""}</td>\n<td>${item.details || ""}</td>\n</tr>`;
+              } else {
+                html += `<tr style='${rowStyle}'>\n<td>${toEnglishNumbers(item.time || "")}</td>\n<td>${item.action || ""}</td>\n<td>${item.details || ""}</td>\n</tr>`;
+              }
             });
-            html += `</table>`;
+            html += `</tbody></table></div>`;
             document.getElementById("userLogContent").innerHTML = html;
           });
         };
@@ -2041,6 +2088,7 @@ document.getElementById("sidebarUserControlBtn").onclick = function() {
       <tr>
         <th style="background:#f6f6f6;">المستخدم</th>
         <th style="background:#f6f6f6;">الوصول لسجل النشاطات</th>
+        <th style="background:#f6f6f6;">نوع الصلاحية</th>
       </tr>`;
     Object.entries(users).forEach(([username, data]) => {
       if (username === "admin") return; // لا تظهر للمدير نفسه
@@ -2052,17 +2100,32 @@ document.getElementById("sidebarUserControlBtn").onclick = function() {
             <span style="font-size:13px;color:${data.canViewLog ? '#28a745':'#dc3545'};">${data.canViewLog ? 'مفعل':'معطل'}</span>
           </label>
         </td>
+        <td style="padding:7px 4px;">
+          <select onchange="window.setUserLogType('${username}', this.value)" style="font-size:13px;">
+            <option value="all" ${!data.logViewType || data.logViewType==="all" ? "selected" : ""}>كل السجل</option>
+            <option value="self" ${data.logViewType==="self" ? "selected" : ""}>سجل المستخدم فقط</option>
+          </select>
+        </td>
       </tr>`;
     });
     html += `</table>
       <div style="margin-top:10px;font-size:13px;color:#555;">
         عند تفعيل الصلاحية يظهر زر سجل النشاطات للمستخدم في القائمة الجانبية.<br>
+        نوع الصلاحية:<br>
+        <b>كل السجل:</b> يرى كل النشاطات لجميع المستخدمين.<br>
+        <b>سجل المستخدم فقط:</b> يرى فقط نشاطاته هو.<br>
         عند التعطيل يختفي الزر مباشرة من عند المستخدم.
       </div>`;
     document.getElementById("userLogControlContent").innerHTML = html;
     window.setUserLogAccess = function(username, enabled) {
       db.ref("users/" + username + "/canViewLog").set(enabled).then(() => {
         logActivity("تغيير صلاحية سجل النشاطات", `تم ${enabled ? 'تفعيل' : 'تعطيل'} سجل النشاطات للمستخدم: ${username}`);
+        updateSidebarVisibility();
+      });
+    };
+    window.setUserLogType = function(username, type) {
+      db.ref("users/" + username + "/logViewType").set(type).then(() => {
+        logActivity("تغيير نوع صلاحية سجل النشاطات", `تم تغيير نوع الصلاحية للمستخدم: ${username} إلى: ${type === 'all' ? 'كل السجل' : 'سجل المستخدم فقط'}`);
         updateSidebarVisibility();
       });
     };
