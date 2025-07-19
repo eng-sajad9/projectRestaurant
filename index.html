@@ -1131,6 +1131,17 @@ function loadUsers() {
     });
   });
 }
+// ========== تسجيل خروج إجباري للمستخدم ========== 
+function forceLogoutUser(username) {
+  if (!confirm(`هل تريد تسجيل خروج المستخدم ${username} إجباريًا؟`)) return;
+  db.ref("forcedLogout/" + username).set(true).then(() => {
+    alert("✅ تم إرسال أمر تسجيل الخروج الإجباري.");
+    logActivity("تسجيل خروج إجباري", username);
+  }).catch(err => {
+    alert("❌ حدث خطأ أثناء تنفيذ تسجيل الخروج الإجباري");
+    console.error(err);
+  });
+}
 function toggleUserEdit(username, currentCanEdit) {
   if (username === currentUser) {
     alert("❌ لا يمكنك تغيير صلاحيتك الخاصة.");
