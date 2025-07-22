@@ -207,9 +207,8 @@
     <button onclick="login()">دخول</button>
     <div id="loginMessage"></div>
     <div style="text-align:center; margin-top:10px; font-size:14px; color:#555; font-style:italic; line-height:1.3;">
-<br>بـتصميم المـهندس سجـاد رشيد
-  INSTA: e._mg <br/>
-
+      بتصميم المهندس سجاد رشيد<br />
+      insta: e ._ mg
     </div>
   </div>
 
@@ -1106,63 +1105,75 @@ async function saveData() {
 }
 
 // ========== إدارة المستخدمين والموظفين ==========
-function loadUsers() {
-  db.ref("users").once("value").then(snapshot => {
-    const users = snapshot.val() || {};
-    const tbody = document.getElementById("usersBody");
-    tbody.innerHTML = "";
-    Object.entries(users).forEach(([username, data]) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${username}</td>
-        <td>${data.canEdit ? "نعم" : "لا"}</td>
-        <td>
-          <button class="small-button btn-toggle" onclick="toggleUserEdit('${username}', ${data.canEdit})">
-            ${data.canEdit ? "قفل التعديل" : "فتح التعديل"}
-          </button>
-        </td>
-        <td>
-          ${username === currentUser ? "لا يمكن حذف نفسك" : `<button class="small-button btn-delete" onclick="deleteUser('${username}')">حذف</button>`}
-        </td>
-        <td>
-          ${username === currentUser ? "—" : `<button class="small-button btn-delete" style="background:#ff9800;" onclick="forceLogoutUser('${username}')">تسجيل خروج</button>`}
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
+// ========== إدارة المستخدمين ========== 
+// تحميل جدول المستخدمين
+async function loadUsers() {
+  const snapshot = await db.ref("users").once("value");
+  const users = snapshot.val() || {};
+  const tbody = document.getElementById("usersBody");
+  tbody.innerHTML = "";
+  Object.entries(users).forEach(([username, data]) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${username}</td>
+      <td>${data.canEdit ? "نعم" : "لا"}</td>
+      <td>
+        <button class="small-button btn-toggle" onclick="toggleUserEdit('${username}', ${data.canEdit})">
+          ${data.canEdit ? "قفل التعديل" : "فتح التعديل"}
+        </button>
+      </td>
+      <td>
+        ${username === currentUser ? "لا يمكن حذف نفسك" : `<button class="small-button btn-delete" onclick="deleteUser('${username}')">حذف</button>`}
+      </td>
+      <td>
+        ${username === currentUser ? "—" : `<button class="small-button btn-delete" style="background:#ff9800;" onclick="forceLogoutUser('${username}')">تسجيل خروج</button>`}
+      </td>
+    `;
+    tbody.appendChild(tr);
   });
 }
-// ========== تسجيل خروج إجباري للمستخدم ========== 
-function forceLogoutUser(username) {
+
+// تسجيل خروج إجباري لمستخدم
+async function forceLogoutUser(username) {
+  if (username === currentUser) {
+    alert("❌ لا يمكنك تسجيل خروج نفسك إجباريًا.");
+    return;
+  }
   if (!confirm(`هل تريد تسجيل خروج المستخدم ${username} إجباريًا؟`)) return;
-  db.ref("forcedLogout/" + username).set(true).then(() => {
+  try {
+    await db.ref("forcedLogout/" + username).set(true);
     alert("✅ تم إرسال أمر تسجيل الخروج الإجباري.");
     logActivity("تسجيل خروج إجباري", username);
-  }).catch(err => {
+  } catch (err) {
     alert("❌ حدث خطأ أثناء تنفيذ تسجيل الخروج الإجباري");
     console.error(err);
-  });
+  }
 }
-function toggleUserEdit(username, currentCanEdit) {
+
+// تبديل صلاحية التعديل للمستخدم
+async function toggleUserEdit(username, currentCanEdit) {
   if (username === currentUser) {
     alert("❌ لا يمكنك تغيير صلاحيتك الخاصة.");
     return;
   }
-  db.ref("users/" + username + "/canEdit").set(!currentCanEdit).then(loadUsers);
+  await db.ref("users/" + username + "/canEdit").set(!currentCanEdit);
+  loadUsers();
 }
-function deleteUser(username) {
+
+// حذف مستخدم
+async function deleteUser(username) {
   if (username === currentUser) {
     alert("❌ لا يمكن حذف نفسك.");
     return;
   }
-  if (confirm(`هل أنت متأكد من حذف المستخدم ${username}؟`)) {
-    db.ref("users/" + username).remove().then(() => {
-      loadUsers();
-      logActivity("حذف مستخدم", username);
-    });
-  }
+  if (!confirm(`هل أنت متأكد من حذف المستخدم ${username}؟`)) return;
+  await db.ref("users/" + username).remove();
+  loadUsers();
+  logActivity("حذف مستخدم", username);
 }
-function addUser() {
+
+// إضافة مستخدم جديد
+async function addUser() {
   const username = document.getElementById("newUserName").value.trim().toLowerCase();
   const password = document.getElementById("newUserPass").value.trim();
   const canEdit = document.getElementById("newUserCanEdit").checked;
@@ -1170,22 +1181,22 @@ function addUser() {
     alert("❌ يرجى إدخال اسم المستخدم وكلمة المرور");
     return;
   }
-  db.ref("users/" + username).once("value").then(snapshot => {
-    if (snapshot.exists()) {
-      alert("❌ اسم المستخدم موجود مسبقاً");
-      return;
-    }
-    return db.ref("users/" + username).set({ password, role: "user", canEdit });
-  }).then(() => {
+  const snapshot = await db.ref("users/" + username).once("value");
+  if (snapshot.exists()) {
+    alert("❌ اسم المستخدم موجود مسبقاً");
+    return;
+  }
+  try {
+    await db.ref("users/" + username).set({ password, role: "user", canEdit });
     alert("✅ تم إنشاء المستخدم بنجاح");
     document.getElementById("newUserName").value = "";
     document.getElementById("newUserPass").value = "";
     document.getElementById("newUserCanEdit").checked = true;
     loadUsers();
-  }).catch(err => {
+  } catch (err) {
     console.error(err);
     alert("❌ حدث خطأ أثناء إنشاء المستخدم");
-  });
+  }
 }
 
 // ========== إدارة الموظفين ==========
