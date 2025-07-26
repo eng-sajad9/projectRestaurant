@@ -35,14 +35,38 @@
       border: none;
       cursor: pointer;
     }
-    button:hover { background-color: #0056b3; }
+button:hover { background-color: #0056b3; }
+button:active { background-color: #1976d2; }
     #mainContent, #adminPanel { display: none; }
     #attendanceTable {
       width: 100%;
       border-collapse: collapse;
       margin-top: 15px;
     }
-    #attendanceTable th, #attendanceTable td {
+    #attendanceTable th {
+      border: 1px solid #000000;
+      padding: 10px 8px;
+      text-align: center;
+      background: #000000;
+      color: #fff;
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: 0.5px;
+      border-bottom: 2.5px solid #000000;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+      transition: background 0.2s;
+      box-shadow: 0 2px 8px #e3eafc;
+    }
+    @media (max-width: 767px) {
+      #attendanceTable th {
+        font-size: 15px;
+        padding: 7px 4px;
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+      }
+    }
+    #attendanceTable td {
       border: 1px solid #ccc;
       padding: 5px;
       text-align: center;
@@ -219,7 +243,7 @@
     <table id="attendanceTable">
       <thead>
         <tr>
-          <th>التاريخ</th>
+          <th style="background: linear-gradient(90deg, #e3f0ff 0%, #cbe6ff 100%); color: #1976d2; font-weight: bold; font-size: 18px; border-bottom: 2.5px solid #90caf9; letter-spacing: 0.5px;">التاريخ</th>
         </tr>
       </thead>
       <tbody id="tableBody"></tbody>
@@ -1012,7 +1036,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 let employees = [];
-// ========== استرجاع الجلسة عند تحديث الصفحة ==========
+// ========== استرجاع الجلسة عند تحديث الصفحة ========== (مع مراقبة صلاحية التعديل)
 document.addEventListener("DOMContentLoaded", function() {
   if (localStorage.getItem('loggedUser')) {
     const userObj = JSON.parse(localStorage.getItem('loggedUser'));
@@ -1035,6 +1059,22 @@ document.addEventListener("DOMContentLoaded", function() {
     if (typeof checkForcedLogoutOnLogin === "function") checkForcedLogoutOnLogin(currentUser);
     if (typeof updateSidebarVisibility === "function") updateSidebarVisibility();
     if (typeof loadAvailableMonths === "function") loadAvailableMonths();
+
+    // مراقبة صلاحية التعديل للمستخدم الحالي وتحديثها فوراً
+    if (currentUser !== "admin") {
+      db.ref("users/" + currentUser + "/canEdit").on("value", function(snap) {
+        const newCanEdit = !!snap.val();
+        if (currentUserCanEdit !== newCanEdit) {
+          currentUserCanEdit = newCanEdit;
+          // إعادة توليد الجدول لتعطيل/تفعيل الحقول فوراً
+          generateTable();
+          // إشعار المستخدم إذا تم تعطيل التعديل
+          if (!currentUserCanEdit) {
+            alert("تم قفل صلاحية التعديل الخاصة بك من قبل المدير. لن تتمكن من تعديل الجدول حتى إشعار آخر.");
+          }
+        }
+      });
+    }
   }
 });
 const statuses = ["", "شفت", "نص", "❌"];
@@ -1113,13 +1153,37 @@ function logout() {
 
 // ========== تحميل الموظفين ==========
 function loadEmployees() {
+  
   return db.ref("employees").once("value").then(snapshot => {
     employees = snapshot.exists() ? Object.values(snapshot.val()) : [];
     const theadRow = document.querySelector("#attendanceTable thead tr");
     while (theadRow.children.length > 1) theadRow.removeChild(theadRow.lastChild);
+    // Make all header cells (including 'التاريخ') unified in color and style
+    // First, update the first th ("التاريخ")
+    if (theadRow.children.length > 0) {
+      const firstTh = theadRow.children[0];
+      firstTh.style.background = '#e3f0ff'; // calm blue
+      firstTh.style.color = '#222'; // black text
+      firstTh.style.fontWeight = 'bold';
+      firstTh.style.fontSize = '17px';
+      firstTh.style.border = '1px solid #b0bec5'; // add grid border
+      firstTh.style.boxShadow = 'none';
+      firstTh.style.letterSpacing = '0.5px';
+      firstTh.style.borderRadius = '0';
+      firstTh.style.transition = 'background 0.2s';
+    }
     employees.forEach(emp => {
       const th = document.createElement("th");
       th.textContent = emp;
+      th.style.background = '#e3f0ff'; // calm blue
+      th.style.color = '#222'; // black text
+      th.style.fontWeight = 'bold';
+      th.style.fontSize = '17px';
+      th.style.border = '1px solid #b0bec5'; // add grid border
+      th.style.boxShadow = 'none';
+      th.style.letterSpacing = '0.5px';
+      th.style.borderRadius = '0';
+      th.style.transition = 'background 0.2s';
       theadRow.appendChild(th);
     });
     loadEmployeesTable();
@@ -1160,6 +1224,7 @@ function generateTable() {
         </div>`;
       }
       dateCell.innerHTML = dateContent;
+      // لا تلوين لخلايا التاريخ في الصفوف
       row.appendChild(dateCell);
       employees.forEach((employee, empIndex) => {
         const cell = document.createElement("td");
@@ -1179,6 +1244,13 @@ function generateTable() {
           cell.style.background = "#d4edda"; // أخضر فاتح
         } else if (select.value === "نص") {
           cell.style.background = "#fff9db"; // أصفر فاتح
+        } else if (select.value === "❌") {
+          cell.style.background = "#ffe3e3"; // أحمر فاتح
+          cell.style.color = "#d32f2f"; // أحمر غامق
+          select.style.color = "#d32f2f";
+        } else {
+          cell.style.color = "";
+          select.style.color = "";
         }
         if (!currentUserCanEdit) {
           select.setAttribute('disabled','disabled');
@@ -1188,10 +1260,20 @@ function generateTable() {
         select.addEventListener('change', function() {
           if (this.value === "شفت") {
             cell.style.background = "#d4edda";
+            cell.style.color = "";
+            select.style.color = "";
           } else if (this.value === "نص") {
             cell.style.background = "#fff9db";
+            cell.style.color = "";
+            select.style.color = "";
+          } else if (this.value === "❌") {
+            cell.style.background = "#ffe3e3";
+            cell.style.color = "#d32f2f";
+            select.style.color = "#d32f2f";
           } else {
             cell.style.background = "";
+            cell.style.color = "";
+            select.style.color = "";
           }
         });
         cell.appendChild(select);
