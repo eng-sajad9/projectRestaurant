@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>نظام تسجيل الحضور</title>
   <style>
+    #adminPanel {
+      box-shadow: 0 2px 12px rgba(151, 86, 86, 0.067);
+    }
     body {
       font-family: 'Segoe UI', sans-serif;
       direction: rtl;
@@ -34,9 +37,10 @@
       color: white;
       border: none;
       cursor: pointer;
+      transition: background 0.2s;
     }
-button:hover { background-color: #0056b3; }
-button:active { background-color: #1976d2; }
+    button:hover { background-color: #0056b3; }
+    button:active { background-color: #1976d2; }
     #mainContent, #adminPanel { display: none; }
     #attendanceTable {
       width: 100%;
@@ -349,95 +353,7 @@ button:active { background-color: #1976d2; }
   </div>
 </div>
 
-<!-- أضف هذا قبل نهاية </body> -->
-<style>
-  #sidebarMenu {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 0;
-    height: 100vh;
-    background: #fff;
-    box-shadow: -2px 0 12px #0002;
-    overflow-x: hidden;
-    transition: 0.3s;
-    z-index: 5000;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    padding-top: 0;
-  }
-  #sidebarMenu.open {
-    width: 210px;
-    padding-top: 30px;
-  }
-  #sidebarMenu .sidebar-header {
-    width: 100%;
-    padding: 14px 18px 8px 18px;
-    background: #007bff;
-    color: #fff;
-    font-size: 16px;
-    font-weight: bold;
-    text-align: right;
-    border-bottom: 1px solid #eee;
-    letter-spacing: 0.5px;
-  }
-  #sidebarMenu button {
-    width: 88%;
-    margin: 8px 6%;
-    padding: 8px;
-    font-size: 15px;
-    border-radius: 6px;
-    border: none;
-    background: #f4f4f4;
-    color: #333;
-    cursor: pointer;
-    text-align: right;
-    transition: background 0.2s;
-  }
-  #sidebarMenu button:hover {
-    background: #e0e0e0;
-  }
-  #sidebarToggleBtn, #sidebarCloseBtn {
-    position: fixed;
-    top: 14px;
-    right: 14px;
-    width: 34px;
-    height: 34px;
-    background: #007bff;
-    color: #fff;
-    border: none;
-    border-radius: 50%;
-    font-size: 20px;
-    cursor: pointer;
-    z-index: 5100;
-    box-shadow: 0 2px 8px #0002;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.2s;
-  }
-  #sidebarCloseBtn {
-    background: rgba(0,0,0,0.08);
-    color: #333;
-    font-size: 18px;
-    border: none;
-    box-shadow: none;
-    width: 30px;
-    height: 30px;
-    right: 18px;
-    top: 18px;
-    opacity: 0.7;
-  }
-  #sidebarCloseBtn:hover {
-    background: #f4f4f4;
-    opacity: 1;
-  }
-  @media (max-width: 600px) {
-    #sidebarMenu.open { width: 90vw; }
-    #sidebarToggleBtn, #sidebarCloseBtn { right: 8px; top: 8px; }
-  }
-</style>
+<!-- تم حذف الأنماط المكررة للـ sidebarMenu لتقليل التكرار -->
 <button id="sidebarToggleBtn" style="display:none;">☰</button>
 <button id="sidebarCloseBtn" style="display:none;">✖</button>
 <div id="sidebarMenu">
@@ -1070,8 +986,36 @@ document.addEventListener("DOMContentLoaded", function() {
           generateTable();
           // إشعار المستخدم إذا تم تعطيل التعديل
           if (!currentUserCanEdit) {
-            alert("تم قفل صلاحية التعديل الخاصة بك من قبل المدير. لن تتمكن من تعديل الجدول حتى إشعار آخر.");
+            showPermissionRevokedModal();
           }
+// نافذة منبثقة لإشعار تعطيل الصلاحية
+function showPermissionRevokedModal() {
+  let oldModal = document.getElementById("permRevokedModal");
+  if (oldModal) oldModal.remove();
+  const modal = document.createElement("div");
+  modal.id = "permRevokedModal";
+  modal.style = `position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.25);z-index:9999;display:flex;align-items:center;justify-content:center;`;
+  modal.innerHTML = `
+    <div style=\"background:linear-gradient(135deg,#f7faff 60%,#e3eafc 100%);max-width:370px;width:92vw;padding:32px 20px 22px 20px;border-radius:18px;box-shadow:0 8px 32px #1976d233;position:relative;text-align:center;animation:fadeIn 0.3s;\">
+      <button id=\"closePermRevokedModalBtn\" style=\"position:absolute;top:10px;left:10px;background:#e57373;color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;transition:background 0.2s;box-shadow:0 2px 8px #e5737322;\">✖</button>
+      <div style=\"font-size:21px;color:#d32f2f;margin-bottom:18px;font-weight:700;letter-spacing:0.2px;\">🚫 تم تعطيل صلاحية التعديل</div>
+      <div style=\"font-size:16.5px;color:#2d3a4a;line-height:1.8;margin-bottom:16px;background:#fff3f3;border-radius:8px;padding:10px 7px 8px 7px;box-shadow:0 1px 4px #e5737311;\">تم قفل صلاحية التعديل الخاصة بك من قبل المدير.<br>لن تتمكن من تعديل الجدول حتى إشعار آخر.</div>
+      <button id=\"permRevokedOkBtn\" style=\"background:linear-gradient(90deg,#1976d2 60%,#42a5f5 100%);color:white;padding:11px 0;border:none;border-radius:8px;font-size:17px;cursor:pointer;box-shadow:0 2px 8px #1976d222;width:90%;margin-top:8px;font-weight:600;transition:background 0.2s;\">حسناً</button>
+    </div>
+    <style>
+      @keyframes fadeIn { from { opacity:0; transform:scale(0.95);} to { opacity:1; transform:scale(1);} }
+      @media (max-width: 600px) {
+        #permRevokedModal > div { max-width:99vw !important; padding:18px 2vw 18px 2vw !important; }
+        #permRevokedModal div { font-size:16px !important; }
+      }
+      #closePermRevokedModalBtn:hover { background:#b71c1c !important; }
+      #permRevokedOkBtn:hover { background:#1565c0 !important; }
+    </style>
+  `;
+  document.body.appendChild(modal);
+  document.getElementById("permRevokedOkBtn").onclick = () => { modal.remove(); };
+  document.getElementById("closePermRevokedModalBtn").onclick = () => { modal.remove(); };
+}
         }
       });
     }
@@ -1224,7 +1168,6 @@ function generateTable() {
         </div>`;
       }
       dateCell.innerHTML = dateContent;
-      // لا تلوين لخلايا التاريخ في الصفوف
       row.appendChild(dateCell);
       employees.forEach((employee, empIndex) => {
         const cell = document.createElement("td");
@@ -1239,14 +1182,13 @@ function generateTable() {
         if (savedData[day.key] && savedData[day.key][employee] !== undefined) {
           select.value = savedData[day.key][employee];
         }
-        // إضافة تلوين الخلية حسب القيمة
         if (select.value === "شفت") {
-          cell.style.background = "#d4edda"; // أخضر فاتح
+          cell.style.background = "#d4edda";
         } else if (select.value === "نص") {
-          cell.style.background = "#fff9db"; // أصفر فاتح
+          cell.style.background = "#fff9db";
         } else if (select.value === "❌") {
-          cell.style.background = "#ffe3e3"; // أحمر فاتح
-          cell.style.color = "#d32f2f"; // أحمر غامق
+          cell.style.background = "#ffe3e3";
+          cell.style.color = "#d32f2f";
           select.style.color = "#d32f2f";
         } else {
           cell.style.color = "";
@@ -1256,7 +1198,6 @@ function generateTable() {
           select.setAttribute('disabled','disabled');
           select.addEventListener('change', (e)=>{ e.target.value = savedData[day.key] ? savedData[day.key][employee] : ""; });
         }
-        // تحديث اللون عند تغيير القيمة
         select.addEventListener('change', function() {
           if (this.value === "شفت") {
             cell.style.background = "#d4edda";
@@ -1281,8 +1222,27 @@ function generateTable() {
       });
       tbody.appendChild(row);
     });
+    // تعطيل زر الحفظ إذا لم يكن للمستخدم صلاحية
+    const saveBtn = document.querySelector('button[onclick="saveData()"]');
+    if (saveBtn) saveBtn.disabled = !currentUserCanEdit;
     calculateStats(savedData);
   });
+  // تعطيل جميع select وinput وtextarea وأزرار الحفظ إذا فقدت الصلاحية (احتياطي)
+  setTimeout(()=>{
+    if (!currentUserCanEdit) {
+      document.querySelectorAll('#mainContent select, #mainContent input, #mainContent textarea').forEach(el=>{
+        el.setAttribute('disabled','disabled');
+      });
+      const saveBtn = document.querySelector('button[onclick="saveData()"]');
+      if (saveBtn) saveBtn.disabled = true;
+    } else {
+      document.querySelectorAll('#mainContent select, #mainContent input, #mainContent textarea').forEach(el=>{
+        el.removeAttribute('disabled');
+      });
+      const saveBtn = document.querySelector('button[onclick="saveData()"]');
+      if (saveBtn) saveBtn.disabled = false;
+    }
+  }, 100);
 }
 
 // ========== حفظ البيانات ==========
@@ -1447,18 +1407,112 @@ async function toggleUserEdit(username, currentCanEdit) {
   loadUsers();
 }
 
-// حذف مستخدم
+// حذف مستخدم مع نافذة منبثقة أنيقة وإخراج المستخدم فوراً
 async function deleteUser(username) {
   if (username === currentUser) {
-    alert("❌ لا يمكن حذف نفسك.");
+    showPermissionRevokedModal("لا يمكن حذف نفسك.");
     return;
   }
-  showConfirmModal(`هل أنت متأكد من حذف المستخدم ${username}؟`, async () => {
+  showDeleteUserModal(username);
+}
+
+function showDeleteUserModal(username) {
+  let oldModal = document.getElementById("deleteUserModal");
+  if (oldModal) oldModal.remove();
+  const modal = document.createElement("div");
+  modal.id = "deleteUserModal";
+  modal.style = `position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.25);z-index:9999;display:flex;align-items:center;justify-content:center;`;
+  modal.innerHTML = `
+    <div style=\"background:linear-gradient(135deg,#fff7f7 60%,#fce4ec 100%);max-width:370px;width:92vw;padding:32px 20px 22px 20px;border-radius:18px;box-shadow:0 8px 32px #e5737333;position:relative;text-align:center;animation:fadeIn 0.3s;\">
+      <button id=\"closeDeleteUserModalBtn\" style=\"position:absolute;top:10px;left:10px;background:#e57373;color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;transition:background 0.2s;box-shadow:0 2px 8px #e5737322;\">✖</button>
+      <div style=\"font-size:21px;color:#d32f2f;margin-bottom:18px;font-weight:700;letter-spacing:0.2px;\">🗑️ حذف مستخدم</div>
+      <div style=\"font-size:16.5px;color:#2d3a4a;line-height:1.8;margin-bottom:16px;background:#fff3f3;border-radius:8px;padding:10px 7px 8px 7px;box-shadow:0 1px 4px #e5737311;\">هل أنت متأكد من حذف المستخدم <b style='color:#d32f2f;'>${username}</b>؟<br>سيتم إخراجه فوراً ولن يتمكن من الدخول مجدداً إلا إذا أنشأته من جديد.</div>
+      <button id=\"deleteUserConfirmBtn\" style=\"background:linear-gradient(90deg,#d32f2f 60%,#e57373 100%);color:white;padding:11px 0;border:none;border-radius:8px;font-size:17px;cursor:pointer;box-shadow:0 2px 8px #d32f2f22;width:90%;margin-top:8px;font-weight:600;transition:background 0.2s;\">تأكيد الحذف</button>
+    </div>
+    <style>
+      @keyframes fadeIn { from { opacity:0; transform:scale(0.95);} to { opacity:1; transform:scale(1);} }
+      @media (max-width: 600px) {
+        #deleteUserModal > div { max-width:99vw !important; padding:18px 2vw 18px 2vw !important; }
+        #deleteUserModal div { font-size:16px !important; }
+      }
+      #closeDeleteUserModalBtn:hover { background:#b71c1c !important; }
+      #deleteUserConfirmBtn:hover { background:#b71c1c !important; }
+    </style>
+  `;
+  document.body.appendChild(modal);
+  document.getElementById("deleteUserConfirmBtn").onclick = async () => {
     await db.ref("users/" + username).remove();
+    await db.ref("forcedLogout/" + username).set(true);
+    if (username === currentUser) {
+      localStorage.setItem('accountDeleted', 'true');
+      clearSession && clearSession();
+      location.reload();
+      return;
+    }
     loadUsers();
     logActivity("حذف مستخدم", username);
-  });
+    modal.remove();
+  };
+// رسالة حذف الحساب عند تحميل الصفحة
+document.addEventListener("DOMContentLoaded", function() {
+  if (localStorage.getItem('accountDeleted')) {
+    localStorage.removeItem('accountDeleted');
+    showAccountDeletedModal();
+  }
+});
+
+// نافذة رسالة حذف الحساب
+function showAccountDeletedModal() {
+  const modal = document.createElement("div");
+  modal.style = `position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.25);z-index:9999;display:flex;align-items:center;justify-content:center;`;
+  modal.innerHTML = `
+    <div style="background:#fff3f3;padding:24px 18px;border-radius:12px;box-shadow:0 4px 20px #0002;text-align:center;">
+      <div style="font-size:20px;color:#d32f2f;margin-bottom:12px;">❌ تم حذف حسابك</div>
+      <div style="font-size:15px;color:#444;">تم حذف حسابك من النظام من قبل المدير.</div>
+      <button onclick="this.parentElement.parentElement.remove()" style="margin-top:15px;padding:10px 20px;background:#dc3545;color:#fff;border:none;border-radius:8px;cursor:pointer;">موافق</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
 }
+// عند تحميل الصفحة، إذا accountDeleted=true في localStorage، أظهر رسالة حذف الحساب فقط
+document.addEventListener("DOMContentLoaded", function() {
+  if (localStorage.getItem('accountDeleted')) {
+    localStorage.removeItem('accountDeleted');
+    showAccountDeletedModal();
+  }
+});
+  document.getElementById("closeDeleteUserModalBtn").onclick = () => { modal.remove(); };
+}
+
+// تحديث showPermissionRevokedModal لقبول رسالة مخصصة (اختياري)
+const _oldShowPermissionRevokedModal = window.showPermissionRevokedModal;
+window.showPermissionRevokedModal = function(msg) {
+  if (!msg) return _oldShowPermissionRevokedModal();
+  let oldModal = document.getElementById("permRevokedModal");
+  if (oldModal) oldModal.remove();
+  const modal = document.createElement("div");
+  modal.id = "permRevokedModal";
+  modal.style = `position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.25);z-index:9999;display:flex;align-items:center;justify-content:center;`;
+  modal.innerHTML = `
+    <div style=\"background:linear-gradient(135deg,#f7faff 60%,#e3eafc 100%);max-width:370px;width:92vw;padding:32px 20px 22px 20px;border-radius:18px;box-shadow:0 8px 32px #1976d233;position:relative;text-align:center;animation:fadeIn 0.3s;\">
+      <button id=\"closePermRevokedModalBtn\" style=\"position:absolute;top:10px;left:10px;background:#e57373;color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;transition:background 0.2s;box-shadow:0 2px 8px #e5737322;\">✖</button>
+      <div style=\"font-size:19px;color:#d32f2f;margin-bottom:16px;font-weight:600;\">${msg}</div>
+      <button id=\"permRevokedOkBtn\" style=\"background:linear-gradient(90deg,#1976d2 60%,#42a5f5 100%);color:white;padding:11px 0;border:none;border-radius:8px;font-size:17px;cursor:pointer;box-shadow:0 2px 8px #1976d222;width:90%;margin-top:8px;font-weight:600;transition:background 0.2s;\">حسناً</button>
+    </div>
+    <style>
+      @keyframes fadeIn { from { opacity:0; transform:scale(0.95);} to { opacity:1; transform:scale(1);} }
+      @media (max-width: 600px) {
+        #permRevokedModal > div { max-width:99vw !important; padding:18px 2vw 18px 2vw !important; }
+        #permRevokedModal div { font-size:16px !important; }
+      }
+      #closePermRevokedModalBtn:hover { background:#b71c1c !important; }
+      #permRevokedOkBtn:hover { background:#1565c0 !important; }
+    </style>
+  `;
+  document.body.appendChild(modal);
+  document.getElementById("permRevokedOkBtn").onclick = () => { modal.remove(); };
+  document.getElementById("closePermRevokedModalBtn").onclick = () => { modal.remove(); };
+};
 
 // إضافة مستخدم جديد
 async function addUser() {
@@ -1744,6 +1798,9 @@ toggleAdminBtn.onclick = () => {
   if (adminPanel.style.maxHeight === "0px") {
     adminPanel.style.maxHeight = adminPanel.scrollHeight + "px";
     toggleAdminBtn.style.backgroundColor = "green";
+    setTimeout(() => {
+      adminPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 200);
   } else {
     adminPanel.style.maxHeight = "0px";
     toggleAdminBtn.style.backgroundColor = "#6c757d";
@@ -1861,13 +1918,65 @@ function checkForcedLogoutOnLogin(userKey) {
   return db.ref("forcedLogout/" + userKey).once("value").then(snapshot => {
     if (snapshot.exists()) {
       localStorage.removeItem('loggedUser');
-      alert("❌ تم تسجيل خروجك من قبل المدير.");
+      db.ref("users/" + userKey).once("value").then(userSnap => {
+        if (!userSnap.exists()) {
+          showAccountDeletedModal();
+        } else {
+          showForcedLogoutModal();
+        }
+      });
       db.ref("forcedLogout/" + userKey).remove();
-      location.reload();
+      setTimeout(()=>location.reload(), 2500);
       return true;
     }
     return false;
   });
+}
+
+// نافذة أنيقة عند حذف حساب المستخدم من قبل المدير
+function showAccountDeletedModal() {
+  let oldModal = document.getElementById("accountDeletedModal");
+  if (oldModal) oldModal.remove();
+  const modal = document.createElement("div");
+  modal.id = "accountDeletedModal";
+  modal.style = `position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.25);z-index:9999;display:flex;align-items:center;justify-content:center;`;
+  modal.innerHTML = `
+    <div style=\"background:linear-gradient(135deg,#fff7f7 60%,#fce4ec 100%);max-width:370px;width:92vw;padding:32px 20px 22px 20px;border-radius:18px;box-shadow:0 8px 32px #e5737333;position:relative;text-align:center;animation:fadeIn 0.3s;\">
+      <div style=\"font-size:21px;color:#d32f2f;margin-bottom:18px;font-weight:700;letter-spacing:0.2px;\">🚫 تم حذف حسابك</div>
+      <div style=\"font-size:16.5px;color:#2d3a4a;line-height:1.8;margin-bottom:16px;background:#fff3f3;border-radius:8px;padding:10px 7px 8px 7px;box-shadow:0 1px 4px #e5737311;\">تم حذف حسابك من قبل المدير.<br>لن تتمكن من الدخول إلا إذا تم إنشاؤه من جديد.</div>
+    </div>
+    <style>
+      @keyframes fadeIn { from { opacity:0; transform:scale(0.95);} to { opacity:1; transform:scale(1);} }
+      @media (max-width: 600px) {
+        #accountDeletedModal > div { max-width:99vw !important; padding:18px 2vw 18px 2vw !important; }
+        #accountDeletedModal div { font-size:16px !important; }
+      }
+    </style>
+  `;
+  document.body.appendChild(modal);
+}
+
+// نافذة أنيقة عند تسجيل خروج المستخدم إجباريًا (احتياط)
+function showForcedLogoutModal() {
+  let oldModal = document.getElementById("forcedLogoutModal");
+  if (oldModal) oldModal.remove();
+  const modal = document.createElement("div");
+  modal.id = "forcedLogoutModal";
+  modal.style = `position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.25);z-index:9999;display:flex;align-items:center;justify-content:center;`;
+  modal.innerHTML = `
+    <div style=\"background:linear-gradient(135deg,#f7faff 60%,#e3eafc 100%);max-width:370px;width:92vw;padding:32px 20px 22px 20px;border-radius:18px;box-shadow:0 8px 32px #1976d233;position:relative;text-align:center;animation:fadeIn 0.3s;\">
+      <div style=\"font-size:21px;color:#1976d2;margin-bottom:18px;font-weight:700;letter-spacing:0.2px;\">🚪 تم تسجيل خروجك</div>
+      <div style=\"font-size:16.5px;color:#2d3a4a;line-height:1.8;margin-bottom:16px;background:#f3f7ff;border-radius:8px;padding:10px 7px 8px 7px;box-shadow:0 1px 4px #1976d211;\">تم تسجيل خروجك من قبل المدير.<br>لن تتمكن من استخدام النظام حتى تعيد تسجيل الدخول.</div>
+    </div>
+    <style>
+      @keyframes fadeIn { from { opacity:0; transform:scale(0.95);} to { opacity:1; transform:scale(1);} }
+      @media (max-width: 600px) {
+        #forcedLogoutModal > div { max-width:99vw !important; padding:18px 2vw 18px 2vw !important; }
+        #forcedLogoutModal div { font-size:16px !important; }
+      }
+    </style>
+  `;
+  document.body.appendChild(modal);
 }
 if (localStorage.getItem('loggedUser')) {
   const savedUser = JSON.parse(localStorage.getItem('loggedUser'));
@@ -1878,9 +1987,9 @@ setInterval(() => {
     db.ref("forcedLogout/" + currentUser).once("value").then(snapshot => {
       if (snapshot.exists()) {
         localStorage.removeItem('loggedUser');
-        alert("❌ تم تسجيل خروجك من قبل المدير.");
+        showForcedLogoutModal();
         db.ref("forcedLogout/" + currentUser).remove();
-        location.reload();
+        setTimeout(()=>location.reload(), 2500);
       }
     });
   }
@@ -2059,9 +2168,9 @@ function renderUserEmpStats() {
         Object.values(data).forEach(day => {
           if (day[emp] === "شفت") shift++;
           if (day[emp] === "نص") half++;
-          
           if (day[emp] === "❌") x++;
         });
+        const salary = (shift * 20000) + (half * 10000);
         const card = document.createElement("div");
         card.className = "emp-card";
         card.innerHTML = `
@@ -2070,6 +2179,9 @@ function renderUserEmpStats() {
             <div class='stat shift'>✅ شفت: <b>${shift}</b></div>
             <div class='stat half'>🌓 نص: <b>${half}</b></div>
             <div class='stat absent'>🏖️ اجازة: <b>${x}</b></div>
+          </div>
+          <div class='emp-salary' style='margin-top:8px;font-size:15px;color:#222;background:#e3f7e3;padding:6px 0;border-radius:7px;width:100%;text-align:center;'>
+            💰 الراتب الكلي: <b>${salary.toLocaleString()} د.ع</b>
           </div>
         `;
         gridDiv.appendChild(card);
@@ -2268,119 +2380,8 @@ document.getElementById("closeChangePassModal").onclick = function() {
   document.getElementById("changePassModal").style.display = "none";
 };
 
-// ========== تحديث ظهور الأزرار حسب الدور ==========
-function updateSidebarVisibility() {
-  const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
-  const sidebarMenu = document.getElementById("sidebarMenu");
-  const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
-  const isAdmin = currentUserRole === "admin";
-  // أزرار المدير فقط
-  ["sidebarAdminBtn","sidebarEmpStatsBtn","sidebarDeleteDataBtn","sidebarFeaturesTabBtn","sidebarChangePassBtn","sidebarUserControlBtn"].forEach(id=>{
-    const el = document.getElementById(id);
-    if (el) el.style.display = isAdmin ? "block" : "none";
-  });
-
-  // زر سجل النشاطات يظهر فقط إذا كان للمستخدم صلاحية
-  db.ref("users/" + currentUser).once("value").then(snapshot => {
-    const data = snapshot.val() || {};
-    let logBtn = document.getElementById("sidebarUserLogBtn");
-    if (data.canViewLog) {
-      if (!logBtn) {
-        logBtn = document.createElement("button");
-        logBtn.id = "sidebarUserLogBtn";
-        logBtn.style = "background:#673ab7;color:white;";
-        logBtn.textContent = "📋 سجل النشاطات";
-        logBtn.onclick = function() {
-          document.getElementById("sidebarMenu").classList.remove("open");
-          // نافذة سجل النشاطات للمستخدم
-          let modal = document.getElementById("userLogModal");
-          if (!modal) {
-            modal = document.createElement("div");
-            modal.id = "userLogModal";
-            modal.style.position = "fixed";
-            modal.style.top = "0";
-            modal.style.left = "0";
-            modal.style.width = "100vw";
-            modal.style.height = "100vh";
-            modal.style.background = "rgba(0,0,0,0.35)";
-            modal.style.zIndex = "7000";
-            modal.style.display = "flex";
-            modal.style.alignItems = "center";
-            modal.style.justifyContent = "center";
-            modal.innerHTML = `
-              <div style="background:#fff;max-width:400px;width:95vw;border-radius:12px;box-shadow:0 8px 32px #0002;padding:22px 18px 18px 18px;position:relative;">
-                <button id="closeUserLogModal" style="position:absolute;top:10px;left:10px;background:#dc3545;color:white;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;">✖</button>
-                <h3 style="text-align:center;margin-bottom:18px;color:#673ab7;">📋 سجل النشاطات</h3>
-                <div id="userLogContent">جاري التحميل...</div>
-              </div>
-            `;
-            document.body.appendChild(modal);
-            document.getElementById("closeUserLogModal").onclick = function() {
-              modal.style.display = "none";
-            };
-          } else {
-            modal.style.display = "flex";
-          }
-          // منطق عرض السجل حسب نوع الصلاحية
-          let logType = data.logViewType || "all"; // "all" أو "self"
-          let logQuery;
-          if (logType === "all") {
-            // كل السجل
-            logQuery = db.ref("activityLog").limitToLast(30).once("value");
-          } else {
-            // فقط سجل المستخدم
-            logQuery = db.ref("activityLog").orderByChild("user").equalTo(currentUser).limitToLast(30).once("value");
-          }
-          logQuery.then(snapshot => {
-            const log = snapshot.val() || {};
-            let html = `<div style='max-width:99vw;overflow-x:auto;'>`;
-            html += `<table class=\"activity-log-table\" style='width:100%;border-collapse:collapse;font-size:15px;'>`;
-            html += `<thead><tr style='background:#f6f6f6;'>`;
-            if (logType === "all") {
-              html += `<th style='padding:7px 4px;border:1px solid #eee;'>الوقت</th><th style='padding:7px 4px;border:1px solid #eee;'>المستخدم</th><th style='padding:7px 4px;border:1px solid #eee;'>النشاط</th><th style='padding:7px 4px;border:1px solid #eee;'>الوصف</th>`;
-            } else {
-              html += `<th style='padding:7px 4px;border:1px solid #eee;'>الوقت</th><th style='padding:7px 4px;border:1px solid #eee;'>النشاط</th><th style='padding:7px 4px;border:1px solid #eee;'>الوصف</th>`;
-            }
-            html += `</tr></thead><tbody>`;
-            // ترتيب حسب الوقت تنازليًا
-            Object.values(log).sort((a,b)=>{
-              const ta = a.time || "";
-              const tb = b.time || "";
-              return tb.localeCompare(ta,'ar');
-            }).forEach(item => {
-              // إبراز تغييرات جدول الحضور
-              let rowStyle = "";
-              if ((item.action||"").includes("تعديل جدول الحضور") || (item.action||"").includes("حذف موظف")) {
-                rowStyle = "background:#fff9db;";
-              }
-              if (logType === "all") {
-                html += `<tr style='${rowStyle}'>\n<td>${toEnglishNumbers(item.time || "")}</td>\n<td>${item.user || ""}</td>\n<td>${item.action || ""}</td>\n<td>${item.details || ""}</td>\n</tr>`;
-              } else {
-                html += `<tr style='${rowStyle}'>\n<td>${toEnglishNumbers(item.time || "")}</td>\n<td>${item.action || ""}</td>\n<td>${item.details || ""}</td>\n</tr>`;
-              }
-            });
-            html += `</tbody></table></div>`;
-            document.getElementById("userLogContent").innerHTML = html;
-          });
-        };
-        sidebarMenu.appendChild(logBtn);
-      } else {
-        logBtn.style.display = "block";
-      }
-    } else {
-      if (logBtn) logBtn.style.display = "none";
-    }
-  });
-
-  if (localStorage.getItem('loggedUser')) {
-    sidebarToggleBtn.style.display = sidebarMenu.classList.contains("open") ? "none" : "flex";
-    sidebarCloseBtn.style.display = sidebarMenu.classList.contains("open") ? "flex" : "none";
-  } else {
-    sidebarToggleBtn.style.display = "none";
-    sidebarCloseBtn.style.display = "none";
-    sidebarMenu.classList.remove("open");
-  }
-}
+// ========== تحديث ظهور الأزرار حسب الدور ========== 
+// تم دمج دالة updateSidebarVisibility في الأعلى مع منطق موحد وتجنب التكرار
 
 // ========== فتح وإغلاق القائمة الجانبية ==========
 document.getElementById("sidebarToggleBtn").onclick = () => {
