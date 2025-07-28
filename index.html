@@ -298,6 +298,11 @@
         <button id="closeEmpStatsTab" style="position:absolute;top:10px;left:10px;background:#dc3545;color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;">✖</button>
         <h3 style="text-align:center;margin-bottom:18px;">📊 إحصائيات الموظفين</h3>
         <div id="empStatsTabContent"></div>
+        <style>
+          #empStatsTabContent button.small-button, #empStatsTabContent .old-emp-stats-btn {
+            display: none !important;
+          }
+        </style>
       </div>
     </div>
     <button id="btnDeleteData" style="background-color:#dc3545; color:white; font-size:12px; padding:5px 10px; margin-top:15px; cursor:pointer;">
@@ -976,6 +981,43 @@ document.addEventListener("DOMContentLoaded", function() {
     if (typeof updateSidebarVisibility === "function") updateSidebarVisibility();
     if (typeof loadAvailableMonths === "function") loadAvailableMonths();
 
+    // إضافة مستمعين للتحديث الفوري لجميع الميزات
+    setupRealtimeListeners();
+// إضافة مستمعين للتحديث الفوري لجميع الميزات
+function setupRealtimeListeners() {
+  // الحضور
+  db.ref("attendance").on("value", snapshot => {
+    generateTable();
+  });
+  // الموظفين
+  db.ref("employees").on("value", snapshot => {
+    employees = snapshot.val() || [];
+    generateTable();
+    if (typeof loadEmployeesTable === "function") loadEmployeesTable();
+  });
+  // المستخدمين وصلاحياتهم
+  db.ref("users").on("value", snapshot => {
+    if (typeof loadUsers === "function") loadUsers();
+    generateTable();
+    // تحديث عناصر التحكم في الإحصائيات
+    if (document.getElementById("empStatsTab") && document.getElementById("empStatsTab").style.display === "flex") {
+      if (typeof openEmpStatsTab === "function") openEmpStatsTab("");
+    }
+    updateSidebarVisibility();
+  });
+  // صلاحيات الإحصائيات والرواتب
+  db.ref("settings/empStatsMode").on("value", () => {
+    generateTable();
+    if (document.getElementById("empStatsTab") && document.getElementById("empStatsTab").style.display === "flex") {
+      if (typeof openEmpStatsTab === "function") openEmpStatsTab("");
+    }
+  });
+  // الملاحظات
+  db.ref("notes").on("value", () => {
+    if (typeof renderNotesTabContent === "function") renderNotesTabContent();
+  });
+}
+
     // مراقبة صلاحية التعديل للمستخدم الحالي وتحديثها فوراً
     if (currentUser !== "admin") {
       db.ref("users/" + currentUser + "/canEdit").on("value", function(snap) {
@@ -1226,7 +1268,56 @@ function generateTable() {
     const saveBtn = document.querySelector('button[onclick="saveData()"]');
     if (saveBtn) saveBtn.disabled = !currentUserCanEdit;
     calculateStats(savedData);
+    showInlineEmpStats();
   });
+// عرض إحصائيات الموظفين أسفل الجدول حسب صلاحيات المدير
+function showInlineEmpStats() {
+  Promise.all([
+    db.ref("users").once("value"),
+    db.ref("employees").once("value"),
+    db.ref("attendance").once("value")
+  ]).then(([usersSnap, empsSnap, attSnap]) => {
+    const users = usersSnap.val() || {};
+    const employeesList = empsSnap.val() || [];
+    const attendance = attSnap.val() || {};
+    let showStats = false;
+    let allowedEmps = employeesList;
+    let showSalary = true;
+    if (currentUserRole === "admin") {
+      showStats = true;
+    } else if (users[currentUser]) {
+      allowedEmps = users[currentUser].allowedEmps || [];
+      showSalary = !!users[currentUser].canViewSalary;
+      if (allowedEmps.length > 0) showStats = true;
+    }
+    const statsBox = document.getElementById("statsBox");
+    if (!showStats) {
+      statsBox.innerHTML = "—";
+      return;
+    }
+    let statsHtml = `<div style='margin-top:10px;'>`;
+    allowedEmps.forEach(emp => {
+      let shift=0, half=0, x=0;
+      Object.values(attendance).forEach(day => {
+        if (day[emp] === "شفت") shift++;
+        if (day[emp] === "نص") half++;
+        if (day[emp] === "❌") x++;
+      });
+      const salary = (shift * 20000) + (half * 10000);
+      statsHtml += `<div class='emp-card' style='background:#f8f9fa;border-radius:10px;box-shadow:0 1px 6px #0001;padding:15px 10px;display:flex;flex-direction:column;align-items:center;transition:box-shadow 0.2s;margin-bottom:10px;'>
+        <div class='emp-name' style='font-weight:bold;font-size:16px;color:#007bff;margin-bottom:7px;'>${emp}</div>
+        <div class='emp-stats' style='display:flex;gap:8px;justify-content:center;flex-wrap:wrap;'>
+          <div class='stat shift' style='color:#28a745;background:#fff;border-radius:6px;padding:4px 9px;margin:2px 0;box-shadow:0 1px 3px #0001;'>✅ شفت: <b>${shift}</b></div>
+          <div class='stat half' style='color:#ffc107;background:#fff;border-radius:6px;padding:4px 9px;margin:2px 0;box-shadow:0 1px 3px #0001;'>🌓 نص: <b>${half}</b></div>
+          <div class='stat absent' style='color:#dc3545;background:#fff;border-radius:6px;padding:4px 9px;margin:2px 0;box-shadow:0 1px 3px #0001;'>🏖️ اجازة: <b>${x}</b></div>
+        </div>
+        ${showSalary ? `<div class='emp-salary' style='margin-top:8px;font-size:15px;color:#222;background:#e3f7e3;padding:6px 0;border-radius:7px;width:100%;text-align:center;'>💰 الراتب الكلي: <b>${salary.toLocaleString()} د.ع</b></div>` : ""}
+      </div>`;
+    });
+    statsHtml += `</div>`;
+    statsBox.innerHTML = statsHtml;
+  });
+}
   // تعطيل جميع select وinput وtextarea وأزرار الحفظ إذا فقدت الصلاحية (احتياطي)
   setTimeout(()=>{
     if (!currentUserCanEdit) {
@@ -2016,8 +2107,69 @@ if (closeEmpStatsTab) {
   closeEmpStatsTab.onclick = () => { empStatsTab.style.display = "none"; };
 }
 function openEmpStatsTab(html) {
-  empStatsTabContent.innerHTML = html;
-  empStatsTab.style.display = "flex";
+  // تحميل المستخدمين والموظفين
+  Promise.all([
+    db.ref("users").once("value"),
+    db.ref("employees").once("value"),
+    db.ref("attendance").once("value")
+  ]).then(([usersSnap, empsSnap, attSnap]) => {
+    const users = usersSnap.val() || {};
+    const employeesList = empsSnap.val() || [];
+    const attendance = attSnap.val() || {};
+    let controls = "";
+    if (currentUserRole === "admin") {
+      controls += `<div class='empstats-admin-controls' style='margin-bottom:15px;padding:10px;background:#eef;border-radius:14px;box-shadow:0 2px 12px #0001;'>
+        <h4 style='margin:0 0 14px 0;font-size:17px;text-align:center;color:#009688;'>⚙️ تحكم عرض الإحصائيات للمستخدمين</h4>
+        <div style='overflow-x:auto;'>
+        <table style='width:100%;border-collapse:collapse;font-size:15px;'>
+          <tr style='background:#e0f7fa;'>
+            <th style='padding:8px 4px;font-size:14px;border-radius:8px 0 0 8px;'>المستخدم</th>
+            <th style='padding:8px 4px;font-size:14px;'>الموظفون المسموح عرضهم</th>
+            <th style='padding:8px 4px;font-size:14px;border-radius:0 8px 8px 0;'>عرض الرواتب</th>
+          </tr>`;
+      Object.entries(users).forEach(([username, userData]) => {
+        if (username === "admin") return;
+        let empSelect = `<select multiple style='min-width:90px;max-width:120px;font-size:14px;border-radius:7px;padding:5px;' onchange='window.setUserAllowedEmps("${username}", this)'>`;
+        employeesList.forEach(emp => {
+          const allowed = userData.allowedEmps && userData.allowedEmps.includes(emp);
+          empSelect += `<option value='${emp}' ${allowed ? "selected" : ""}>${emp}</option>`;
+        });
+        empSelect += `</select>`;
+        let salaryCheck = `<label style='display:inline-flex;align-items:center;gap:4px;'><input type='checkbox' ${userData.canViewSalary ? "checked" : ""} onchange='window.setUserSalaryView("${username}", this.checked)' style='width:18px;height:18px;'> <span style='font-size:13px;'>رواتب</span></label>`;
+        controls += `<tr>
+          <td style='padding:7px 4px;'>${username}</td>
+          <td style='padding:7px 4px;'>${empSelect}</td>
+          <td style='padding:7px 4px;text-align:center;'>${salaryCheck}</td>
+        </tr>`;
+      });
+      controls += `</table>
+        </div>
+        <div style='font-size:13px;color:#555;margin-top:10px;text-align:center;'>حدد الموظفين الذين يستطيع المستخدم رؤية إحصائياتهم، وتفعيل أو تعطيل عرض الرواتب لكل مستخدم.</div>
+        <style>
+          @media (max-width: 600px) {
+            .empstats-admin-controls { padding:7px 2vw !important; border-radius:10px !important; }
+            .empstats-admin-controls table { font-size:13px !important; }
+            .empstats-admin-controls th, .empstats-admin-controls td { padding:6px 2px !important; }
+            .empstats-admin-controls select { min-width:70px !important; font-size:12px !important; }
+            .empstats-admin-controls label { font-size:12px !important; }
+          }
+        </style>
+      </div>`;
+      // دوال التحكم
+      window.setUserAllowedEmps = function(username, selectElem) {
+        const selected = Array.from(selectElem.selectedOptions).map(opt => opt.value);
+        db.ref("users/" + username + "/allowedEmps").set(selected);
+        logActivity("تغيير صلاحية عرض الموظفين", `تم تحديث الموظفين المسموح عرضهم للمستخدم: ${username}`);
+      };
+      window.setUserSalaryView = function(username, enabled) {
+        db.ref("users/" + username + "/canViewSalary").set(enabled);
+        logActivity("تغيير صلاحية عرض الرواتب", `تم ${enabled ? "تفعيل" : "تعطيل"} عرض الرواتب للمستخدم: ${username}`);
+      };
+    }
+    // عرض فقط عناصر التحكم للمدير داخل التبويبة بدون تكرار الإحصائيات
+    empStatsTabContent.innerHTML = controls;
+    empStatsTab.style.display = "flex";
+  });
 }
 if (toggleEmpStatsBtn) {
   toggleEmpStatsBtn.onclick = function() {
@@ -2119,88 +2271,7 @@ if (toggleEmpStatsBtn) {
 }
 
 // ========== إحصائيات للمستخدمين ==========
-const userEmpStatsDiv = document.createElement("div");
-userEmpStatsDiv.id = "userEmpStatsDiv";
-userEmpStatsDiv.style.margin = "20px 0";
-userEmpStatsDiv.style.padding = "10px";
-userEmpStatsDiv.style.background = "#f8f9fa";
-userEmpStatsDiv.style.border = "1px solid #ddd";
-userEmpStatsDiv.style.borderRadius = "7px";
-userEmpStatsDiv.style.display = "none";
-document.getElementById("mainContent").appendChild(userEmpStatsDiv);
-
-function renderUserEmpStats() {
-  Promise.all([getEmpStatsEnabled(), getEmpStatsMode()]).then(([enabled, modeObj]) => {
-    if (!enabled) {
-      userEmpStatsDiv.style.display = "none";
-      return;
-    }
-    let allow = false, onlyEmp = null;
-    if (modeObj.mode === "all") allow = true;
-    else if (modeObj.mode === "user" && currentUser === modeObj.value) allow = true;
-    else if (modeObj.mode === "employee") { allow = true; onlyEmp = modeObj.value; }
-    if (!allow) { userEmpStatsDiv.style.display = "none"; return; }
-    let html = `
-      <b>إحصائيات الموظفين:</b>
-      <div id='userEmpStatsGrid' style='margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:13px;'></div>
-      <style>
-        @media (max-width:600px){
-          #userEmpStatsGrid{grid-template-columns:1fr;gap:8px;}
-        }
-        .emp-card{background:#f8f9fa;border-radius:10px;box-shadow:0 1px 6px #0001;padding:15px 10px;display:flex;flex-direction:column;align-items:center;transition:box-shadow 0.2s;}
-        .emp-card .emp-name{font-weight:bold;font-size:16px;color:#007bff;margin-bottom:7px;}
-        .emp-card .emp-stats{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
-        .emp-card .stat{display:flex;align-items:center;gap:4px;font-size:14px;background:#fff;border-radius:6px;padding:4px 9px;margin:2px 0;box-shadow:0 1px 3px #0001;}
-        .emp-card .stat.shift{color:#28a745;}
-        .emp-card .stat.half{color:#ffc107;}
-        .emp-card .stat.absent{color:#dc3545;}
-      </style>
-    `;
-    userEmpStatsDiv.innerHTML = html;
-    const gridDiv = document.getElementById("userEmpStatsGrid");
-    gridDiv.innerHTML = "<div style='text-align:center;width:100%;color:#888;'>جاري التحميل...</div>";
-    db.ref("attendance").once("value").then(snapshot => {
-      const data = snapshot.val() || {};
-      gridDiv.innerHTML = "";
-      employees.forEach(emp => {
-        if (onlyEmp && emp !== onlyEmp) return;
-        let shift=0, half=0, x=0;
-        Object.values(data).forEach(day => {
-          if (day[emp] === "شفت") shift++;
-          if (day[emp] === "نص") half++;
-          if (day[emp] === "❌") x++;
-        });
-        const salary = (shift * 20000) + (half * 10000);
-        const card = document.createElement("div");
-        card.className = "emp-card";
-        card.innerHTML = `
-          <div class='emp-name'>${emp}</div>
-          <div class='emp-stats'>
-            <div class='stat shift'>✅ شفت: <b>${shift}</b></div>
-            <div class='stat half'>🌓 نص: <b>${half}</b></div>
-            <div class='stat absent'>🏖️ اجازة: <b>${x}</b></div>
-          </div>
-          <div class='emp-salary' style='margin-top:8px;font-size:15px;color:#222;background:#e3f7e3;padding:6px 0;border-radius:7px;width:100%;text-align:center;'>
-            💰 الراتب الكلي: <b>${salary.toLocaleString()} د.ع</b>
-          </div>
-        `;
-        gridDiv.appendChild(card);
-      });
-    });
-    userEmpStatsDiv.style.display = "block";
-  });
-}
-function tryShowUserEmpStats() {
-  if (typeof employees !== "undefined" && employees.length > 0) renderUserEmpStats();
-}
-const origLoadEmployees = loadEmployees;
-loadEmployees = function() {
-  return origLoadEmployees.apply(this, arguments).then(() => {
-    tryShowUserEmpStats();
-  });
-};
-if (localStorage.getItem('loggedUser')) tryShowUserEmpStats();
-db.ref("settings/empStatsMode").on("value", () => renderUserEmpStats());
+// ...تم حذف الكود القديم الخاص بإحصائيات المستخدمين...
 
 // ========== تغيير كلمة مرور المدير ==========
 // تعديل: السماح فقط للمدير بتغيير كلمة المرور
