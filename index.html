@@ -1,3 +1,93 @@
+<script>
+// تحكم احترافي في ظهور واختفاء تبويبة التحميل الوسطية
+// تبويبة تحميل احترافية مع أنيميشن ورسائل مخصصة ومحسنة
+function showCenterLoader(show = true, msg = null) {
+  const centerModal = document.getElementById('centerLoadingModal');
+  const loginBox = document.getElementById('loginBox');
+  const centerLoadingText = document.getElementById('centerLoadingText');
+  if (!centerModal) return;
+  // لا تظهر أبداً في صفحة تسجيل الدخول
+  if (loginBox && loginBox.style.display !== 'none') {
+    hideModal(centerModal);
+    document.body.style.overflow = '';
+    return;
+  }
+  if (show) {
+    if (msg && centerLoadingText) centerLoadingText.textContent = msg;
+    showModal(centerModal);
+    document.body.style.overflow = 'hidden';
+  } else {
+    hideModal(centerModal);
+    document.body.style.overflow = '';
+  }
+}
+
+// دوال مساعدة للأنيميشن والتنظيف
+function showModal(modal) {
+  if (!modal) return;
+  modal.style.display = 'flex';
+  modal.classList.remove('fade-out');
+  void modal.offsetWidth; // force reflow
+  modal.classList.add('fade-in');
+}
+function hideModal(modal) {
+  if (!modal) return;
+  modal.classList.remove('fade-in');
+  modal.classList.add('fade-out');
+  setTimeout(()=>{ modal.style.display = 'none'; }, 200);
+}
+// عند أي تغيير في صفحة تسجيل الدخول، أخفِ التبويبة فوراً
+document.addEventListener('DOMContentLoaded', function() {
+  var loginBox = document.getElementById('loginBox');
+  if (!loginBox) return;
+  function hideIfLogin() { showCenterLoader(false); }
+  hideIfLogin();
+  const observer = new MutationObserver(hideIfLogin);
+  observer.observe(loginBox, { attributes: true, attributeFilter: ['style'] });
+});
+</script>
+  <!-- Centered loading modal -->
+  <div id="centerLoadingModal" style="display:flex;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;background:rgba(255,255,255,0.55);align-items:center;justify-content:center;pointer-events:auto;transition:none;">
+    <div id="centerLoadingBox" style="background: #fff; border-radius: 18px; box-shadow: 0 8px 32px #1976d233; padding: 32px 36px 28px 36px; display: flex; flex-direction: column; align-items: center; min-width: 220px; max-width: 92vw;">
+      <div class="loader" style="margin-bottom: 18px;"></div>
+      <div id="centerLoadingText" style="color:#1976d2;font-size:20px;font-weight:600;letter-spacing:0.5px;text-align:center;">جاري جلب البيانات من السيرفر...</div>
+    </div>
+    <style>
+    /* أنيميشن fade لتبويبة التحميل */
+    #centerLoadingModal.fade-in {
+      animation: fadeInModal 0.22s;
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #centerLoadingModal.fade-out {
+      animation: fadeOutModal 0.22s;
+      opacity: 0;
+      pointer-events: none;
+    }
+    @keyframes fadeInModal {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes fadeOutModal {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+    #centerLoadingModal {
+      transition: opacity 0.22s;
+      pointer-events: auto;
+    }
+      @media (max-width: 600px) {
+        #centerLoadingBox {
+          padding: 18px 6vw 18px 6vw !important;
+          min-width: 0 !important;
+          max-width: 98vw !important;
+        }
+        #centerLoadingText {
+          font-size: 16px !important;
+        }
+      }
+    </style>
+  </div>
 <!DOCTYPE html>
 <html lang="ar">
 <head>
@@ -244,14 +334,34 @@
   <div id="mainContent">
     <h2>📋 جدول الحضور - تموز</h2>
     <button id="btnDownloadPDF" style="margin-bottom:10px;" onclick="downloadPDF()">⬇️ تحميل PDF</button>
-    <table id="attendanceTable">
-      <thead>
-        <tr>
-          <th style="background: linear-gradient(90deg, #e3f0ff 0%, #cbe6ff 100%); color: #1976d2; font-weight: bold; font-size: 18px; border-bottom: 2.5px solid #90caf9; letter-spacing: 0.5px;">التاريخ</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-    </table>
+  <!-- Loader for table -->
+  <div id="tableLoader" style="display:none;flex-direction:column;justify-content:center;align-items:center;padding:30px 0;gap:16px;">
+    <div class="loader"></div>
+    <div class="loader-text" style="color:#1976d2;font-size:18px;font-weight:500;letter-spacing:0.5px;">جاري تحميل الجدول...</div>
+  </div>
+  <table id="attendanceTable">
+    <thead>
+      <tr>
+        <th id="dateHeaderCell" style="background: linear-gradient(90deg, #e3f0ff 0%, #cbe6ff 100%); color: #1976d2; font-weight: bold; font-size: 18px; border-bottom: 2.5px solid #90caf9; letter-spacing: 0.5px; display:none;">التاريخ</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+  <style>
+    .loader {
+      border: 6px solid #e3f0ff;
+      border-top: 6px solid #1976d2;
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
     <button onclick="saveData()">💾 حفظ التعديلات</button>
     <button onclick="logout()" style="background-color: #dc3545; margin-top: 10px;">🚪 تسجيل خروج</button>
     <h3 style="margin-top:20px;">📊 الإحصائيات</h3>
@@ -482,6 +592,10 @@ document.getElementById("sidebarNotesSettingsBtn").onclick = function() {
   // عرض صناديق الملاحظات لكل موظف
   function renderNotesTabContent() {
     const notesDiv = document.getElementById("notesTabContent");
+    if (!notesDiv) {
+      console.warn("لم يتم العثور على العنصر notesTabContent. ربما لم يتم إنشاء نافذة الملاحظات بعد أو تم إغلاقها.");
+      return;
+    }
     notesDiv.innerHTML = "جاري التحميل...";
     db.ref("notes").once("value").then(snapshot => {
       const notes = snapshot.val() || {};
@@ -1113,7 +1227,12 @@ function login() {
     showMessage("");
     document.getElementById("loginBox").style.display = "none";
     document.getElementById("mainContent").style.display = "block";
-    loadEmployees().then(generateTable);
+    var centerModal = document.getElementById('centerLoadingModal');
+    if(centerModal) centerModal.style.display = 'flex';
+    loadEmployees().then(()=>{
+      generateTable();
+      if(centerModal) centerModal.style.display = 'none';
+    });
     if (currentUserRole === "admin") {
       document.getElementById("adminPanel").style.display = "block";
       loadUsers();
@@ -1124,6 +1243,8 @@ function login() {
     checkForcedLogoutOnLogin(username);
   }).catch(error => {
     showMessage(error.message === "User not found" ? "❌ اسم المستخدم غير موجود" : "❌ كلمة المرور غير صحيحة", true);
+    var centerModal = document.getElementById('centerLoadingModal');
+    if(centerModal) centerModal.style.display = 'none';
   });
 }
 
@@ -1191,55 +1312,69 @@ function getDays() {
 
 function generateTable() {
   const days = getDays();
-  // تحديث عنوان الجدول باسم الشهر الحالي
   document.querySelector("#mainContent h2").textContent = `📋 جدول الحضور - ${arMonths[month]}`;
   const tbody = document.getElementById("tableBody");
+  const loader = document.getElementById("tableLoader");
+  const centerModal = document.getElementById("centerLoadingModal");
+  const dateHeaderCell = document.getElementById("dateHeaderCell");
+  if (dateHeaderCell) dateHeaderCell.style.display = "none";
+  if (!tbody) {
+    console.error("خطأ: لم يتم العثور على عنصر tbody بالمعرف 'tableBody'. تأكد من وجود العنصر في الصفحة قبل استدعاء generateTable().");
+    if (loader) loader.style.display = "none";
+    if (centerModal) centerModal.style.display = "none";
+    return;
+  }
   tbody.innerHTML = "";
-  db.ref("attendance").once("value").then(snapshot => {
+  loader.style.display = "flex";
+  showCenterLoader(true, "جاري جلب البيانات من السيرفر...");
+  // fallback: hide modal after 10 seconds in case of any unexpected error
+  if (window._centerModalTimeout) clearTimeout(window._centerModalTimeout);
+  window._centerModalTimeout = setTimeout(()=>{ showCenterLoader(false); }, 10000);
+  // تحميل البيانات بالتوازي
+  Promise.all([
+    db.ref("attendance").once("value"),
+    Promise.resolve(employees) // الموظفين يجب أن يكونوا محملين مسبقاً
+  ]).then(([snapshot]) => {
     const savedData = snapshot.val() || {};
+    // بناء الجدول دفعة واحدة باستخدام innerHTML
+    let tableRows = "";
     days.forEach((day, dayIndex) => {
-      const row = document.createElement("tr");
-      const dateCell = document.createElement("td");
       let dateContent = toEnglishNumbers(day.label);
       if (savedData[day.key] && savedData[day.key].__editor) {
         const ts = savedData[day.key].__editedAt || "";
         const editor = savedData[day.key].__editor;
         const color = (editor === "admin") ? "#1fa745" : "#dc3545";
-        dateContent += `<div class='editor-tag' style="color:${color};font-weight:bold;">
-          🖊️ ${editor}${ts ? ' - ' + toEnglishNumbers(ts) : ''}
-        </div>`;
+        dateContent += `<div class='editor-tag' style="color:${color};font-weight:bold;">🖊️ ${editor}${ts ? ' - ' + toEnglishNumbers(ts) : ''}</div>`;
       }
-      dateCell.innerHTML = dateContent;
-      row.appendChild(dateCell);
+      let rowHtml = `<tr><td>${dateContent}</td>`;
       employees.forEach((employee, empIndex) => {
-        const cell = document.createElement("td");
-        const select = document.createElement("select");
-        select.id = `d${dayIndex}e${empIndex}`;
+        let selectHtml = `<select id='d${dayIndex}e${empIndex}'`;
+        if (!currentUserCanEdit) selectHtml += " disabled";
+        selectHtml += ">";
         statuses.forEach(status => {
-          const option = document.createElement("option");
-          option.value = status;
-          option.textContent = status;
-          select.appendChild(option);
+          const selected = (savedData[day.key] && savedData[day.key][employee] === status) ? "selected" : "";
+          selectHtml += `<option value='${status}' ${selected}>${status}</option>`;
         });
-        if (savedData[day.key] && savedData[day.key][employee] !== undefined) {
-          select.value = savedData[day.key][employee];
-        }
-        if (select.value === "شفت") {
-          cell.style.background = "#d4edda";
-        } else if (select.value === "نص") {
-          cell.style.background = "#fff9db";
-        } else if (select.value === "❌") {
-          cell.style.background = "#ffe3e3";
-          cell.style.color = "#d32f2f";
-          select.style.color = "#d32f2f";
-        } else {
-          cell.style.color = "";
-          select.style.color = "";
-        }
-        if (!currentUserCanEdit) {
-          select.setAttribute('disabled','disabled');
-          select.addEventListener('change', (e)=>{ e.target.value = savedData[day.key] ? savedData[day.key][employee] : ""; });
-        }
+        selectHtml += "</select>";
+        // تلوين الخلية حسب القيمة
+        let cellStyle = "";
+        let cellColor = "";
+        let selectColor = "";
+        const val = savedData[day.key] ? savedData[day.key][employee] : "";
+        if (val === "شفت") cellStyle = "background:#d4edda;";
+        else if (val === "نص") cellStyle = "background:#fff9db;";
+        else if (val === "❌") { cellStyle = "background:#ffe3e3;color:#d32f2f;"; selectColor = "color:#d32f2f;"; }
+        rowHtml += `<td style='${cellStyle}${cellColor}'><div style='${selectColor}'>${selectHtml}</div></td>`;
+      });
+      rowHtml += "</tr>";
+      tableRows += rowHtml;
+    });
+    tbody.innerHTML = tableRows;
+    // إضافة الأحداث بعد بناء الجدول
+    days.forEach((day, dayIndex) => {
+      employees.forEach((employee, empIndex) => {
+        const select = document.getElementById(`d${dayIndex}e${empIndex}`);
+        const cell = select.parentElement.parentElement;
         select.addEventListener('change', function() {
           if (this.value === "شفت") {
             cell.style.background = "#d4edda";
@@ -1259,18 +1394,64 @@ function generateTable() {
             select.style.color = "";
           }
         });
-        cell.appendChild(select);
-        row.appendChild(cell);
+        if (!currentUserCanEdit) {
+          select.addEventListener('change', (e)=>{ e.target.value = savedData[days[dayIndex].key] ? savedData[days[dayIndex].key][employee] : ""; });
+        }
       });
-      tbody.appendChild(row);
     });
     // تعطيل زر الحفظ إذا لم يكن للمستخدم صلاحية
     const saveBtn = document.querySelector('button[onclick="saveData()"]');
     if (saveBtn) saveBtn.disabled = !currentUserCanEdit;
     calculateStats(savedData);
     showInlineEmpStats();
+    loader.style.display = "none";
+    // إخفاء التبويبة فقط بعد التأكد من ظهور الجدول فعليًا (خاصة على الهواتف)
+    // إخفاء التبويبة فقط بعد التأكد من ظهور كل عناصر الجدول (كل select)
+    // ضمان اكتمال كل عمليات الرسم (paint) قبل إخفاء التبويبة (خاصة على الهواتف)
+    function hideLoaderAfterPaints(n, cb) {
+      if (n <= 0) return cb();
+      requestAnimationFrame(() => hideLoaderAfterPaints(n - 1, cb));
+    }
+    hideLoaderAfterPaints(5, () => {
+      showCenterLoader(false);
+      if (window._centerModalTimeout) clearTimeout(window._centerModalTimeout);
+      if (dateHeaderCell) dateHeaderCell.style.display = "";
+    });
+  }).catch(()=>{
+    loader.style.display = "none";
+    // Defer hiding the loader in error case as well
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        showCenterLoader(false);
+        if (window._centerModalTimeout) clearTimeout(window._centerModalTimeout);
+        if (dateHeaderCell) dateHeaderCell.style.display = "";
+      });
+    });
   });
-// عرض إحصائيات الموظفين أسفل الجدول حسب صلاحيات المدير
+
+
+// ========== إحصائيات عامة للموظفين (أكثر شفت، أكثر نص، أكثر غياب) ==========
+function calculateStats(savedData) {
+  const counts = {};
+  employees.forEach(e=>{ counts[e] = {"شفت":0,"نص":0,"❌":0}; });
+  Object.values(savedData).forEach(day=>{
+    employees.forEach(e=>{
+      const val = day[e];
+      if (val && counts[e][val] !== undefined) counts[e][val] += 1;
+    });
+  });
+  const bestShift = Object.entries(counts).sort((a,b)=>b[1]["شفت"]-a[1]["شفت"])[0];
+  const bestHalf  = Object.entries(counts).sort((a,b)=>b[1]["نص"]-a[1]["نص"])[0];
+  const mostX     = Object.entries(counts).sort((a,b)=>b[1]["❌"]-a[1]["❌"])[0];
+  const statsDiv = document.getElementById('statsBox');
+  let html = `
+    <p>أكثر موظف شفت: <b>${bestShift ? bestShift[0]+` (${bestShift[1]["شفت"]})` : '—'}</b></p>
+    <p>أكثر موظف نص: <b>${bestHalf ? bestHalf[0]+` (${bestHalf[1]["نص"]})` : '—'}</b></p>
+    <p>أكثر موظف ❌: <b>${mostX ? mostX[0]+` (${mostX[1]["❌"]})` : '—'}</b></p>`;
+  statsDiv.innerHTML = html;
+}
+
+// ========== إحصائيات تفصيلية لكل موظف مع الرواتب ==========
 function showInlineEmpStats() {
   Promise.all([
     db.ref("users").once("value"),
@@ -1292,10 +1473,10 @@ function showInlineEmpStats() {
     }
     const statsBox = document.getElementById("statsBox");
     if (!showStats) {
-      statsBox.innerHTML = "—";
+      // لا تعرض الإحصائيات التفصيلية إذا لم يكن مسموحاً
       return;
     }
-    let statsHtml = `<div style='margin-top:10px;'>`;
+    let statsHtml = statsBox.innerHTML + `<div style='margin-top:10px;'>`;
     allowedEmps.forEach(emp => {
       let shift=0, half=0, x=0;
       Object.values(attendance).forEach(day => {
