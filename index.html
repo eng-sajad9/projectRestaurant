@@ -2077,114 +2077,74 @@ function setEmpStatsMode(mode, value) {
 function getEmpStatsMode() {
   return db.ref("settings/empStatsMode").once("value").then(snap => snap.val() || {mode:"all",value:""});
 }
-const toggleEmpStatsBtn = document.getElementById("toggleEmpStatsBtn");
-const empStatsTab = document.getElementById("empStatsTab");
-const empStatsTabContent = document.getElementById("empStatsTabContent");
-const closeEmpStatsTab = document.getElementById("closeEmpStatsTab");
-if (closeEmpStatsTab) {
-  closeEmpStatsTab.onclick = () => { empStatsTab.style.display = "none"; };
-}
-function openEmpStatsTab(html) {
-  empStatsTabContent.innerHTML = html;
-  empStatsTab.style.display = "flex";
-}
-if (toggleEmpStatsBtn) {
-  toggleEmpStatsBtn.onclick = function() {
-    let html = `
-      <div style="margin-bottom:18px;">
-        <b>التحكم في عرض الإحصائيات للمستخدمين:</b>
-        <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
-          <button id="showAllStatsBtn" class="small-button" style="background:#28a745;color:white;min-width:110px;">عرض للجميع</button>
-          <button id="showUserStatsBtn" class="small-button" style="background:#007bff;color:white;min-width:110px;">عرض لمستخدم معين</button>
-          <button id="showEmpStatsBtn" class="small-button" style="background:#ffc107;color:black;min-width:110px;">عرض لموظف معين فقط</button>
-        </div>
-      </div>
-      <div id="empStatsAdminOptions" style="margin-bottom:20px;"></div>
-      <div style="border-top:1px solid #eee;margin:10px 0 15px 0;"></div>
-      <div>
-        <b>إحصائيات الموظفين:</b>
-        <div id="empStatsTabGrid" style="margin-top:15px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px;"></div>
-      </div>
-      <style>
-        @media (max-width:600px){
-          #empStatsTabGrid{grid-template-columns:1fr;gap:10px;}
-        }
-        .emp-card{background:#f8f9fa;border-radius:10px;box-shadow:0 1px 6px #0001;padding:16px 12px;display:flex;flex-direction:column;align-items:center;transition:box-shadow 0.2s;}
-        .emp-card:hover{box-shadow:0 4px 16px #0002;}
-        .emp-card .emp-name{font-weight:bold;font-size:17px;color:#007bff;margin-bottom:8px;}
-        .emp-card .emp-stats{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
-        .emp-card .stat{display:flex;align-items:center;gap:4px;font-size:15px;background:#fff;border-radius:6px;padding:5px 10px;margin:3px 0;box-shadow:0 1px 3px #0001;}
-        .emp-card .stat.shift{color:#28a745;}
-        .emp-card .stat.half{color:#ffc107;}
-        .emp-card .stat.absent{color:#dc3545;}
-      </style>
-    `;
-    openEmpStatsTab(html);
-    const gridDiv = document.getElementById("empStatsTabGrid");
-    gridDiv.innerHTML = "<div style='text-align:center;width:100%;color:#888;'>جاري التحميل...</div>";
-    db.ref("attendance").once("value").then(snapshot => {
-      const data = snapshot.val() || {};
-      gridDiv.innerHTML = "";
-      employees.forEach(emp => {
-        let shift=0, half=0, x=0;
-        Object.values(data).forEach(day => {
-          if (day[emp] === "شفت") shift++;
-          if (day[emp] === "نص") half++;
-          if (day[emp] === "❌") x++;
-        });
-        const card = document.createElement("div");
-        card.className = "emp-card";
-        card.innerHTML = `
-          <div class='emp-name'>${emp}</div>
-          <div class='emp-stats'>
-            <div class='stat shift'>✅ شفت: <b>${shift}</b></div>
-            <div class='stat half'>🌓 نص: <b>${half}</b></div>
-            <div class='stat absent'>🏖️ اجازة: <b>${x}</b></div>
-          </div>
-        `;
-        gridDiv.appendChild(card);
-      });
+// نافذة تفاصيل إحصائيات الموظفين للمدير
+document.getElementById("toggleEmpStatsBtn").onclick = function() {
+  let tab = document.getElementById("empStatsTab");
+  tab.style.display = "flex";
+  document.getElementById("closeEmpStatsTab").onclick = function() { tab.style.display = "none"; };
+  renderEmpStatsTabContent();
+};
+
+// عرض إعدادات صلاحيات الإحصائيات لكل مستخدم
+function renderEmpStatsTabContent() {
+  const contentDiv = document.getElementById("empStatsTabContent");
+  contentDiv.innerHTML = "جاري التحميل...";
+  Promise.all([
+    db.ref("users").once("value"),
+    db.ref("employees").once("value")
+  ]).then(([usersSnap, empsSnap]) => {
+    const users = usersSnap.val() || {};
+    const employeesList = empsSnap.val() || [];
+    let html = `<div style='font-size:15px;color:#333;margin-bottom:10px;text-align:center;'>تحكم بعرض إحصائيات الموظفين للمستخدمين</div>`;
+    html += `<table style='width:100%;border-collapse:collapse;'>
+      <tr style='background:#f6f6f6;'>
+        <th>المستخدم</th>
+        <th>الموظفون المسموح عرضهم</th>
+        <th>عرض الرواتب</th>
+      </tr>`;
+    Object.entries(users).forEach(([username, data]) => {
+      if (username === "admin") return;
+      const allowedEmps = data.allowedStatsEmps || [];
+      const canViewSalary = !!data.canViewSalary;
+      html += `<tr>
+        <td style='padding:7px 4px;'>${username}</td>
+        <td style='padding:7px 4px;'>
+          <select multiple data-user='${username}' class='allowedEmpsSelect' style='width:140px;min-height:38px;font-size:15px;'>
+            ${employeesList.map(emp => `<option value='${emp}' ${allowedEmps.includes(emp)?"selected":""}>${emp}</option>`).join("")}
+          </select>
+        </td>
+        <td style='padding:7px 4px;text-align:center;'>
+  <label style='display:inline-flex;align-items:center;gap:7px;'>
+    <span style='font-size:15px;color:#1976d2;'>الرواتب</span>
+    <input type='checkbox' data-user='${username}' class='canViewSalaryCheckbox' ${canViewSalary?"checked":""} />
+  </label>
+</td>
+      </tr>`;
     });
-    document.getElementById("showAllStatsBtn").onclick = function() {
-      setEmpStatsEnabled(true);
-      setEmpStatsMode("all", "");
-      document.getElementById("empStatsAdminOptions").innerHTML = "<span style='color:green'>سيتم عرض الإحصائيات لكل المستخدمين</span>";
-    };
-    document.getElementById("showUserStatsBtn").onclick = function() {
-      db.ref("users").once("value").then(snapshot => {
-        const users = snapshot.val() || {};
-        let html = "<b>اختر مستخدم:</b><br>";
-        Object.keys(users).forEach(u => {
-          html += `<button class=\"small-button\" style=\"margin:3px 2px;background:#007bff;color:white;\" onclick=\"window.setEmpStatsModeForUser('${u}')\">${u}</button>`;
+    html += `</table><div style='font-size:13px;color:#555;margin-top:8px;'>حدد الموظفين المسموح عرضهم لكل مستخدم، وخيار عرض الرواتب. التغيير فوري.</div>`;
+    contentDiv.innerHTML = html;
+
+    // حفظ الموظفين المسموح عرضهم عند التغيير
+    Array.from(document.getElementsByClassName("allowedEmpsSelect")).forEach(sel => {
+      sel.onchange = function() {
+        const user = sel.getAttribute("data-user");
+        const selected = Array.from(sel.selectedOptions).map(opt => opt.value);
+        db.ref("users/"+user+"/allowedStatsEmps").set(selected).then(()=>{
+          logActivity("تغيير صلاحية إحصائيات الموظفين","تم تغيير الموظفين المسموح عرضهم للمستخدم: "+user+" إلى: "+selected.join(", "));
         });
-        document.getElementById("empStatsAdminOptions").innerHTML = html;
-      });
-    };
-    document.getElementById("showEmpStatsBtn").onclick = function() {
-      let html = "<b>اختر موظف:</b><br>";
-      employees.forEach(emp => {
-        html += `<button class=\"small-button\" style=\"margin:3px 2px;background:#ffc107;color:black;\" onclick=\"window.setEmpStatsModeForEmp('${emp}')\">${emp}</button>`;
-      });
-      document.getElementById("empStatsAdminOptions").innerHTML = html;
-    };
-    window.setEmpStatsModeForUser = function(username) {
-      setEmpStatsEnabled(true);
-      setEmpStatsMode("user", username);
-      document.getElementById("empStatsAdminOptions").innerHTML = `<span style='color:green'>سيتم عرض الإحصائيات فقط للمستخدم: <b>${username}</b></span>`;
-    };
-    window.setEmpStatsModeForEmp = function(emp) {
-      setEmpStatsEnabled(true);
-      setEmpStatsMode("employee", emp);
-      document.getElementById("empStatsAdminOptions").innerHTML = `<span style='color:green'>سيتم عرض إحصائيات الموظف <b>${emp}</b> فقط لكل المستخدمين</span>`;
-    };
-    getEmpStatsMode().then(modeObj => {
-      let txt = "";
-      if (modeObj.mode === "all") txt = "<span style='color:green'>سيتم عرض الإحصائيات لكل المستخدمين</span>";
-      else if (modeObj.mode === "user") txt = `<span style='color:green'>سيتم عرض الإحصائيات فقط للمستخدم: <b>${modeObj.value}</b></span>`;
-      else if (modeObj.mode === "employee") txt = `<span style='color:green'>سيتم عرض إحصائيات الموظف <b>${modeObj.value}</b> فقط لكل المستخدمين</span>`;
-      document.getElementById("empStatsAdminOptions").innerHTML = txt;
+      };
     });
-  };
+    // حفظ خيار الرواتب عند التغيير
+    Array.from(document.getElementsByClassName("canViewSalaryCheckbox")).forEach(chk => {
+      chk.onchange = function() {
+        const user = chk.getAttribute("data-user");
+        const val = chk.checked;
+        db.ref("users/"+user+"/canViewSalary").set(val).then(()=>{
+          logActivity("تغيير صلاحية الرواتب","تم تغيير صلاحية عرض الرواتب للمستخدم: "+user+" إلى: "+(val?"نعم":"لا"));
+        });
+      };
+    });
+  });
 }
 
 // ========== إحصائيات للمستخدمين ==========
@@ -2231,39 +2191,48 @@ function renderUserEmpStats() {
     db.ref("attendance").once("value").then(snapshot => {
       const data = snapshot.val() || {};
       gridDiv.innerHTML = "";
-      employees.forEach(emp => {
-        if (onlyEmp && emp !== onlyEmp) return;
-        let shift=0, half=0, x=0;
-        Object.entries(data).forEach(([dateStr, day]) => {
-          let parts = dateStr.split("-");
-          if (parts.length === 3) {
-            let dYear = parseInt(parts[0]);
-            let dMonth = parseInt(parts[1]) - 1;
-            if (dYear === year && dMonth === month) {
-              if (day[emp] === "شفت") shift++;
-              if (day[emp] === "نص") half++;
-              if (day[emp] === "❌") x++;
+      // جلب صلاحيات الموظفين لهذا المستخدم
+      db.ref("users/"+currentUser).once("value").then(userSnap => {
+        const userData = userSnap.val() || {};
+        let allowedEmps = userData.allowedStatsEmps || [];
+        // إذا كان المدير، يرى الجميع
+        let showEmps = (currentUserRole === "admin") ? employees : allowedEmps;
+        // إذا لم يتم تحديد صلاحيات، يرى الجميع
+        if (!Array.isArray(showEmps) || showEmps.length === 0) showEmps = employees;
+        showEmps.forEach(emp => {
+          if (onlyEmp && emp !== onlyEmp) return;
+          let shift=0, half=0, x=0;
+          Object.entries(data).forEach(([dateStr, day]) => {
+            let parts = dateStr.split("-");
+            if (parts.length === 3) {
+              let dYear = parseInt(parts[0]);
+              let dMonth = parseInt(parts[1]) - 1;
+              if (dYear === year && dMonth === month) {
+                if (day[emp] === "شفت") shift++;
+                if (day[emp] === "نص") half++;
+                if (day[emp] === "❌") x++;
+              }
             }
-          }
+          });
+          const salary = (shift * 20000) + (half * 10000);
+          const card = document.createElement("div");
+          card.className = "emp-card";
+          card.innerHTML = `
+            <div class='emp-name'>${emp}</div>
+            <div class='emp-stats'>
+              <div class='stat shift'>✅ شفت: <b>${shift}</b></div>
+              <div class='stat half'>🌓 نص: <b>${half}</b></div>
+              <div class='stat absent'>🏖️ اجازة: <b>${x}</b></div>
+            </div>
+            <div class='emp-salary' style='margin-top:8px;font-size:15px;color:#222;background:#e3f7e3;padding:6px 0;border-radius:7px;width:100%;text-align:center;'>
+              💰 الراتب الكلي: <b>${salary.toLocaleString()} د.ع</b>
+            </div>
+          `;
+          gridDiv.appendChild(card);
         });
-        const salary = (shift * 20000) + (half * 10000);
-        const card = document.createElement("div");
-        card.className = "emp-card";
-        card.innerHTML = `
-          <div class='emp-name'>${emp}</div>
-          <div class='emp-stats'>
-            <div class='stat shift'>✅ شفت: <b>${shift}</b></div>
-            <div class='stat half'>🌓 نص: <b>${half}</b></div>
-            <div class='stat absent'>🏖️ اجازة: <b>${x}</b></div>
-          </div>
-          <div class='emp-salary' style='margin-top:8px;font-size:15px;color:#222;background:#e3f7e3;padding:6px 0;border-radius:7px;width:100%;text-align:center;'>
-            💰 الراتب الكلي: <b>${salary.toLocaleString()} د.ع</b>
-          </div>
-        `;
-        gridDiv.appendChild(card);
+        userEmpStatsDiv.style.display = "block";
       });
     });
-    userEmpStatsDiv.style.display = "block";
   });
 }
 function tryShowUserEmpStats() {
