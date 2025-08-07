@@ -1,99 +1,12 @@
-<script>
-// تحكم احترافي في ظهور واختفاء تبويبة التحميل الوسطية
-// تبويبة تحميل احترافية مع أنيميشن ورسائل مخصصة ومحسنة
-function showCenterLoader(show = true, msg = null) {
-  const centerModal = document.getElementById('centerLoadingModal');
-  const loginBox = document.getElementById('loginBox');
-  const centerLoadingText = document.getElementById('centerLoadingText');
-  if (!centerModal) return;
-  // لا تظهر أبداً في صفحة تسجيل الدخول
-  if (loginBox && loginBox.style.display !== 'none') {
-    hideModal(centerModal);
-    document.body.style.overflow = '';
-    return;
-  }
-  if (show) {
-    if (msg && centerLoadingText) centerLoadingText.textContent = msg;
-    showModal(centerModal);
-    document.body.style.overflow = 'hidden';
-  } else {
-    hideModal(centerModal);
-    document.body.style.overflow = '';
-  }
-}
-
-// دوال مساعدة للأنيميشن والتنظيف
-function showModal(modal) {
-  if (!modal) return;
-  modal.style.display = 'flex';
-  modal.classList.remove('fade-out');
-  void modal.offsetWidth; // force reflow
-  modal.classList.add('fade-in');
-}
-function hideModal(modal) {
-  if (!modal) return;
-  modal.classList.remove('fade-in');
-  modal.classList.add('fade-out');
-  setTimeout(()=>{ modal.style.display = 'none'; }, 200);
-}
-// عند أي تغيير في صفحة تسجيل الدخول، أخفِ التبويبة فوراً
-document.addEventListener('DOMContentLoaded', function() {
-  var loginBox = document.getElementById('loginBox');
-  if (!loginBox) return;
-  function hideIfLogin() { showCenterLoader(false); }
-  hideIfLogin();
-  const observer = new MutationObserver(hideIfLogin);
-  observer.observe(loginBox, { attributes: true, attributeFilter: ['style'] });
-});
-</script>
-  <!-- Centered loading modal -->
-  <div id="centerLoadingModal" style="display:flex;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;background:rgba(255,255,255,0.55);align-items:center;justify-content:center;pointer-events:auto;transition:none;">
-    <div id="centerLoadingBox" style="background: #fff; border-radius: 18px; box-shadow: 0 8px 32px #1976d233; padding: 32px 36px 28px 36px; display: flex; flex-direction: column; align-items: center; min-width: 220px; max-width: 92vw;">
-      <div class="loader" style="margin-bottom: 18px;"></div>
-      <div id="centerLoadingText" style="color:#1976d2;font-size:20px;font-weight:600;letter-spacing:0.5px;text-align:center;">جاري جلب البيانات من السيرفر...</div>
-    </div>
-    <style>
-    /* أنيميشن fade لتبويبة التحميل */
-    #centerLoadingModal.fade-in {
-      animation: fadeInModal 0.22s;
-      opacity: 1;
-      pointer-events: auto;
-    }
-    #centerLoadingModal.fade-out {
-      animation: fadeOutModal 0.22s;
-      opacity: 0;
-      pointer-events: none;
-    }
-    @keyframes fadeInModal {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    @keyframes fadeOutModal {
-      from { opacity: 1; }
-      to { opacity: 0; }
-    }
-    #centerLoadingModal {
-      transition: opacity 0.22s;
-      pointer-events: auto;
-    }
-      @media (max-width: 600px) {
-        #centerLoadingBox {
-          padding: 18px 6vw 18px 6vw !important;
-          min-width: 0 !important;
-          max-width: 98vw !important;
-        }
-        #centerLoadingText {
-          font-size: 16px !important;
-        }
-      }
-    </style>
-  </div>
 <!DOCTYPE html>
 <html lang="ar">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>نظام تسجيل الحضور</title>
+  <title>نظام حضور الموظفين </title>
+  <meta name="description" content="نظام حضور وانصراف الموظفين - سجل حضور الموظفين وغيابهم بسهولة واحترافية. برنامج حضور وانصراف عربي مجاني وسهل الاستخدام.">
+  <meta name="keywords" content="نظام حضور, نظام حضور وانصراف, برنامج حضور, برنامج حضور وانصراف, حضور الموظفين, نظام حضور هي هي, سجل حضور, attendance system, employee attendance, حضور الكتروني, برنامج دوام, نظام دوام, حضور وانصراف مجاني, حضور وانصراف عربي">
+  <meta name="robots" content="index, follow">
   <style>
     #adminPanel {
       box-shadow: 0 2px 12px rgba(151, 86, 86, 0.067);
@@ -332,42 +245,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
   <!-- المحتوى الرئيسي وجدول الحضور -->
   <div id="mainContent">
-    <h2>📋 جدول الحضور - تموز</h2>
+    <h2>📋 جدول الحضور </h2>
     <button id="btnDownloadPDF" style="margin-bottom:10px;" onclick="downloadPDF()">⬇️ تحميل PDF</button>
-  <!-- Loader for table -->
-  <div id="tableLoader" style="display:none;flex-direction:column;justify-content:center;align-items:center;padding:30px 0;gap:16px;">
-    <div class="loader"></div>
-    <div class="loader-text" style="color:#1976d2;font-size:18px;font-weight:500;letter-spacing:0.5px;">جاري تحميل الجدول...</div>
-  </div>
-  <table id="attendanceTable">
-    <thead>
-      <tr>
-        <th id="dateHeaderCell" style="background: linear-gradient(90deg, #e3f0ff 0%, #cbe6ff 100%); color: #1976d2; font-weight: bold; font-size: 18px; border-bottom: 2.5px solid #90caf9; letter-spacing: 0.5px; display:none;">التاريخ</th>
-      </tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
-  <style>
-    .loader {
-      border: 6px solid #e3f0ff;
-      border-top: 6px solid #1976d2;
-      border-radius: 50%;
-      width: 44px;
-      height: 44px;
-      animation: spin 1s linear infinite;
-      margin: 0 auto;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-  </style>
+    <table id="attendanceTable">
+      <thead>
+        <tr>
+          <th style="background: linear-gradient(90deg, #e3f0ff 0%, #cbe6ff 100%); color: #1976d2; font-weight: bold; font-size: 18px; border-bottom: 2.5px solid #90caf9; letter-spacing: 0.5px;">التاريخ</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
     <button onclick="saveData()">💾 حفظ التعديلات</button>
     <button onclick="logout()" style="background-color: #dc3545; margin-top: 10px;">🚪 تسجيل خروج</button>
-    <h3 style="margin-top:20px;">📊 الإحصائيات</h3>
-    <div id="statsBox">—</div>
+  <h3 style="margin-top:20px;">📊 الإحصائيات</h3>
+  <div id="statsBox">—</div>
+  <!-- إحصائيات الموظفين أسفل الجدول -->
+  <div id="empStatsBelowTable" style="margin:30px 0 0 0;"></div>
   </div>
 
+  <!-- مكان ظهور إحصائيات الموظفين أسفل جدول الحضور -->
+  <div id="empStatsBelowTable" style="margin:30px 0 0 0;"></div>
   <!-- لوحة تحكم الـ Admin -->
   <div id="adminPanel" style="display:none">
     <h3>لوحة تحكم المدير</h3>
@@ -408,11 +305,6 @@ document.addEventListener('DOMContentLoaded', function() {
         <button id="closeEmpStatsTab" style="position:absolute;top:10px;left:10px;background:#dc3545;color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;">✖</button>
         <h3 style="text-align:center;margin-bottom:18px;">📊 إحصائيات الموظفين</h3>
         <div id="empStatsTabContent"></div>
-        <style>
-          #empStatsTabContent button.small-button, #empStatsTabContent .old-emp-stats-btn {
-            display: none !important;
-          }
-        </style>
       </div>
     </div>
     <button id="btnDeleteData" style="background-color:#dc3545; color:white; font-size:12px; padding:5px 10px; margin-top:15px; cursor:pointer;">
@@ -477,7 +369,9 @@ document.addEventListener('DOMContentLoaded', function() {
   <button onclick="saveData()" style="background:#2196f3;color:white;"> 💾 حفظ التعديلات</button>
   <button onclick="logout()" style="background:#dc3545;color:white;">🚪 تسجيل خروج</button>
   <button id="sidebarAdminBtn" style="background:#000000;color:white;display:none;">⚙️ لوحة التحكم</button>
+  <button id="sidebarMonthsManagerBtn" style="background:#1976d2;color:white;display:none;margin-top:2px;">📅 إدارة الأشهر</button>
   <button id="sidebarEmpStatsBtn" style="background:#17a2b8;color:white;display:none;">📊 تفاصيل إحصائيات الموظفين</button>
+  <button id="sidebarNotificationsBtn" style="background:#ff4081;color:white;display:none;">🔔 الإشعارات</button>
   <button id="sidebarDeleteDataBtn" style="background:#dc3545;color:white;display:none;">🗑️ حذف بيانات متقدمة</button>
   <button id="sidebarFeaturesTabBtn" style="background:#673ab7;color:white;display:none;">⭐️سجل النشاطات</button>
   <button id="sidebarChangePassBtn" style="background:#2196f3;color:white;">🔑 تغيير كلمة المرور</button>
@@ -487,8 +381,24 @@ document.addEventListener('DOMContentLoaded', function() {
   <button id="sidebarNotesBtn" style="background:#ffb300;color:#333;display:none;">📝 الملاحظات</button>
   <!-- زر إعدادات الملاحظات للمدير فقط -->
   <button id="sidebarNotesSettingsBtn" style="background:#ff9800;color:#222;display:none;">⚙️ إعدادات الملاحظات</button>
+  <!-- أزرار إدارة قاعدة البيانات -->
+
 </div>
 <script>
+// دالة تتحقق أن الشهر المعروض هو الشهر الحالي
+function isCurrentMonthSelected() {
+  const now = new Date();
+  return (month === now.getMonth() && year === now.getFullYear());
+}
+
+// دالة منع التعديل على الأشهر السابقة
+function preventEditIfNotCurrentMonth() {
+  if (!isCurrentMonthSelected()) {
+    alert('❌ لا يمكن التعديل أو الحذف أو الإضافة على بيانات الأشهر السابقة.');
+    return false;
+  }
+  return true;
+}
   // زر إعدادات الملاحظات (للمدير فقط)
 document.getElementById("sidebarNotesSettingsBtn").onclick = function() {
   document.getElementById("sidebarMenu").classList.remove("open");
@@ -591,63 +501,537 @@ document.getElementById("sidebarNotesSettingsBtn").onclick = function() {
 
   // عرض صناديق الملاحظات لكل موظف
   function renderNotesTabContent() {
-    const notesDiv = document.getElementById("notesTabContent");
-    if (!notesDiv) {
-      console.warn("لم يتم العثور على العنصر notesTabContent. ربما لم يتم إنشاء نافذة الملاحظات بعد أو تم إغلاقها.");
-      return;
+    // إذا تم استدعاء الدالة من نافذة الملاحظات الجانبية، أظهرها هناك، وإلا أظهرها أسفل الجدول
+    let notesDiv = document.getElementById("notesTabContent");
+    let notesSection = document.getElementById("notesSection");
+    if (notesSection && notesSection.style.display !== "none") {
+      notesDiv = notesSection.querySelector("#notesTabContent");
     }
     notesDiv.innerHTML = "جاري التحميل...";
-    db.ref("notes").once("value").then(snapshot => {
-      const notes = snapshot.val() || {};
-      db.ref("users/"+currentUser).once("value").then(userSnap => {
-        const userData = userSnap.val() || {};
-        const perm = userData.notesPermission || "edit";
-        let html = "";
-        employees.forEach(emp => {
-          html += `<div style='margin-bottom:18px;padding:12px 10px;background:#f7f7f7;border-radius:10px;'>
-            <div style='font-weight:500;color:#007bff;margin-bottom:7px;'>${emp}</div>`;
-          if (perm === "edit") {
-            html += `<textarea id='noteInput_${emp}' style='width:98%;min-height:48px;border-radius:7px;border:1px solid #ccc;padding:7px;font-size:15px;'>${notes[emp] ? notes[emp] : ""}</textarea>
-            <button class='saveNoteBtn' data-emp='${emp}' style='margin-top:7px;background:#ffb300;color:#333;padding:6px 18px;border:none;border-radius:6px;font-size:15px;cursor:pointer;'>💾 حفظ الملاحظة</button>`;
-          } else if (perm === "read") {
-            html += `<textarea id='noteInput_${emp}' style='width:98%;min-height:48px;border-radius:7px;border:1px solid #ccc;padding:7px;font-size:15px;background:#eee;' readonly>${notes[emp] ? notes[emp] : ""}</textarea>`;
-          } else {
-            html += `<div style='color:#888;font-size:14px;'>لا يوجد صلاحية لعرض الملاحظات</div>`;
+    // جلب بيانات الملاحظات، الحضور، الرواتب دفعة واحدة
+    Promise.all([
+      db.ref("notes").once("value"),
+      db.ref("attendance").once("value"),
+      db.ref("salaries").once("value"),
+      db.ref("users/"+currentUser).once("value")
+    ]).then(([notesSnap, attSnap, salSnap, userSnap]) => {
+      const notes = notesSnap.val() || {};
+      const attendance = attSnap.val() || {};
+      const salaries = salSnap.val() || {};
+      const userData = userSnap.val() || {};
+      const perm = userData.notesPermission || "edit";
+      // حساب إحصائيات الحضور لكل موظف
+      const stats = {};
+      employees.forEach(emp => { stats[emp] = { shift: 0, half: 0, vac: 0 }; });
+      Object.entries(attendance).forEach(([dateStr, day]) => {
+        // فقط الشهر الحالي
+        let parts = dateStr.split("-");
+        if (parts.length === 3) {
+          let dYear = parseInt(parts[0]);
+          let dMonth = parseInt(parts[1]) - 1;
+          if (dYear === year && dMonth === month) {
+            employees.forEach(emp => {
+              const val = day[emp];
+              if (val === "شفت") stats[emp].shift++;
+              if (val === "نص") stats[emp].half++;
+              if (val === "❌") stats[emp].vac++;
+            });
           }
-          html += `</div>`;
-        });
-        notesDiv.innerHTML = html;
-        if (perm === "edit") {
-          Array.from(document.getElementsByClassName("saveNoteBtn")).forEach(btn => {
-            btn.onclick = function() {
-              const emp = btn.getAttribute("data-emp");
-              const noteVal = document.getElementById(`noteInput_${emp}`).value;
-              db.ref("notes/" + emp).set(noteVal).then(() => {
-                btn.textContent = "✅ تم الحفظ";
-                setTimeout(() => { btn.textContent = "💾 حفظ الملاحظة"; }, 1200);
-                logActivity(
-                  "تعديل ملاحظة موظف",
-                  `<span style='color:#007bff;font-weight:bold;'>${emp}</span> | <span style='color:#ffb300;'>${noteVal.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`,
-                  { type: "note", emp: emp }
-                );
-              });
-            };
-          });
         }
       });
+      let html = "";
+      employees.forEach(emp => {
+        let noteVal = notes[emp] ? notes[emp] : "";
+        let isEmpty = noteVal.trim() === "";
+        html += `<div class="note-box" style="border:1.5px solid #e3eafc; margin:18px 0 22px 0; border-radius:13px; background:linear-gradient(135deg,#f8fafc 70%,#e3eafc 100%); box-shadow:0 2px 12px #3f51b511; transition:box-shadow 0.2s;">`;
+        // اسم الموظف
+        html += `<div style=\"font-weight:700; color:#3f51b5; font-size:18px; padding:13px 16px 0 16px; letter-spacing:0.2px;\">👤 ${emp}</div>`;
+        // خانة الملاحظة وزر الحفظ
+        if (perm === "edit") {
+          html += `<textarea id='noteInput_${emp}' style='width:94%;min-height:60px;margin:13px 3%;border-radius:8px;border:1.2px solid #bfc7e3;padding:9px;font-size:15.5px;resize:vertical;background:#fff;transition:border 0.2s;'>${noteVal}</textarea>`;
+          html += `<div style='display:flex;align-items:center;justify-content:space-between;margin:0 3% 13px 3%;'>`;
+          html += isEmpty ? `<span style='color:#b0b0b0;font-size:13px;display:flex;align-items:center;gap:3px;'><span style='font-size:17px;'>🛈</span>لا توجد ملاحظة بعد</span>` : `<span style='color:#607d8b;font-size:13px;display:flex;align-items:center;gap:3px;'><span style='font-size:17px;'>📝</span>تمت آخر مراجعة</span>`;
+          html += `<button class='saveNoteBtn' data-emp='${emp}' style='background:linear-gradient(90deg,#3f51b5 60%,#5c6bc0 100%);color:white;padding:7px 22px;border:none;border-radius:7px;font-size:15.5px;cursor:pointer;box-shadow:0 2px 8px #3f51b522;font-weight:600;transition:background 0.2s;'>💾 حفظ</button>`;
+          html += `</div>`;
+        } else if (perm === "read") {
+          html += `<textarea id='noteInput_${emp}' style='width:94%;min-height:60px;margin:13px 3%;border-radius:8px;border:1.2px solid #bfc7e3;padding:9px;font-size:15.5px;background:#f5f7fa;resize:vertical;' readonly>${noteVal}</textarea>`;
+          html += isEmpty ? `<div style='color:#b0b0b0;font-size:13px;padding:0 3% 13px 3%;display:flex;align-items:center;gap:3px;'><span style='font-size:17px;'>🛈</span>لا توجد ملاحظة بعد</div>` : `<div style='color:#607d8b;font-size:13px;padding:0 3% 13px 3%;display:flex;align-items:center;gap:3px;'><span style='font-size:17px;'>📝</span>تمت آخر مراجعة</div>`;
+        } else {
+          html += `<div style='color:#888;font-size:14px;padding:13px;'>لا يوجد صلاحية لعرض الملاحظات</div>`;
+        }
+        html += `</div>`;
+      });
+      notesDiv.innerHTML = html;
+      // إذا كنا في القسم أسفل الجدول، أظهر القسم
+      if (notesSection) notesSection.style.display = "block";
+      if (perm === "edit") {
+        Array.from(document.getElementsByClassName("saveNoteBtn")).forEach(btn => {
+          btn.onclick = function() {
+            const emp = btn.getAttribute("data-emp");
+            const noteVal = document.getElementById(`noteInput_${emp}`).value;
+            db.ref("notes/" + emp).set(noteVal).then(() => {
+              btn.textContent = "✅ تم الحفظ";
+              setTimeout(() => { btn.textContent = "💾 حفظ الملاحظة"; }, 1200);
+              logActivity(
+                "تعديل ملاحظة موظف",
+                `<span style='color:#007bff;font-weight:bold;'>${emp}</span> | <span style='color:#ffb300;'>${noteVal.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`,
+                { type: "note", emp: emp }
+              );
+            });
+          };
+        });
+      }
     });
   }
+  // عرض الملاحظات أسفل الجدول تلقائياً بعد تحميل الصفحة إذا كان للمستخدم صلاحية
+  document.addEventListener("DOMContentLoaded", function() {
+    db.ref("users/"+currentUser).once("value").then(snap=>{
+      const data = snap.val()||{};
+      const perm = data.notesPermission || "edit";
+      if (perm === "edit" || perm === "read") {
+        let notesSection = document.getElementById("notesSection");
+        if (notesSection) {
+          notesSection.style.display = "block";
+          renderNotesTabContent();
+        }
+      }
+    });
+  });
   // تحديث ظهور الأزرار حسب الدور وصلاحية المستخدم
   function updateSidebarVisibility() {
     const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
     const sidebarMenu = document.getElementById("sidebarMenu");
     const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
     const isAdmin = currentUserRole === "admin";
-    // أزرار المدير فقط
-    ["sidebarAdminBtn","sidebarEmpStatsBtn","sidebarDeleteDataBtn","sidebarFeaturesTabBtn","sidebarChangePassBtn","sidebarUserControlBtn","sidebarNotesSettingsBtn"].forEach(id=>{
+// أزرار المدير فقط
+    ["sidebarAdminBtn","sidebarMonthsManagerBtn","sidebarEmpStatsBtn","sidebarDeleteDataBtn","sidebarFeaturesTabBtn","sidebarChangePassBtn","sidebarUserControlBtn","sidebarNotesSettingsBtn","sidebarNotificationsBtn"].forEach(id=>{
+// زر الإشعارات للمدير
+document.getElementById("sidebarNotificationsBtn").onclick = function() {
+  document.getElementById("sidebarMenu").classList.remove("open");
+  setTimeout(showNotificationsManager, 100);
+};
+
+function showNotificationsManager() {
+  let modal = document.getElementById("notificationsManagerModal");
+  if (modal) { modal.style.display = "flex"; return; }
+  modal = document.createElement("div");
+  modal.id = "notificationsManagerModal";
+  modal.style = `position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);z-index:9100;display:flex;align-items:center;justify-content:center;`;
+  modal.innerHTML = `
+    <div style="background:#fff;max-width:420px;width:97vw;border-radius:18px;box-shadow:0 8px 32px #0002;padding:28px 18px 18px 18px;position:relative;display:flex;flex-direction:column;animation:fadeIn 0.3s;">
+      <button id="closeNotificationsManagerBtn" style="position:absolute;top:10px;left:10px;background:#dc3545;color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;">✖</button>
+      <div style="font-size:21px;color:#ff4081;margin-bottom:10px;font-weight:700;text-align:center;letter-spacing:0.2px;">🔔 إرسال إشعار</div>
+      <div style="margin-bottom:10px;">
+        <label style="font-size:15px;font-weight:500;">المستلم:
+          <select id="notificationTarget" multiple style="width:100%;padding:7px 8px;border-radius:6px;border:1px solid #ccc;font-size:15px;margin-top:5px;min-height:38px;max-height:120px;overflow:auto;"></select>
+          <div style="font-size:12px;color:#888;margin-top:3px;">يمكنك اختيار أكثر من موظف بالضغط مع Ctrl أو Shift</div>
+        </label>
+      </div>
+      <textarea id="notificationMsg" placeholder="اكتب نص الإشعار هنا..." style="width:100%;min-height:60px;border-radius:7px;border:1px solid #ccc;padding:7px;font-size:15px;margin-bottom:10px;"></textarea>
+      <button id="sendNotificationBtn" style="background:#ff4081;color:white;padding:9px 0;border:none;border-radius:8px;font-size:17px;cursor:pointer;font-weight:600;">إرسال الإشعار</button>
+    </div>
+    <style>
+      @media (max-width: 600px) {
+        #notificationsManagerModal > div { max-width:99vw !important; padding:18px 2vw 18px 2vw !important; }
+        #notificationsManagerModal div { font-size:16px !important; }
+      }
+      #closeNotificationsManagerBtn:hover { background:#b71c1c !important; }
+      #sendNotificationBtn:hover { background:#c51162 !important; }
+    </style>
+  `;
+  document.body.appendChild(modal);
+  document.getElementById("closeNotificationsManagerBtn").onclick = function() { modal.style.display = "none"; };
+  // تحميل المستخدمين
+  db.ref("users").once("value").then(snap=>{
+    const users = snap.val()||{};
+    let sel = document.getElementById("notificationTarget");
+    sel.innerHTML = `<option value="all">جميع المستخدمين</option>`;
+    Object.keys(users).forEach(u=>{
+      if(u!=="admin") sel.innerHTML += `<option value="${u}">${u}</option>`;
+    });
+  });
+  document.getElementById("sendNotificationBtn").onclick = function() {
+    const sel = document.getElementById("notificationTarget");
+    const selected = Array.from(sel.selectedOptions).map(opt=>opt.value);
+    const msg = document.getElementById("notificationMsg").value.trim();
+    if(!msg) return alert("❌ يرجى كتابة نص الإشعار");
+    const notif = {msg,time:Date.now(),from:currentUser};
+    if(selected.includes("all")) {
+      db.ref("notifications/all").set(notif).then(()=>{
+        alert("✅ تم إرسال الإشعار للجميع");
+        modal.style.display = "none";
+      });
+    } else if(selected.length>0) {
+      let promises = selected.map(u=>db.ref("notifications/"+u).set(notif));
+      Promise.all(promises).then(()=>{
+        alert("✅ تم إرسال الإشعار للموظفين المحددين");
+        modal.style.display = "none";
+      });
+    } else {
+      alert("❌ يرجى اختيار مستلم واحد على الأقل");
+    }
+  };
+}
+// مراقبة الإشعارات لحظياً للمستخدم الحالي
+window.listenForNotifications = function listenForNotifications() {
+  if(!currentUser) return;
+  // تجاهل استقبال الإشعارات للمدير
+  if(currentUser === 'admin') return;
+  // إشعار مخصص للمستخدم
+  db.ref("notifications/"+currentUser).on("value", snap => {
+    const notif = snap.val();
+    if(notif) showNotificationPopup(notif,()=>{
+      db.ref("notifications/"+currentUser).remove();
+    });
+  });
+  // إشعار عام للجميع
+  db.ref("notifications/all").on("value", snap => {
+    const notif = snap.val();
+    if(notif) showNotificationPopup(notif,()=>{
+      db.ref("notifications/all").remove();
+    });
+  });
+}
+
+// نافذة منبثقة احترافية للإشعار
+function showNotificationPopup(notif, onOk) {
+  let old = document.getElementById("notificationPopup");
+  if(old) old.remove();
+  const modal = document.createElement("div");
+  modal.id = "notificationPopup";
+  modal.style = `position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);z-index:12000;display:flex;align-items:center;justify-content:center;`;
+  let sender = notif.from === 'admin' ? 'المدير' : (notif.from||'');
+  modal.innerHTML = `
+    <div style="background:linear-gradient(135deg,#e8eaf6 60%,#c5cae9 100%);max-width:370px;width:92vw;padding:32px 20px 22px 20px;border-radius:18px;box-shadow:0 8px 32px #3f51b522;position:relative;text-align:center;animation:fadeIn 0.3s;">
+      <button id="closeNotifPopupBtn" style="position:absolute;top:10px;left:10px;background:#3f51b5;color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;">✖</button>
+      <div style="font-size:21px;color:#3f51b5;margin-bottom:18px;font-weight:700;letter-spacing:0.2px;">🔔 إشعار من ${sender}</div>
+      <div style="font-size:16.5px;color:#2d3a4a;line-height:1.8;margin-bottom:16px;background:#e3eafc;border-radius:8px;padding:10px 7px 8px 7px;box-shadow:0 1px 4px #3f51b511;">${notif.msg.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+      <button id="notifOkBtn" style="background:linear-gradient(90deg,#3f51b5 60%,#5c6bc0 100%);color:white;padding:11px 0;border:none;border-radius:8px;font-size:17px;cursor:pointer;box-shadow:0 2px 8px #3f51b522;width:90%;margin-top:8px;font-weight:600;transition:background 0.2s;">حسنًا</button>
+    </div>
+    <style>
+      @keyframes fadeIn { from { opacity:0; transform:scale(0.95);} to { opacity:1; transform:scale(1);} }
+      @media (max-width: 600px) {
+        #notificationPopup > div { max-width:99vw !important; padding:18px 2vw 18px 2vw !important; }
+        #notificationPopup div { font-size:16px !important; }
+      }
+      #closeNotifPopupBtn:hover { background:#283593 !important; }
+      #notifOkBtn:hover { background:#283593 !important; }
+    </style>
+  `;
+  document.body.appendChild(modal);
+  document.getElementById("notifOkBtn").onclick = () => { modal.remove(); if(onOk) onOk(); };
+  document.getElementById("closeNotifPopupBtn").onclick = () => { modal.remove(); if(onOk) onOk(); };
+}
       const el = document.getElementById(id);
       if (el) el.style.display = isAdmin ? "block" : "none";
     });
+// نافذة إدارة الأشهر الاحترافية
+document.getElementById("sidebarMonthsManagerBtn").onclick = function() {
+  document.getElementById("sidebarMenu").classList.remove("open");
+  setTimeout(showMonthsManagerModal, 100);
+};
+
+function showMonthsManagerModal() {
+  let modal = document.getElementById("monthsManagerModal");
+  if (modal) { modal.style.display = "flex"; return; }
+  modal = document.createElement("div");
+  modal.id = "monthsManagerModal";
+  modal.style = `position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);z-index:9000;display:flex;align-items:center;justify-content:center;`;
+  modal.innerHTML = `
+    <div id="monthsManagerModalInner" style="background:#fff;max-width:480px;width:97vw;border-radius:18px;box-shadow:0 8px 32px #0002;padding:24px 10px 14px 10px;position:relative;display:flex;flex-direction:column;animation:fadeIn 0.3s;">
+      <button id="closeMonthsManagerBtn" style="position:absolute;top:10px;left:10px;background:#dc3545;color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;">✖</button>
+      <div style="font-size:21px;color:#1976d2;margin-bottom:10px;font-weight:700;text-align:center;letter-spacing:0.2px;">📅 إدارة الأشهر</div>
+      <div id="monthsManagerContent" style="overflow-x:auto;max-height:60vh;padding-bottom:4px;">جاري التحميل...</div>
+      <div style="margin-top:12px;text-align:center;display:flex;flex-wrap:wrap;gap:7px;justify-content:center;">
+        <button id="addNewMonthBtn" style="background:#1976d2;color:white;padding:10px 16px;border:none;border-radius:8px;font-size:16px;cursor:pointer;">➕ إضافة شهر</button>
+        <button id="toggleAutoMonthBtn" style="background:#ffb300;color:#333;padding:10px 16px;border:none;border-radius:8px;font-size:16px;cursor:pointer;">—</button>
+      </div>
+      <div style="font-size:13px;color:#888;margin-top:10px;text-align:center;">يمكنك إدارة الأشهر، إغلاقها، إخفائها، إضافة ملاحظات، نسخ أو حذف شهر، والمزيد من هنا.</div>
+    </div>
+    <style>
+      #monthsManagerModalInner table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 15px;
+        margin-bottom: 8px;
+        background: #fafbfc;
+      }
+      #monthsManagerModalInner th, #monthsManagerModalInner td {
+        border: 1px solid #e0e0e0;
+        padding: 7px 4px;
+        text-align: center;
+      }
+      #monthsManagerModalInner th {
+        background: #e3f0ff;
+        color: #1976d2;
+        font-size: 15px;
+      }
+      #monthsManagerModalInner td {
+        font-size: 15px;
+      }
+      #monthsManagerModalInner button.advMonthBtn {
+        padding: 4px 10px;
+        font-size: 14px;
+        border-radius: 6px;
+        margin: 0 2px;
+      }
+      @media (max-width: 600px) {
+        #monthsManagerModalInner {
+          max-width: 99vw !important;
+          padding: 10px 2vw 10px 2vw !important;
+        }
+        #monthsManagerModalInner table, #monthsManagerModalInner th, #monthsManagerModalInner td {
+          font-size: 13px !important;
+          padding: 5px 2px !important;
+        }
+        #monthsManagerModalInner button, #monthsManagerModalInner .advMonthBtn {
+          font-size: 13px !important;
+          padding: 7px 8px !important;
+        }
+      }
+      #closeMonthsManagerBtn:hover { background:#b71c1c !important; }
+      #addNewMonthBtn:hover { background:#1565c0 !important; color:#fff; }
+      #toggleAutoMonthBtn:hover { background:#ff9800 !important; }
+    </style>
+  `;
+  document.body.appendChild(modal);
+  document.getElementById("closeMonthsManagerBtn").onclick = function() { modal.style.display = "none"; };
+  loadMonthsManagerContent();
+}
+
+function loadMonthsManagerContent() {
+  const contentDiv = document.getElementById("monthsManagerContent");
+  contentDiv.innerHTML = "جاري التحميل...";
+  Promise.all([
+    db.ref("monthsSettings").once("value"),
+    db.ref("attendance").once("value"),
+    db.ref("employees").once("value"),
+    db.ref("monthsNotes").once("value"),
+    db.ref("activityLog").once("value")
+  ]).then(([settingsSnap, attSnap, empSnap, notesSnap, logSnap]) => {
+    const settings = settingsSnap.val() || { auto: true, closed: {}, hidden: {} };
+    const data = attSnap.val() || {};
+    const allEmployees = empSnap.val() || {};
+    const monthsNotes = notesSnap.val() || {};
+    const activityLog = logSnap.val() || {};
+    const monthsSet = new Set();
+    Object.keys(data).forEach(key => {
+      const parts = key.split("-");
+      if (parts.length === 3) {
+        const m = parseInt(parts[1]) - 1;
+        const y = parseInt(parts[0]);
+        monthsSet.add(`${y}-${m}`);
+      }
+    });
+    if (settings.manual && Array.isArray(settings.manual)) {
+      settings.manual.forEach(m => monthsSet.add(m));
+    }
+    const monthsArr = Array.from(monthsSet).sort((a,b)=>{
+      const [ya,ma]=a.split('-').map(Number), [yb,mb]=b.split('-').map(Number);
+      return ya!==yb?ya-yb:ma-mb;
+    });
+    let html = `<table style='width:100%;border-collapse:collapse;margin-bottom:10px;'>
+      <tr><th>الشهر</th><th>الحالة</th><th>إغلاق</th><th>إخفاء</th><th>خيارات متقدمة</th></tr>`;
+    monthsArr.forEach(m => {
+      const [y,mo] = m.split('-');
+      const label = `${arMonths[parseInt(mo)]} ${y}`;
+      const isClosed = settings.closed && settings.closed[m];
+      const isHidden = settings.hidden && settings.hidden[m];
+      const isDefault = settings.defaultMonth === m;
+      // حساب عدد الموظفين وعدد أيام الحضور لهذا الشهر
+    let empKey = `employees_${y}_${(parseInt(mo)+1).toString().padStart(2,'0')}`;
+    let empArr = allEmployees[empKey] ? Object.values(allEmployees[empKey]) : [];
+    let empCount = empArr.length;
+    let daysCount = Object.keys(data).filter(k => k.startsWith(`${y}-${parseInt(mo)+1}`)).length;
+      html += `<tr>
+        <td><span style="font-weight:bold;">${label}</span><br><span style="font-size:12px;color:#888;">عدد الموظفين: ${empCount} | أيام: ${daysCount}</span></td>
+        <td>${isClosed ? '<span style="color:#d32f2f;font-weight:bold;">مغلق</span>' : '<span style="color:#388e3c;font-weight:bold;">مفتوح</span>'}${isDefault ? '<br><span style="color:#1976d2;font-size:12px;">افتراضي</span>':''}</td>
+        <td><input type='checkbox' data-month='${m}' class='closeMonthChk' ${isClosed?'checked':''}></td>
+        <td><input type='checkbox' data-month='${m}' class='hideMonthChk' ${isHidden?'checked':''}></td>
+        <td>
+          <button class='advMonthBtn' data-month='${m}' style='background:#eee;color:#333;font-size:13px;padding:3px 8px;border-radius:5px;border:none;cursor:pointer;'>⚙️ إدارة</button>
+        </td>
+      </tr>`;
+    });
+    html += `</table>`;
+    contentDiv.innerHTML = html;
+    // ربط الأحداث
+    Array.from(document.getElementsByClassName('closeMonthChk')).forEach(chk => {
+      chk.onchange = function() {
+        const m = chk.getAttribute('data-month');
+        db.ref('monthsSettings/closed/'+m).set(chk.checked);
+      };
+    });
+    Array.from(document.getElementsByClassName('hideMonthChk')).forEach(chk => {
+      chk.onchange = function() {
+        const m = chk.getAttribute('data-month');
+        db.ref('monthsSettings/hidden/'+m).set(chk.checked);
+      };
+    });
+    // خيارات متقدمة لكل شهر
+    Array.from(document.getElementsByClassName('advMonthBtn')).forEach(btn => {
+      btn.onclick = function() {
+        const m = btn.getAttribute('data-month');
+        showMonthAdvancedOptions(m, monthsArr, settings, data, allEmployees, monthsNotes, activityLog);
+      };
+    });
+  });
+  // زر إضافة شهر جديد
+  document.getElementById('addNewMonthBtn').onclick = function() {
+    let now = new Date();
+    let y = now.getFullYear(), m = now.getMonth();
+    let nextM = m+1, nextY = y;
+    if (nextM > 11) { nextM = 0; nextY++; }
+    const key = `${nextY}-${nextM}`;
+    db.ref('monthsSettings/manual').once('value').then(snap => {
+      let arr = snap.val() || [];
+      if (!arr.includes(key)) arr.push(key);
+      db.ref('monthsSettings/manual').set(arr).then(loadMonthsManagerContent);
+    });
+  };
+  // زر تفعيل/تعطيل الوضع التلقائي
+  db.ref('monthsSettings/auto').once('value').then(snap => {
+    const auto = snap.val() !== false;
+    const btn = document.getElementById('toggleAutoMonthBtn');
+    btn.textContent = auto ? '🔄 الوضع التلقائي: مفعل' : '⏸️ الوضع التلقائي: معطل';
+    btn.style.background = auto ? '#ffb300' : '#bdbdbd';
+    btn.onclick = function() {
+      db.ref('monthsSettings/auto').set(!auto).then(loadMonthsManagerContent);
+    };
+  });
+}
+
+// نافذة الخيارات المتقدمة لكل شهر
+function showMonthAdvancedOptions(m, monthsArr, settings, data, allEmployees, monthsNotes, activityLog) {
+  let advModal = document.getElementById("monthAdvModal");
+  if (advModal) advModal.remove();
+  advModal = document.createElement("div");
+  advModal.id = "monthAdvModal";
+  advModal.style = "position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);z-index:9500;display:flex;align-items:center;justify-content:center;";
+  const [y, mo] = m.split('-');
+  const label = `${arMonths[parseInt(mo)]} ${y}`;
+  let empKey = `employees_${y}_${(parseInt(mo)+1).toString().padStart(2,'0')}`;
+  let empCount = allEmployees[empKey] ? Object.values(allEmployees[empKey]).length : 0;
+  let daysCount = Object.keys(data).filter(k => k.startsWith(`${y}-${parseInt(mo)+1}`)).length;
+  let note = monthsNotes[m] || "";
+  let isClosed = settings.closed && settings.closed[m];
+  let isHidden = settings.hidden && settings.hidden[m];
+  let isDefault = settings.defaultMonth === m;
+  let closeMsg = settings.closeMsg && settings.closeMsg[m] ? settings.closeMsg[m] : "";
+  // سجل النشاطات لهذا الشهر فقط
+  let monthLog = Object.values(activityLog).filter(l => l.month === m || (l.details && l.details.includes(m)));
+  advModal.innerHTML = `
+    <div style="background:#fff;max-width:440px;width:97vw;border-radius:16px;box-shadow:0 8px 32px #0002;padding:28px 18px 18px 18px;position:relative;display:flex;flex-direction:column;animation:fadeIn 0.3s;">
+      <button id="closeMonthAdvModalBtn" style="position:absolute;top:10px;left:10px;background:#dc3545;color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;">✖</button>
+      <div style="font-size:20px;color:#1976d2;margin-bottom:10px;font-weight:600;text-align:center;">⚙️ إدارة شهر: ${label}</div>
+      <div style="font-size:13px;color:#888;margin-bottom:8px;">عدد الموظفين: ${empCount} | أيام: ${daysCount}</div>
+      <label style="font-size:15px;font-weight:500;">اسم الشهر:
+        <input id="renameMonthInput" type="text" value="${label}" style="width:70%;margin:0 0 8px 0;padding:5px 8px;border-radius:6px;border:1px solid #ccc;font-size:15px;">
+        <button id="renameMonthBtn" style="background:#1976d2;color:white;padding:4px 10px;border:none;border-radius:6px;font-size:14px;">تغيير</button>
+      </label>
+      <label style="font-size:15px;font-weight:500;">ملاحظة إدارية:
+        <textarea id="monthNoteInput" style="width:95%;min-height:40px;margin:0 0 8px 0;border-radius:6px;border:1px solid #ccc;font-size:15px;">${note}</textarea>
+        <button id="saveMonthNoteBtn" style="background:#ffb300;color:#333;padding:4px 10px;border:none;border-radius:6px;font-size:14px;">حفظ</button>
+      </label>
+      <label style="font-size:15px;font-weight:500;">رسالة عند قفل الشهر:
+        <input id="closeMsgInput" type="text" value="${closeMsg}" style="width:80%;margin:0 0 8px 0;padding:5px 8px;border-radius:6px;border:1px solid #ccc;font-size:15px;">
+        <button id="saveCloseMsgBtn" style="background:#d32f2f;color:white;padding:4px 10px;border:none;border-radius:6px;font-size:14px;">حفظ</button>
+      </label>
+      <div style="margin:8px 0 0 0;display:flex;gap:7px;flex-wrap:wrap;">
+        <button id="setDefaultMonthBtn" style="background:${isDefault?'#1976d2':'#eee'};color:${isDefault?'#fff':'#333'};padding:4px 10px;border:none;border-radius:6px;font-size:14px;">${isDefault?'افتراضي حالياً':'تعيين كافتراضي'}</button>
+        <button id="copyMonthBtn" style="background:#2196f3;color:white;padding:4px 10px;border:none;border-radius:6px;font-size:14px;">نسخ بيانات إلى شهر آخر</button>
+        <button id="deleteMonthBtn" style="background:#dc3545;color:white;padding:4px 10px;border:none;border-radius:6px;font-size:14px;">حذف الشهر</button>
+        <button id="restoreMonthBtn" style="background:#388e3c;color:white;padding:4px 10px;border:none;border-radius:6px;font-size:14px;display:${isHidden?'inline-block':'none'};">استعادة الشهر</button>
+      </div>
+      <div style="margin:12px 0 0 0;">
+        <b>سجل النشاطات لهذا الشهر:</b>
+        <div style="max-height:90px;overflow:auto;border:1px solid #eee;border-radius:7px;padding:5px 7px;background:#fafafa;font-size:13px;">
+          ${monthLog.length ? monthLog.map(l=>`<div style='border-bottom:1px solid #eee;margin-bottom:3px;'>${l.time||''} - ${l.user||''}: ${l.action||''}</div>`).join('') : 'لا يوجد نشاطات.'}
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(advModal);
+  document.getElementById("closeMonthAdvModalBtn").onclick = function() { advModal.remove(); };
+  // إعادة التسمية (فقط واجهة، الاسم في القوائم)
+  document.getElementById("renameMonthBtn").onclick = function() {
+    const newName = document.getElementById("renameMonthInput").value.trim();
+    if (!newName) return alert("❌ الاسم لا يمكن أن يكون فارغاً");
+    db.ref('monthsSettings/renames/'+m).set(newName).then(()=>{
+      alert('✅ تم تغيير اسم الشهر في القوائم فقط');
+      advModal.remove();
+      loadMonthsManagerContent();
+    });
+  };
+  // ملاحظة إدارية
+  document.getElementById("saveMonthNoteBtn").onclick = function() {
+    const noteVal = document.getElementById("monthNoteInput").value;
+    db.ref('monthsNotes/'+m).set(noteVal).then(()=>{
+      alert('✅ تم حفظ الملاحظة');
+    });
+  };
+  // رسالة القفل
+  document.getElementById("saveCloseMsgBtn").onclick = function() {
+    const msg = document.getElementById("closeMsgInput").value;
+    db.ref('monthsSettings/closeMsg/'+m).set(msg).then(()=>{
+      alert('✅ تم حفظ الرسالة');
+    });
+  };
+  // تعيين كافتراضي
+  document.getElementById("setDefaultMonthBtn").onclick = function() {
+    db.ref('monthsSettings/defaultMonth').set(m).then(()=>{
+      alert('✅ تم تعيين الشهر كافتراضي');
+      advModal.remove();
+      loadMonthsManagerContent();
+    });
+  };
+  // نسخ بيانات شهر
+  document.getElementById("copyMonthBtn").onclick = function() {
+    let target = prompt('أدخل السنة والشهر الهدف (مثال: 2025-8)');
+    if (!target || !/^\d{4}-\d{1,2}$/.test(target)) return alert('❌ صيغة غير صحيحة');
+    // نسخ الموظفين
+    let srcEmpKey = empKey;
+    let tgtEmpKey = `employees_${target.split('-')[0]}_${(parseInt(target.split('-')[1])+1).toString().padStart(2,'0')}`;
+    db.ref(srcEmpKey).once('value').then(snap=>{
+      db.ref(tgtEmpKey).set(snap.val()||[]);
+    });
+    // نسخ الحضور
+    Object.keys(data).filter(k=>k.startsWith(`${y}-${parseInt(mo)+1}`)).forEach(dayKey=>{
+      let tgtDayKey = target+'-'+dayKey.split('-')[2];
+      db.ref('attendance/'+tgtDayKey).set(data[dayKey]);
+    });
+    alert('✅ تم نسخ بيانات الشهر');
+  };
+  // حذف شهر
+  document.getElementById("deleteMonthBtn").onclick = function() {
+    if (!confirm('هل أنت متأكد من حذف الشهر؟ سيتم حذف جميع بيانات الحضور والموظفين لهذا الشهر.')) return;
+    // حذف الموظفين
+    db.ref(empKey).remove();
+    // حذف الحضور
+    Object.keys(data).filter(k=>k.startsWith(`${y}-${parseInt(mo)+1}`)).forEach(dayKey=>{
+      db.ref('attendance/'+dayKey).remove();
+    });
+    // حذف الملاحظة
+    db.ref('monthsNotes/'+m).remove();
+    // حذف من monthsSettings.manual إذا كان يدوي
+    db.ref('monthsSettings/manual').once('value').then(snap=>{
+      let arr = snap.val()||[];
+      arr = arr.filter(x=>x!==m);
+      db.ref('monthsSettings/manual').set(arr);
+    });
+    alert('✅ تم حذف الشهر');
+    advModal.remove();
+    loadMonthsManagerContent();
+  };
+  // استعادة شهر مخفي
+  document.getElementById("restoreMonthBtn").onclick = function() {
+    db.ref('monthsSettings/hidden/'+m).set(false).then(()=>{
+      alert('✅ تم استعادة الشهر');
+      advModal.remove();
+      loadMonthsManagerContent();
+    });
+  };
+}
 
     // زر الملاحظات: يظهر فقط إذا كان للمستخدم صلاحية (edit أو read)
     db.ref("users/"+currentUser).once("value").then(snap=>{
@@ -867,6 +1251,8 @@ async function saveData() {
     return;
   }
   const days = getDays();
+  // الموظفين لهذا الشهر فقط من قاعدة البيانات الشهرية
+  let monthEmployees = employees.slice();
   try {
     const attendanceSnapshot = await db.ref("attendance").once("value");
     const savedData = attendanceSnapshot.val() || {};
@@ -876,7 +1262,7 @@ async function saveData() {
     days.forEach((day, dayIndex) => {
       if (!updatedData[day.key]) updatedData[day.key] = {};
       let dayChanged = false;
-      employees.forEach((employee, empIndex) => {
+      monthEmployees.forEach((employee, empIndex) => {
         const selectElement = document.getElementById(`d${dayIndex}e${empIndex}`);
         if (selectElement) {
           const newValue = selectElement.value;
@@ -1053,8 +1439,6 @@ document.getElementById("sidebarUserControlBtn").onclick = function() {
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 // ========== إعداد Firebase ==========
 const firebaseConfig = {
@@ -1069,6 +1453,25 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+
+// دوال إدارة قاعدة البيانات
+function clearDatabase() {
+  if (confirm('هل أنت متأكد من مسح جميع بيانات قاعدة البيانات؟')) {
+    db.ref('/').remove()
+      .then(() => {
+        // إعادة إنشاء حساب المدير بعد المسح مباشرة
+        db.ref('users/admin').set({
+          password: 'admin',
+          role: 'admin',
+          canEdit: true
+        }).then(() => {
+          alert('تم مسح جميع البيانات بنجاح! تم إعادة إنشاء حساب المدير الافتراضي.');
+        });
+      })
+      .catch(err => alert('حدث خطأ أثناء المسح: ' + err.message));
+  }
+}
+
 
 let employees = [];
 // ========== استرجاع الجلسة عند تحديث الصفحة ========== (مع مراقبة صلاحية التعديل)
@@ -1094,43 +1497,7 @@ document.addEventListener("DOMContentLoaded", function() {
     if (typeof checkForcedLogoutOnLogin === "function") checkForcedLogoutOnLogin(currentUser);
     if (typeof updateSidebarVisibility === "function") updateSidebarVisibility();
     if (typeof loadAvailableMonths === "function") loadAvailableMonths();
-
-    // إضافة مستمعين للتحديث الفوري لجميع الميزات
-    setupRealtimeListeners();
-// إضافة مستمعين للتحديث الفوري لجميع الميزات
-function setupRealtimeListeners() {
-  // الحضور
-  db.ref("attendance").on("value", snapshot => {
-    generateTable();
-  });
-  // الموظفين
-  db.ref("employees").on("value", snapshot => {
-    employees = snapshot.val() || [];
-    generateTable();
-    if (typeof loadEmployeesTable === "function") loadEmployeesTable();
-  });
-  // المستخدمين وصلاحياتهم
-  db.ref("users").on("value", snapshot => {
-    if (typeof loadUsers === "function") loadUsers();
-    generateTable();
-    // تحديث عناصر التحكم في الإحصائيات
-    if (document.getElementById("empStatsTab") && document.getElementById("empStatsTab").style.display === "flex") {
-      if (typeof openEmpStatsTab === "function") openEmpStatsTab("");
-    }
-    updateSidebarVisibility();
-  });
-  // صلاحيات الإحصائيات والرواتب
-  db.ref("settings/empStatsMode").on("value", () => {
-    generateTable();
-    if (document.getElementById("empStatsTab") && document.getElementById("empStatsTab").style.display === "flex") {
-      if (typeof openEmpStatsTab === "function") openEmpStatsTab("");
-    }
-  });
-  // الملاحظات
-  db.ref("notes").on("value", () => {
-    if (typeof renderNotesTabContent === "function") renderNotesTabContent();
-  });
-}
+    listenForNotifications();
 
     // مراقبة صلاحية التعديل للمستخدم الحالي وتحديثها فوراً
     if (currentUser !== "admin") {
@@ -1138,40 +1505,10 @@ function setupRealtimeListeners() {
         const newCanEdit = !!snap.val();
         if (currentUserCanEdit !== newCanEdit) {
           currentUserCanEdit = newCanEdit;
-          // إعادة توليد الجدول لتعطيل/تفعيل الحقول فوراً
           generateTable();
-          // إشعار المستخدم إذا تم تعطيل التعديل
           if (!currentUserCanEdit) {
             showPermissionRevokedModal();
           }
-// نافذة منبثقة لإشعار تعطيل الصلاحية
-function showPermissionRevokedModal() {
-  let oldModal = document.getElementById("permRevokedModal");
-  if (oldModal) oldModal.remove();
-  const modal = document.createElement("div");
-  modal.id = "permRevokedModal";
-  modal.style = `position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.25);z-index:9999;display:flex;align-items:center;justify-content:center;`;
-  modal.innerHTML = `
-    <div style=\"background:linear-gradient(135deg,#f7faff 60%,#e3eafc 100%);max-width:370px;width:92vw;padding:32px 20px 22px 20px;border-radius:18px;box-shadow:0 8px 32px #1976d233;position:relative;text-align:center;animation:fadeIn 0.3s;\">
-      <button id=\"closePermRevokedModalBtn\" style=\"position:absolute;top:10px;left:10px;background:#e57373;color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;transition:background 0.2s;box-shadow:0 2px 8px #e5737322;\">✖</button>
-      <div style=\"font-size:21px;color:#d32f2f;margin-bottom:18px;font-weight:700;letter-spacing:0.2px;\">🚫 تم تعطيل صلاحية التعديل</div>
-      <div style=\"font-size:16.5px;color:#2d3a4a;line-height:1.8;margin-bottom:16px;background:#fff3f3;border-radius:8px;padding:10px 7px 8px 7px;box-shadow:0 1px 4px #e5737311;\">تم قفل صلاحية التعديل الخاصة بك من قبل المدير.<br>لن تتمكن من تعديل الجدول حتى إشعار آخر.</div>
-      <button id=\"permRevokedOkBtn\" style=\"background:linear-gradient(90deg,#1976d2 60%,#42a5f5 100%);color:white;padding:11px 0;border:none;border-radius:8px;font-size:17px;cursor:pointer;box-shadow:0 2px 8px #1976d222;width:90%;margin-top:8px;font-weight:600;transition:background 0.2s;\">حسناً</button>
-    </div>
-    <style>
-      @keyframes fadeIn { from { opacity:0; transform:scale(0.95);} to { opacity:1; transform:scale(1);} }
-      @media (max-width: 600px) {
-        #permRevokedModal > div { max-width:99vw !important; padding:18px 2vw 18px 2vw !important; }
-        #permRevokedModal div { font-size:16px !important; }
-      }
-      #closePermRevokedModalBtn:hover { background:#b71c1c !important; }
-      #permRevokedOkBtn:hover { background:#1565c0 !important; }
-    </style>
-  `;
-  document.body.appendChild(modal);
-  document.getElementById("permRevokedOkBtn").onclick = () => { modal.remove(); };
-  document.getElementById("closePermRevokedModalBtn").onclick = () => { modal.remove(); };
-}
         }
       });
     }
@@ -1180,7 +1517,7 @@ function showPermissionRevokedModal() {
 const statuses = ["", "شفت", "نص", "❌"];
 let month = new Date().getMonth();
 const year = new Date().getFullYear();
-const arMonths = ["كانون الثاني","شباط","آذار","نيسان","أيار","حزيران","تموز","آب","أيلول","تشرين الأول","تشرين الثاني","كانون الأول"];
+const arMonths = ["يناير","فبراير","مارس","إبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
 let currentUser = "";
 let currentUserRole = "";
 let currentUserCanEdit = false;
@@ -1227,12 +1564,7 @@ function login() {
     showMessage("");
     document.getElementById("loginBox").style.display = "none";
     document.getElementById("mainContent").style.display = "block";
-    var centerModal = document.getElementById('centerLoadingModal');
-    if(centerModal) centerModal.style.display = 'flex';
-    loadEmployees().then(()=>{
-      generateTable();
-      if(centerModal) centerModal.style.display = 'none';
-    });
+    loadEmployees().then(generateTable);
     if (currentUserRole === "admin") {
       document.getElementById("adminPanel").style.display = "block";
       loadUsers();
@@ -1243,8 +1575,6 @@ function login() {
     checkForcedLogoutOnLogin(username);
   }).catch(error => {
     showMessage(error.message === "User not found" ? "❌ اسم المستخدم غير موجود" : "❌ كلمة المرور غير صحيحة", true);
-    var centerModal = document.getElementById('centerLoadingModal');
-    if(centerModal) centerModal.style.display = 'none';
   });
 }
 
@@ -1261,7 +1591,9 @@ function logout() {
 // ========== تحميل الموظفين ==========
 function loadEmployees() {
   
-  return db.ref("employees").once("value").then(snapshot => {
+  // جلب قائمة الموظفين الخاصة بالشهر الحالي فقط
+  const empKey = `employees_${year}_${(month+1).toString().padStart(2,'0')}`;
+  return db.ref(empKey).once("value").then(snapshot => {
     employees = snapshot.exists() ? Object.values(snapshot.val()) : [];
     const theadRow = document.querySelector("#attendanceTable thead tr");
     while (theadRow.children.length > 1) theadRow.removeChild(theadRow.lastChild);
@@ -1298,6 +1630,36 @@ function loadEmployees() {
 }
 
 // ========== جدول الحضور ==========
+// نسخ قائمة الموظفين من الشهر السابق إلى الشهر الحالي إذا لم تكن موجودة، مع احترام إعدادات الأشهر
+function ensureMonthEmployees() {
+  const empKey = `employees_${year}_${(month+1).toString().padStart(2, '0')}`;
+  // تحقق من إعدادات الأشهر
+  return db.ref('monthsSettings').once('value').then(settingsSnap => {
+    const settings = settingsSnap.val() || { auto: true };
+    const key = `${year}-${month}`;
+    // إذا الشهر مخفي أو مغلق لا تنشئه تلقائياً
+    if ((settings.hidden && settings.hidden[key]) || (settings.closed && settings.closed[key])) return;
+    // إذا الوضع التلقائي معطل، لا تنشئ الشهر إلا إذا كان في القائمة اليدوية
+    if (settings.auto === false && (!settings.manual || !settings.manual.includes(key))) return;
+    return db.ref(empKey).once("value").then(snap => {
+      if (!snap.exists()) {
+        // جلب قائمة الشهر السابق
+        let prevMonth = month - 1;
+        let prevYear = year;
+        if (prevMonth < 0) { prevMonth = 11; prevYear -= 1; }
+        const prevEmpKey = `employees_${prevYear}_${(prevMonth+1).toString().padStart(2, '0')}`;
+        return db.ref(prevEmpKey).once("value").then(prevSnap => {
+          if (prevSnap.exists()) {
+            return db.ref(empKey).set(prevSnap.val());
+          }
+        });
+      }
+    });
+  });
+}
+
+// استدعاء الدالة عند تغيير الشهر أو السنة
+window.addEventListener("DOMContentLoaded", ensureMonthEmployees);
 function getDays() {
   const days = [];
   let date = new Date(year, month, 1);
@@ -1312,69 +1674,58 @@ function getDays() {
 
 function generateTable() {
   const days = getDays();
+  // تحديث عنوان الجدول باسم الشهر الحالي
   document.querySelector("#mainContent h2").textContent = `📋 جدول الحضور - ${arMonths[month]}`;
   const tbody = document.getElementById("tableBody");
-  const loader = document.getElementById("tableLoader");
-  const centerModal = document.getElementById("centerLoadingModal");
-  const dateHeaderCell = document.getElementById("dateHeaderCell");
-  if (dateHeaderCell) dateHeaderCell.style.display = "none";
-  if (!tbody) {
-    console.error("خطأ: لم يتم العثور على عنصر tbody بالمعرف 'tableBody'. تأكد من وجود العنصر في الصفحة قبل استدعاء generateTable().");
-    if (loader) loader.style.display = "none";
-    if (centerModal) centerModal.style.display = "none";
-    return;
-  }
   tbody.innerHTML = "";
-  loader.style.display = "flex";
-  showCenterLoader(true, "جاري جلب البيانات من السيرفر...");
-  // fallback: hide modal after 10 seconds in case of any unexpected error
-  if (window._centerModalTimeout) clearTimeout(window._centerModalTimeout);
-  window._centerModalTimeout = setTimeout(()=>{ showCenterLoader(false); }, 10000);
-  // تحميل البيانات بالتوازي
-  Promise.all([
-    db.ref("attendance").once("value"),
-    Promise.resolve(employees) // الموظفين يجب أن يكونوا محملين مسبقاً
-  ]).then(([snapshot]) => {
+  db.ref("attendance").once("value").then(snapshot => {
     const savedData = snapshot.val() || {};
-    // بناء الجدول دفعة واحدة باستخدام innerHTML
-    let tableRows = "";
+    // الموظفين لهذا الشهر فقط من قاعدة البيانات الشهرية
+    let monthEmployees = employees.slice();
     days.forEach((day, dayIndex) => {
+      const row = document.createElement("tr");
+      const dateCell = document.createElement("td");
       let dateContent = toEnglishNumbers(day.label);
       if (savedData[day.key] && savedData[day.key].__editor) {
         const ts = savedData[day.key].__editedAt || "";
         const editor = savedData[day.key].__editor;
         const color = (editor === "admin") ? "#1fa745" : "#dc3545";
-        dateContent += `<div class='editor-tag' style="color:${color};font-weight:bold;">🖊️ ${editor}${ts ? ' - ' + toEnglishNumbers(ts) : ''}</div>`;
+        dateContent += `<div class='editor-tag' style="color:${color};font-weight:bold;">
+          🖊️ ${editor}${ts ? ' - ' + toEnglishNumbers(ts) : ''}
+        </div>`;
       }
-      let rowHtml = `<tr><td>${dateContent}</td>`;
-      employees.forEach((employee, empIndex) => {
-        let selectHtml = `<select id='d${dayIndex}e${empIndex}'`;
-        if (!currentUserCanEdit) selectHtml += " disabled";
-        selectHtml += ">";
+      dateCell.innerHTML = dateContent;
+      row.appendChild(dateCell);
+      monthEmployees.forEach((employee, empIndex) => {
+        const cell = document.createElement("td");
+        const select = document.createElement("select");
+        select.id = `d${dayIndex}e${empIndex}`;
         statuses.forEach(status => {
-          const selected = (savedData[day.key] && savedData[day.key][employee] === status) ? "selected" : "";
-          selectHtml += `<option value='${status}' ${selected}>${status}</option>`;
+          const option = document.createElement("option");
+          option.value = status;
+          option.textContent = status;
+          select.appendChild(option);
         });
-        selectHtml += "</select>";
-        // تلوين الخلية حسب القيمة
-        let cellStyle = "";
-        let cellColor = "";
-        let selectColor = "";
-        const val = savedData[day.key] ? savedData[day.key][employee] : "";
-        if (val === "شفت") cellStyle = "background:#d4edda;";
-        else if (val === "نص") cellStyle = "background:#fff9db;";
-        else if (val === "❌") { cellStyle = "background:#ffe3e3;color:#d32f2f;"; selectColor = "color:#d32f2f;"; }
-        rowHtml += `<td style='${cellStyle}${cellColor}'><div style='${selectColor}'>${selectHtml}</div></td>`;
-      });
-      rowHtml += "</tr>";
-      tableRows += rowHtml;
-    });
-    tbody.innerHTML = tableRows;
-    // إضافة الأحداث بعد بناء الجدول
-    days.forEach((day, dayIndex) => {
-      employees.forEach((employee, empIndex) => {
-        const select = document.getElementById(`d${dayIndex}e${empIndex}`);
-        const cell = select.parentElement.parentElement;
+        if (savedData[day.key] && savedData[day.key][employee] !== undefined) {
+          select.value = savedData[day.key][employee];
+        }
+        if (select.value === "شفت") {
+          cell.style.background = "#d4edda";
+        } else if (select.value === "نص") {
+          cell.style.background = "#fff9db";
+        } else if (select.value === "❌") {
+          cell.style.background = "#ffe3e3";
+          cell.style.color = "#d32f2f";
+          select.style.color = "#d32f2f";
+        } else {
+          cell.style.color = "";
+          select.style.color = "";
+        }
+        // تعطيل التعديل إذا لم يكن الشهر الحالي أو لا يوجد صلاحية
+        if (!currentUserCanEdit || !isCurrentMonthSelected()) {
+          select.setAttribute('disabled','disabled');
+          select.addEventListener('change', (e)=>{ e.target.value = savedData[day.key] ? savedData[day.key][employee] : ""; });
+        }
         select.addEventListener('change', function() {
           if (this.value === "شفت") {
             cell.style.background = "#d4edda";
@@ -1394,114 +1745,20 @@ function generateTable() {
             select.style.color = "";
           }
         });
-        if (!currentUserCanEdit) {
-          select.addEventListener('change', (e)=>{ e.target.value = savedData[days[dayIndex].key] ? savedData[days[dayIndex].key][employee] : ""; });
-        }
+        cell.appendChild(select);
+        row.appendChild(cell);
       });
+      tbody.appendChild(row);
     });
-    // تعطيل زر الحفظ إذا لم يكن للمستخدم صلاحية
+    // تعطيل زر الحفظ إذا لم يكن الشهر الحالي أو لا يوجد صلاحية
     const saveBtn = document.querySelector('button[onclick="saveData()"]');
-    if (saveBtn) saveBtn.disabled = !currentUserCanEdit;
+    if (saveBtn) saveBtn.disabled = (!currentUserCanEdit || !isCurrentMonthSelected());
     calculateStats(savedData);
-    showInlineEmpStats();
-    loader.style.display = "none";
-    // إخفاء التبويبة فقط بعد التأكد من ظهور الجدول فعليًا (خاصة على الهواتف)
-    // إخفاء التبويبة فقط بعد التأكد من ظهور كل عناصر الجدول (كل select)
-    // ضمان اكتمال كل عمليات الرسم (paint) قبل إخفاء التبويبة (خاصة على الهواتف)
-    function hideLoaderAfterPaints(n, cb) {
-      if (n <= 0) return cb();
-      requestAnimationFrame(() => hideLoaderAfterPaints(n - 1, cb));
-    }
-    hideLoaderAfterPaints(5, () => {
-      showCenterLoader(false);
-      if (window._centerModalTimeout) clearTimeout(window._centerModalTimeout);
-      if (dateHeaderCell) dateHeaderCell.style.display = "";
-    });
-  }).catch(()=>{
-    loader.style.display = "none";
-    // Defer hiding the loader in error case as well
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        showCenterLoader(false);
-        if (window._centerModalTimeout) clearTimeout(window._centerModalTimeout);
-        if (dateHeaderCell) dateHeaderCell.style.display = "";
-      });
-    });
+    if (typeof renderUserEmpStats === "function") renderUserEmpStats();
   });
-
-
-// ========== إحصائيات عامة للموظفين (أكثر شفت، أكثر نص، أكثر غياب) ==========
-function calculateStats(savedData) {
-  const counts = {};
-  employees.forEach(e=>{ counts[e] = {"شفت":0,"نص":0,"❌":0}; });
-  Object.values(savedData).forEach(day=>{
-    employees.forEach(e=>{
-      const val = day[e];
-      if (val && counts[e][val] !== undefined) counts[e][val] += 1;
-    });
-  });
-  const bestShift = Object.entries(counts).sort((a,b)=>b[1]["شفت"]-a[1]["شفت"])[0];
-  const bestHalf  = Object.entries(counts).sort((a,b)=>b[1]["نص"]-a[1]["نص"])[0];
-  const mostX     = Object.entries(counts).sort((a,b)=>b[1]["❌"]-a[1]["❌"])[0];
-  const statsDiv = document.getElementById('statsBox');
-  let html = `
-    <p>أكثر موظف شفت: <b>${bestShift ? bestShift[0]+` (${bestShift[1]["شفت"]})` : '—'}</b></p>
-    <p>أكثر موظف نص: <b>${bestHalf ? bestHalf[0]+` (${bestHalf[1]["نص"]})` : '—'}</b></p>
-    <p>أكثر موظف ❌: <b>${mostX ? mostX[0]+` (${mostX[1]["❌"]})` : '—'}</b></p>`;
-  statsDiv.innerHTML = html;
-}
-
-// ========== إحصائيات تفصيلية لكل موظف مع الرواتب ==========
-function showInlineEmpStats() {
-  Promise.all([
-    db.ref("users").once("value"),
-    db.ref("employees").once("value"),
-    db.ref("attendance").once("value")
-  ]).then(([usersSnap, empsSnap, attSnap]) => {
-    const users = usersSnap.val() || {};
-    const employeesList = empsSnap.val() || [];
-    const attendance = attSnap.val() || {};
-    let showStats = false;
-    let allowedEmps = employeesList;
-    let showSalary = true;
-    if (currentUserRole === "admin") {
-      showStats = true;
-    } else if (users[currentUser]) {
-      allowedEmps = users[currentUser].allowedEmps || [];
-      showSalary = !!users[currentUser].canViewSalary;
-      if (allowedEmps.length > 0) showStats = true;
-    }
-    const statsBox = document.getElementById("statsBox");
-    if (!showStats) {
-      // لا تعرض الإحصائيات التفصيلية إذا لم يكن مسموحاً
-      return;
-    }
-    let statsHtml = statsBox.innerHTML + `<div style='margin-top:10px;'>`;
-    allowedEmps.forEach(emp => {
-      let shift=0, half=0, x=0;
-      Object.values(attendance).forEach(day => {
-        if (day[emp] === "شفت") shift++;
-        if (day[emp] === "نص") half++;
-        if (day[emp] === "❌") x++;
-      });
-      const salary = (shift * 20000) + (half * 10000);
-      statsHtml += `<div class='emp-card' style='background:#f8f9fa;border-radius:10px;box-shadow:0 1px 6px #0001;padding:15px 10px;display:flex;flex-direction:column;align-items:center;transition:box-shadow 0.2s;margin-bottom:10px;'>
-        <div class='emp-name' style='font-weight:bold;font-size:16px;color:#007bff;margin-bottom:7px;'>${emp}</div>
-        <div class='emp-stats' style='display:flex;gap:8px;justify-content:center;flex-wrap:wrap;'>
-          <div class='stat shift' style='color:#28a745;background:#fff;border-radius:6px;padding:4px 9px;margin:2px 0;box-shadow:0 1px 3px #0001;'>✅ شفت: <b>${shift}</b></div>
-          <div class='stat half' style='color:#ffc107;background:#fff;border-radius:6px;padding:4px 9px;margin:2px 0;box-shadow:0 1px 3px #0001;'>🌓 نص: <b>${half}</b></div>
-          <div class='stat absent' style='color:#dc3545;background:#fff;border-radius:6px;padding:4px 9px;margin:2px 0;box-shadow:0 1px 3px #0001;'>🏖️ اجازة: <b>${x}</b></div>
-        </div>
-        ${showSalary ? `<div class='emp-salary' style='margin-top:8px;font-size:15px;color:#222;background:#e3f7e3;padding:6px 0;border-radius:7px;width:100%;text-align:center;'>💰 الراتب الكلي: <b>${salary.toLocaleString()} د.ع</b></div>` : ""}
-      </div>`;
-    });
-    statsHtml += `</div>`;
-    statsBox.innerHTML = statsHtml;
-  });
-}
   // تعطيل جميع select وinput وtextarea وأزرار الحفظ إذا فقدت الصلاحية (احتياطي)
   setTimeout(()=>{
-    if (!currentUserCanEdit) {
+    if (!currentUserCanEdit || !isCurrentMonthSelected()) {
       document.querySelectorAll('#mainContent select, #mainContent input, #mainContent textarea').forEach(el=>{
         el.setAttribute('disabled','disabled');
       });
@@ -1519,6 +1776,10 @@ function showInlineEmpStats() {
 
 // ========== حفظ البيانات ==========
 async function saveData() {
+  if (!isCurrentMonthSelected()) {
+    alert("❌ لا يمكن تعديل جدول الحضور لشهر سابق.");
+    return;
+  }
   if (!currentUserCanEdit) {
     alert("❌ ليس لديك صلاحية تعديل الجدول.");
     return;
@@ -1788,6 +2049,7 @@ window.showPermissionRevokedModal = function(msg) {
 
 // إضافة مستخدم جديد
 async function addUser() {
+  if (!preventEditIfNotCurrentMonth()) return;
   const username = document.getElementById("newUserName").value.trim().toLowerCase();
   const password = document.getElementById("newUserPass").value.trim();
   const canEdit = document.getElementById("newUserCanEdit").checked;
@@ -1815,15 +2077,41 @@ async function addUser() {
 
 // ========== إدارة الموظفين ==========
 function addEmployee() {
+  if (!preventEditIfNotCurrentMonth()) return;
   const name = document.getElementById("newEmployeeName").value.trim();
   if (!name) { alert("❌ يرجى إدخال اسم الموظف"); return; }
   if (employees.includes(name)) { alert("❌ الموظف موجود مسبقاً"); return; }
   employees.push(name);
-  db.ref("employees").set(employees).then(() => {
-    alert("✅ تم إضافة الموظف بنجاح");
-    document.getElementById("newEmployeeName").value = "";
-    loadEmployeesTable();
-    generateTable();
+  const empKey = `employees_${year}_${(month+1).toString().padStart(2,'0')}`;
+  db.ref(empKey).set(employees).then(() => {
+    // إضافة الموظف فقط إلى أيام الشهر الحالي المعروض وليس كل attendance
+    if (!isCurrentMonthSelected()) {
+      alert("✅ تم إضافة الموظف بنجاح (لن يظهر في أي جدول حضور)");
+      document.getElementById("newEmployeeName").value = "";
+      loadEmployeesTable();
+      generateTable();
+      return;
+    }
+    db.ref("attendance").once("value").then(snapshot => {
+      const attendance = snapshot.val() || {};
+      // أضف الموظف فقط لأيام الشهر الحالي المعروض
+      Object.keys(attendance).forEach(dayKey => {
+        const parts = dayKey.split("-");
+        if (parts.length === 3) {
+          const dYear = parseInt(parts[0]);
+          const dMonth = parseInt(parts[1]) - 1;
+          if (dYear === year && dMonth === month) {
+            if (!attendance[dayKey][name]) attendance[dayKey][name] = "";
+          }
+        }
+      });
+      return db.ref("attendance").set(attendance);
+    }).then(() => {
+      alert("✅ تم إضافة الموظف بنجاح (لن يظهر في الأشهر السابقة)");
+      document.getElementById("newEmployeeName").value = "";
+      loadEmployeesTable();
+      generateTable();
+    });
   }).catch(err => {
     console.error(err);
     alert("❌ حدث خطأ أثناء إضافة الموظف");
@@ -1842,18 +2130,22 @@ function loadEmployeesTable() {
     editBtn.textContent = "✏️ تعديل";
     editBtn.className = "small-button btn-edit";
     editBtn.onclick = () => enableEmployeeEdit(idx);
-    const deleteBtn = document.createElement("button");
-    deleteBtn.textContent = "حذف";
-    deleteBtn.className = "small-button btn-delete";
-    deleteBtn.onclick = () => deleteEmployee(idx);
     actionsTd.appendChild(editBtn);
-    actionsTd.appendChild(deleteBtn);
+    // زر الحذف يظهر فقط في الشهر الحالي
+    if (isCurrentMonthSelected()) {
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "حذف";
+      deleteBtn.className = "small-button btn-delete";
+      deleteBtn.onclick = () => deleteEmployee(idx);
+      actionsTd.appendChild(deleteBtn);
+    }
     tr.appendChild(nameTd);
     tr.appendChild(actionsTd);
     tbody.appendChild(tr);
   });
 }
 function enableEmployeeEdit(index) {
+  if (!preventEditIfNotCurrentMonth()) return;
   const nameTd = document.getElementById(`employeeName_${index}`);
   const oldName = nameTd.textContent;
   nameTd.innerHTML = "";
@@ -1867,6 +2159,7 @@ function enableEmployeeEdit(index) {
   saveBtn.className = "small-button btn-edit";
   saveBtn.style.marginLeft = "5px";
   saveBtn.onclick = () => {
+    if (!preventEditIfNotCurrentMonth()) return;
     const newName = input.value.trim();
     if (!newName) { alert("❌ اسم الموظف لا يمكن أن يكون فارغاً"); return; }
     if (employees.includes(newName)) { alert("❌ اسم الموظف موجود مسبقاً"); return; }
@@ -1918,11 +2211,19 @@ async function downloadPDF() {
 function calculateStats(savedData) {
   const counts = {};
   employees.forEach(e=>{ counts[e]={"شفت":0,"نص":0,"❌":0}; });
-  Object.values(savedData).forEach(day=>{
-    employees.forEach(e=>{
-      const val = day[e];
-      if (val && counts[e][val] !== undefined) counts[e][val] += 1;
-    });
+  // تصفية البيانات حسب الشهر والسنة الحاليين
+  Object.entries(savedData).forEach(([dateStr, day]) => {
+    let parts = dateStr.split("-");
+    if (parts.length === 3) {
+      let dYear = parseInt(parts[0]);
+      let dMonth = parseInt(parts[1]) - 1; // month متغير يبدأ من 0
+      if (dYear === year && dMonth === month) {
+        employees.forEach(e=>{
+          const val = day[e];
+          if (val && counts[e][val] !== undefined) counts[e][val] += 1;
+        });
+      }
+    }
   });
   const bestShift = Object.entries(counts).sort((a,b)=>b[1]["شفت"]-a[1]["شفت"])[0];
   const bestHalf  = Object.entries(counts).sort((a,b)=>b[1]["نص"]-a[1]["نص"])[0];
@@ -1932,6 +2233,113 @@ function calculateStats(savedData) {
     <p>أكثر موظف شفت: <b>${bestShift ? bestShift[0]+` (${bestShift[1]["شفت"]})` : '—'}</b></p>
     <p>أكثر موظف نص: <b>${bestHalf ? bestHalf[0]+` (${bestHalf[1]["نص"]})` : '—'}</b></p>
     <p>أكثر موظف ❌: <b>${mostX ? mostX[0]+` (${mostX[1]["❌"]})` : '—'}</b></p>`;
+
+  // عرض إحصائيات كل موظف أسفل الجدول بتصميم حديث مع الراتب
+  // حساب الراتب تلقائياً: كل شفت = 20000، كل نص = 10000
+  const empStatsDiv = document.getElementById('empStatsBelowTable');
+  if (empStatsDiv) {
+    let html = `<div class="emp-stats-bar-official">
+      <table class="emp-stats-table-official">
+        <thead>
+          <tr>
+            <th>الموظف</th>
+            <th>شفت</th>
+            <th>نص</th>
+            <th>إجازة</th>
+            <th>الراتب الكلي</th>
+          </tr>
+        </thead>
+        <tbody>`;
+    employees.forEach(emp => {
+      const shift = counts[emp]["شفت"] || 0;
+      const half = counts[emp]["نص"] || 0;
+      const vac = counts[emp]["❌"] || 0;
+      const salary = (shift * 20000) + (half * 10000);
+      html += `<tr>
+        <td class="emp-name-official">${emp}</td>
+        <td class="emp-stat-official shift">${shift}</td>
+        <td class="emp-stat-official half">${half}</td>
+        <td class="emp-stat-official vac">${vac}</td>
+        <td class="emp-salary-official">${salary.toLocaleString()} د.ع</td>
+      </tr>`;
+    });
+    html += `</tbody></table></div>`;
+    empStatsDiv.innerHTML = html;
+  }
+    // CSS احترافي ومتجاوب
+    if (!document.getElementById('empStatsProStyle')) {
+      const style = document.createElement('style');
+      style.id = 'empStatsProStyle';
+      style.innerHTML = `
+        .emp-stats-bar-official {
+          width: 100%;
+          margin: 0 auto 18px auto;
+          background: #f8f9fa;
+          border-radius: 12px;
+          box-shadow: 0 1px 8px #e3eafc33;
+          padding: 0 0 8px 0;
+          overflow-x: auto;
+        }
+        .emp-stats-table-official {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 16px;
+          background: none;
+        }
+        .emp-stats-table-official th, .emp-stats-table-official td {
+          border: 1px solid #e0e0e0;
+          padding: 8px 10px;
+          text-align: center;
+        }
+        .emp-stats-table-official th {
+          background: #e3f0ff;
+          color: #1976d2;
+          font-weight: bold;
+          font-size: 17px;
+        }
+        .emp-name-official {
+          color: #1976d2;
+          font-weight: 600;
+        }
+        .emp-stat-official.shift { color: #28a745; font-weight: 500; }
+        .emp-stat-official.half { color: #ff9800; font-weight: 500; }
+        .emp-stat-official.vac { color: #d32f2f; font-weight: 500; }
+        .emp-salary-official {
+          color: #388e3c;
+          font-weight: bold;
+          background: #e8fbe8;
+          border-radius: 6px;
+        }
+        @media (max-width: 900px) {
+          .emp-stats-table-official th, .emp-stats-table-official td { font-size: 14px; padding: 6px 4px; }
+        }
+        @media (max-width: 600px) {
+          .emp-stats-bar-official { border-radius: 7px; }
+          .emp-stats-table-official th, .emp-stats-table-official td { font-size: 13px; padding: 5px 2px; }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    // تأثير ripple احترافي مطور
+    if (!window.rippleEffect) {
+      window.rippleEffect = function(e, el) {
+        // منع تكرار التأثيرات المتداخلة
+        if (el.classList.contains('ripple-active')) return;
+        el.classList.add('ripple-active');
+        let rect = el.getBoundingClientRect();
+        let ripple = document.createElement('span');
+        ripple.className = 'ripple';
+        let size = Math.max(rect.width, rect.height) * 1.1;
+        ripple.style.width = ripple.style.height = size + 'px';
+        let x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left - size/2;
+        let y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top - size/2;
+        ripple.style.left = x + 'px';
+        ripple.style.top = y + 'px';
+        el.appendChild(ripple);
+        setTimeout(()=>{ ripple.remove(); el.classList.remove('ripple-active'); }, 700);
+      }
+    }
+  // ...existing code...
 }
 
 // ========== Tabs للأشهر ==========
@@ -1947,17 +2355,35 @@ monthsFab.style.zIndex = "9999";
 document.body.appendChild(monthsFab);
 
 function loadAvailableMonths() {
-  db.ref("attendance").once("value").then(snapshot => {
-    const data = snapshot.val() || {};
+  Promise.all([
+    db.ref("attendance").once("value"),
+    db.ref("monthsSettings/manual").once("value"),
+    db.ref("monthsSettings/hidden").once("value"),
+    db.ref("users/" + (currentUser || "")).once("value")
+  ]).then(([attSnap, manualSnap, hiddenSnap, userSnap]) => {
+    const data = attSnap.val() || {};
+    const manual = manualSnap.val() || [];
+    const hidden = hiddenSnap.val() || {};
+    const user = userSnap.val() || {};
+    const isAdmin = user.role === "admin";
     const monthsSet = new Set();
     Object.keys(data).forEach(key => {
       const parts = key.split("-");
       if (parts.length === 3) {
         const m = parseInt(parts[1]) - 1;
-        monthsSet.add(m);
+        const y = parseInt(parts[0]);
+        monthsSet.add(`${y}-${m}`);
       }
     });
-    const monthsArr = Array.from(monthsSet).sort((a,b)=>a-b);
+    manual.forEach(m => monthsSet.add(m));
+    let monthsArr = Array.from(monthsSet).sort((a,b)=>{
+      const [ya,ma]=a.split('-').map(Number), [yb,mb]=b.split('-').map(Number);
+      return ya!==yb?ya-yb:ma-mb;
+    });
+    // إخفاء الأشهر المخفية عن غير المدير
+    if (!isAdmin) {
+      monthsArr = monthsArr.filter(m => !hidden[m]);
+    }
     renderMonthFab(monthsArr);
   });
 }
@@ -1965,6 +2391,7 @@ function loadAvailableMonths() {
 function renderMonthFab(months) {
   const fabBtn = document.getElementById("fabMainMonth");
   const fabList = document.getElementById("fabMonthsList");
+  // الزر الرئيسي: إيموجي فقط
   fabBtn.textContent = "📅";
   fabBtn.title = `تغيير الشهر`;
   fabBtn.style.background = "#007bff";
@@ -1986,20 +2413,38 @@ function renderMonthFab(months) {
   fabList.style.gap = "8px";
   fabList.style.alignItems = "flex-start";
   fabList.style.transition = "all 0.2s";
+  // تحسين عرض القائمة على الهاتف
+  fabList.style.background = "#fff";
+  fabList.style.borderRadius = "12px";
+  fabList.style.boxShadow = "0 4px 16px #007bff22";
+  fabList.style.padding = "8px 6px";
+  fabList.style.minWidth = "48px";
+  fabList.style.maxHeight = "60vh";
+  fabList.style.overflowY = "auto";
   months.slice().reverse().forEach(m => {
+    const [y, mo] = m.split('-');
     const btn = document.createElement("button");
-    btn.textContent = (m+1);
+    btn.textContent = `${parseInt(mo)+1}-${y}`; // رقم الشهر والسنة
     btn.className = "fab-month fab-month-mini";
-    btn.style.background = m === month ? "#007bff" : "#f4f4f4";
-    btn.style.color = m === month ? "white" : "#333";
-    btn.title = arMonths[m];
+    btn.style.background = (parseInt(y) === year && parseInt(mo) === month) ? "#007bff" : "#f4f4f4";
+    btn.style.color = (parseInt(y) === year && parseInt(mo) === month) ? "white" : "#333";
+    btn.title = `${arMonths[parseInt(mo)]} ${y}`;
+    btn.style.margin = "2px 0";
     btn.onclick = function() {
-      month = m;
+      month = parseInt(mo);
+      window.year = parseInt(y);
       generateTable();
       renderMonthFab(months);
       fabList.style.display = "none";
     };
     fabList.appendChild(btn);
+  });
+  // إغلاق القائمة عند الضغط خارجها (للموبايل)
+  document.addEventListener('click', function fabListClose(e) {
+    if (!fabList.contains(e.target) && e.target !== fabBtn) {
+      fabList.style.display = "none";
+      document.removeEventListener('click', fabListClose);
+    }
   });
 }
 
@@ -2025,18 +2470,41 @@ fabStyle.innerHTML = `
     transition: box-shadow 0.2s, background 0.2s, color 0.2s;
   }
   .fab-month-mini {
-    width: 32px;
-    height: 32px;
-    font-size: 15px;
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
     margin-bottom: 2px;
     background: #f4f4f4;
     color: #333;
     border: 2px solid #007bff22;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s, border 0.2s;
   }
   .fab-month-mini:hover {
     background: #007bff;
     color: white;
     border: 2px solid #007bff;
+  }
+  @media (max-width: 600px) {
+    #monthsFab {
+      left: 8px !important;
+      bottom: 8px !important;
+    }
+    .fab-month, .fab-month-mini {
+      width: 34px !important;
+      height: 34px !important;
+      font-size: 15px !important;
+    }
+    #fabMonthsList {
+      min-width: 38px !important;
+      padding: 5px 2px !important;
+      border-radius: 10px !important;
+      box-shadow: 0 2px 8px #007bff22 !important;
+      gap: 4px !important;
+    }
   }
 `;
 document.head.appendChild(fabStyle);
@@ -2097,6 +2565,7 @@ function advancedDelete() {
         <button class=\"deleteOpBtn\" data-op=\"3\" style=\"background:#ff9800;color:white;padding:10px 22px;border:none;border-radius:7px;font-size:16px;cursor:pointer;\">3 - حذف التاشيرات (شفت، نص، ❌)</button>
         <button class=\"deleteOpBtn\" data-op=\"4\" style=\"background:#009688;color:white;padding:10px 22px;border:none;border-radius:7px;font-size:16px;cursor:pointer;\">4 - حذف سجل النشاطات</button>
         <button class=\"deleteOpBtn\" data-op=\"5\" style=\"background:#607d8b;color:white;padding:10px 22px;border:none;border-radius:7px;font-size:16px;cursor:pointer;\">5 - حذف كل البيانات</button>
+        <button onclick=\"clearDatabase()\" style=\"background:#e53935;color:white;margin-top:10px;width:100%;font-size:15px;padding:8px 0;border-radius:7px;\">🗑️ مسح جميع بيانات قاعدة البيانات</button>
       </div>
     </div>
   `;
@@ -2280,179 +2749,198 @@ function setEmpStatsMode(mode, value) {
 function getEmpStatsMode() {
   return db.ref("settings/empStatsMode").once("value").then(snap => snap.val() || {mode:"all",value:""});
 }
-const toggleEmpStatsBtn = document.getElementById("toggleEmpStatsBtn");
-const empStatsTab = document.getElementById("empStatsTab");
-const empStatsTabContent = document.getElementById("empStatsTabContent");
-const closeEmpStatsTab = document.getElementById("closeEmpStatsTab");
-if (closeEmpStatsTab) {
-  closeEmpStatsTab.onclick = () => { empStatsTab.style.display = "none"; };
-}
-function openEmpStatsTab(html) {
-  // تحميل المستخدمين والموظفين
+// نافذة تفاصيل إحصائيات الموظفين للمدير
+document.getElementById("toggleEmpStatsBtn").onclick = function() {
+  let tab = document.getElementById("empStatsTab");
+  tab.style.display = "flex";
+  document.getElementById("closeEmpStatsTab").onclick = function() { tab.style.display = "none"; };
+  renderEmpStatsTabContent();
+};
+
+// عرض إعدادات صلاحيات الإحصائيات لكل مستخدم
+function renderEmpStatsTabContent() {
+  const contentDiv = document.getElementById("empStatsTabContent");
+  contentDiv.innerHTML = "جاري التحميل...";
   Promise.all([
     db.ref("users").once("value"),
-    db.ref("employees").once("value"),
-    db.ref("attendance").once("value")
-  ]).then(([usersSnap, empsSnap, attSnap]) => {
+    db.ref("employees").once("value")
+  ]).then(([usersSnap, empsSnap]) => {
     const users = usersSnap.val() || {};
     const employeesList = empsSnap.val() || [];
-    const attendance = attSnap.val() || {};
-    let controls = "";
-    if (currentUserRole === "admin") {
-      controls += `<div class='empstats-admin-controls' style='margin-bottom:15px;padding:10px;background:#eef;border-radius:14px;box-shadow:0 2px 12px #0001;'>
-        <h4 style='margin:0 0 14px 0;font-size:17px;text-align:center;color:#009688;'>⚙️ تحكم عرض الإحصائيات للمستخدمين</h4>
-        <div style='overflow-x:auto;'>
-        <table style='width:100%;border-collapse:collapse;font-size:15px;'>
-          <tr style='background:#e0f7fa;'>
-            <th style='padding:8px 4px;font-size:14px;border-radius:8px 0 0 8px;'>المستخدم</th>
-            <th style='padding:8px 4px;font-size:14px;'>الموظفون المسموح عرضهم</th>
-            <th style='padding:8px 4px;font-size:14px;border-radius:0 8px 8px 0;'>عرض الرواتب</th>
-          </tr>`;
-      Object.entries(users).forEach(([username, userData]) => {
-        if (username === "admin") return;
-        let empSelect = `<select multiple style='min-width:90px;max-width:120px;font-size:14px;border-radius:7px;padding:5px;' onchange='window.setUserAllowedEmps("${username}", this)'>`;
-        employeesList.forEach(emp => {
-          const allowed = userData.allowedEmps && userData.allowedEmps.includes(emp);
-          empSelect += `<option value='${emp}' ${allowed ? "selected" : ""}>${emp}</option>`;
+    let html = `<div style='font-size:15px;color:#333;margin-bottom:10px;text-align:center;'>تحكم بعرض إحصائيات الموظفين للمستخدمين</div>`;
+    html += `<table style='width:100%;border-collapse:collapse;'>
+      <tr style='background:#f6f6f6;'>
+        <th>المستخدم</th>
+        <th>الموظفون المسموح عرضهم</th>
+        <th>عرض الرواتب</th>
+      </tr>`;
+    Object.entries(users).forEach(([username, data]) => {
+      if (username === "admin") return;
+      const allowedEmps = data.allowedStatsEmps || [];
+      const canViewSalary = !!data.canViewSalary;
+      html += `<tr>
+        <td style='padding:7px 4px;'>${username}</td>
+        <td style='padding:7px 4px;'>
+          <select multiple data-user='${username}' class='allowedEmpsSelect' style='width:140px;min-height:38px;font-size:15px;'>
+            ${employeesList.map(emp => `<option value='${emp}' ${allowedEmps.includes(emp)?"selected":""}>${emp}</option>`).join("")}
+          </select>
+        </td>
+        <td style='padding:7px 4px;text-align:center;'>
+  <label style='display:inline-flex;align-items:center;gap:7px;'>
+    <span style='font-size:15px;color:#1976d2;'>الرواتب</span>
+    <input type='checkbox' data-user='${username}' class='canViewSalaryCheckbox' ${canViewSalary?"checked":""} />
+  </label>
+</td>
+      </tr>`;
+    });
+    html += `</table><div style='font-size:13px;color:#555;margin-top:8px;'>حدد الموظفين المسموح عرضهم لكل مستخدم، وخيار عرض الرواتب. التغيير فوري.</div>`;
+    contentDiv.innerHTML = html;
+
+    // حفظ الموظفين المسموح عرضهم عند التغيير
+    Array.from(document.getElementsByClassName("allowedEmpsSelect")).forEach(sel => {
+      sel.onchange = function() {
+        const user = sel.getAttribute("data-user");
+        const selected = Array.from(sel.selectedOptions).map(opt => opt.value);
+        db.ref("users/"+user+"/allowedStatsEmps").set(selected).then(()=>{
+          logActivity("تغيير صلاحية إحصائيات الموظفين","تم تغيير الموظفين المسموح عرضهم للمستخدم: "+user+" إلى: "+selected.join(", "));
         });
-        empSelect += `</select>`;
-        let salaryCheck = `<label style='display:inline-flex;align-items:center;gap:4px;'><input type='checkbox' ${userData.canViewSalary ? "checked" : ""} onchange='window.setUserSalaryView("${username}", this.checked)' style='width:18px;height:18px;'> <span style='font-size:13px;'>رواتب</span></label>`;
-        controls += `<tr>
-          <td style='padding:7px 4px;'>${username}</td>
-          <td style='padding:7px 4px;'>${empSelect}</td>
-          <td style='padding:7px 4px;text-align:center;'>${salaryCheck}</td>
-        </tr>`;
-      });
-      controls += `</table>
-        </div>
-        <div style='font-size:13px;color:#555;margin-top:10px;text-align:center;'>حدد الموظفين الذين يستطيع المستخدم رؤية إحصائياتهم، وتفعيل أو تعطيل عرض الرواتب لكل مستخدم.</div>
-        <style>
-          @media (max-width: 600px) {
-            .empstats-admin-controls { padding:7px 2vw !important; border-radius:10px !important; }
-            .empstats-admin-controls table { font-size:13px !important; }
-            .empstats-admin-controls th, .empstats-admin-controls td { padding:6px 2px !important; }
-            .empstats-admin-controls select { min-width:70px !important; font-size:12px !important; }
-            .empstats-admin-controls label { font-size:12px !important; }
-          }
-        </style>
-      </div>`;
-      // دوال التحكم
-      window.setUserAllowedEmps = function(username, selectElem) {
-        const selected = Array.from(selectElem.selectedOptions).map(opt => opt.value);
-        db.ref("users/" + username + "/allowedEmps").set(selected);
-        logActivity("تغيير صلاحية عرض الموظفين", `تم تحديث الموظفين المسموح عرضهم للمستخدم: ${username}`);
       };
-      window.setUserSalaryView = function(username, enabled) {
-        db.ref("users/" + username + "/canViewSalary").set(enabled);
-        logActivity("تغيير صلاحية عرض الرواتب", `تم ${enabled ? "تفعيل" : "تعطيل"} عرض الرواتب للمستخدم: ${username}`);
+    });
+    // حفظ خيار الرواتب عند التغيير
+    Array.from(document.getElementsByClassName("canViewSalaryCheckbox")).forEach(chk => {
+      chk.onchange = function() {
+        const user = chk.getAttribute("data-user");
+        const val = chk.checked;
+        db.ref("users/"+user+"/canViewSalary").set(val).then(()=>{
+          logActivity("تغيير صلاحية الرواتب","تم تغيير صلاحية عرض الرواتب للمستخدم: "+user+" إلى: "+(val?"نعم":"لا"));
+        });
       };
-    }
-    // عرض فقط عناصر التحكم للمدير داخل التبويبة بدون تكرار الإحصائيات
-    empStatsTabContent.innerHTML = controls;
-    empStatsTab.style.display = "flex";
+    });
   });
 }
-if (toggleEmpStatsBtn) {
-  toggleEmpStatsBtn.onclick = function() {
+
+// ========== إحصائيات للمستخدمين ==========
+const userEmpStatsDiv = document.createElement("div");
+userEmpStatsDiv.id = "userEmpStatsDiv";
+userEmpStatsDiv.style.margin = "20px 0";
+userEmpStatsDiv.style.padding = "10px";
+userEmpStatsDiv.style.background = "#f8f9fa";
+userEmpStatsDiv.style.border = "1px solid #ddd";
+userEmpStatsDiv.style.borderRadius = "7px";
+userEmpStatsDiv.style.display = "none";
+document.getElementById("mainContent").appendChild(userEmpStatsDiv);
+
+function renderUserEmpStats() {
+  Promise.all([getEmpStatsEnabled(), getEmpStatsMode()]).then(([enabled, modeObj]) => {
+    if (!enabled) {
+      userEmpStatsDiv.style.display = "none";
+      return;
+    }
+    let allow = false, onlyEmp = null;
+    if (modeObj.mode === "all") allow = true;
+    else if (modeObj.mode === "user" && currentUser === modeObj.value) allow = true;
+    else if (modeObj.mode === "employee") { allow = true; onlyEmp = modeObj.value; }
+    if (!allow) { userEmpStatsDiv.style.display = "none"; return; }
     let html = `
-      <div style="margin-bottom:18px;">
-        <b>التحكم في عرض الإحصائيات للمستخدمين:</b>
-        <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
-          <button id="showAllStatsBtn" class="small-button" style="background:#28a745;color:white;min-width:110px;">عرض للجميع</button>
-          <button id="showUserStatsBtn" class="small-button" style="background:#007bff;color:white;min-width:110px;">عرض لمستخدم معين</button>
-          <button id="showEmpStatsBtn" class="small-button" style="background:#ffc107;color:black;min-width:110px;">عرض لموظف معين فقط</button>
-        </div>
-      </div>
-      <div id="empStatsAdminOptions" style="margin-bottom:20px;"></div>
-      <div style="border-top:1px solid #eee;margin:10px 0 15px 0;"></div>
-      <div>
-        <b>إحصائيات الموظفين:</b>
-        <div id="empStatsTabGrid" style="margin-top:15px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px;"></div>
-      </div>
+      <b>إحصائيات الموظفين:</b>
+      <div id='userEmpStatsGrid' style='margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:13px;'></div>
       <style>
         @media (max-width:600px){
-          #empStatsTabGrid{grid-template-columns:1fr;gap:10px;}
+          #userEmpStatsGrid{grid-template-columns:1fr;gap:8px;}
         }
-        .emp-card{background:#f8f9fa;border-radius:10px;box-shadow:0 1px 6px #0001;padding:16px 12px;display:flex;flex-direction:column;align-items:center;transition:box-shadow 0.2s;}
-        .emp-card:hover{box-shadow:0 4px 16px #0002;}
-        .emp-card .emp-name{font-weight:bold;font-size:17px;color:#007bff;margin-bottom:8px;}
-        .emp-card .emp-stats{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
-        .emp-card .stat{display:flex;align-items:center;gap:4px;font-size:15px;background:#fff;border-radius:6px;padding:5px 10px;margin:3px 0;box-shadow:0 1px 3px #0001;}
+        .emp-card{background:#f8f9fa;border-radius:10px;box-shadow:0 1px 6px #0001;padding:15px 10px;display:flex;flex-direction:column;align-items:center;transition:box-shadow 0.2s;}
+        .emp-card .emp-name{font-weight:bold;font-size:16px;color:#007bff;margin-bottom:7px;}
+        .emp-card .emp-stats{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+        .emp-card .stat{display:flex;align-items:center;gap:4px;font-size:14px;background:#fff;border-radius:6px;padding:4px 9px;margin:2px 0;box-shadow:0 1px 3px #0001;}
         .emp-card .stat.shift{color:#28a745;}
         .emp-card .stat.half{color:#ffc107;}
         .emp-card .stat.absent{color:#dc3545;}
       </style>
     `;
-    openEmpStatsTab(html);
-    const gridDiv = document.getElementById("empStatsTabGrid");
+    userEmpStatsDiv.innerHTML = html;
+    const gridDiv = document.getElementById("userEmpStatsGrid");
     gridDiv.innerHTML = "<div style='text-align:center;width:100%;color:#888;'>جاري التحميل...</div>";
     db.ref("attendance").once("value").then(snapshot => {
       const data = snapshot.val() || {};
-      gridDiv.innerHTML = "";
-      employees.forEach(emp => {
-        let shift=0, half=0, x=0;
-        Object.values(data).forEach(day => {
-          if (day[emp] === "شفت") shift++;
-          if (day[emp] === "نص") half++;
-          if (day[emp] === "❌") x++;
+      // جلب صلاحيات الموظفين لهذا المستخدم
+      db.ref("users/"+currentUser).once("value").then(userSnap => {
+        const userData = userSnap.val() || {};
+        let allowedEmps = userData.allowedStatsEmps || [];
+        // إذا كان المدير، يرى الجميع
+        let showEmps = (currentUserRole === "admin") ? window.monthEmployees : allowedEmps;
+        // إذا لم يتم تحديد صلاحيات، يرى الجميع
+        if (!Array.isArray(showEmps) || showEmps.length === 0) showEmps = window.monthEmployees;
+        // تحقق من وجود موظفين
+        if (!Array.isArray(showEmps) || showEmps.length === 0) {
+          gridDiv.innerHTML = "<div style='text-align:center;width:100%;color:#888;'>لا يوجد موظفون لهذا الشهر.</div>";
+          userEmpStatsDiv.style.display = "block";
+          return;
+        }
+        // تحقق من وجود بيانات حضور للشهر الحالي
+        let hasAttendance = false;
+        Object.entries(data).forEach(([dateStr, day]) => {
+          let parts = dateStr.split("-");
+          if (parts.length === 3) {
+            let dYear = parseInt(parts[0]);
+            let dMonth = parseInt(parts[1]) - 1;
+            if (dYear === year && dMonth === month) hasAttendance = true;
+          }
         });
-        const card = document.createElement("div");
-        card.className = "emp-card";
-        card.innerHTML = `
-          <div class='emp-name'>${emp}</div>
-          <div class='emp-stats'>
-            <div class='stat shift'>✅ شفت: <b>${shift}</b></div>
-            <div class='stat half'>🌓 نص: <b>${half}</b></div>
-            <div class='stat absent'>🏖️ اجازة: <b>${x}</b></div>
-          </div>
-        `;
-        gridDiv.appendChild(card);
+        if (!hasAttendance) {
+          gridDiv.innerHTML = "<div style='text-align:center;width:100%;color:#888;'>لا توجد بيانات حضور لهذا الشهر.</div>";
+          userEmpStatsDiv.style.display = "block";
+          return;
+        }
+        gridDiv.innerHTML = "";
+        showEmps.forEach(emp => {
+          if (onlyEmp && emp !== onlyEmp) return;
+          let shift=0, half=0, x=0;
+          Object.entries(data).forEach(([dateStr, day]) => {
+            let parts = dateStr.split("-");
+            if (parts.length === 3) {
+              let dYear = parseInt(parts[0]);
+              let dMonth = parseInt(parts[1]) - 1;
+              if (dYear === year && dMonth === month) {
+                if (day[emp] === "شفت") shift++;
+                if (day[emp] === "نص") half++;
+                if (day[emp] === "❌") x++;
+              }
+            }
+          });
+          const salary = (shift * 20000) + (half * 10000);
+          const card = document.createElement("div");
+          card.className = "emp-card";
+          card.innerHTML = `
+            <div class='emp-name'>${emp}</div>
+            <div class='emp-stats'>
+              <div class='stat shift'>✅ شفت: <b>${shift}</b></div>
+              <div class='stat half'>🌓 نص: <b>${half}</b></div>
+              <div class='stat absent'>🏖️ اجازة: <b>${x}</b></div>
+            </div>
+            <div class='emp-salary' style='margin-top:8px;font-size:15px;color:#222;background:#e3f7e3;padding:6px 0;border-radius:7px;width:100%;text-align:center;'>
+              💰 الراتب الكلي: <b>${salary.toLocaleString()} د.ع</b>
+            </div>
+          `;
+          gridDiv.appendChild(card);
+        });
+        userEmpStatsDiv.style.display = "block";
       });
     });
-    document.getElementById("showAllStatsBtn").onclick = function() {
-      setEmpStatsEnabled(true);
-      setEmpStatsMode("all", "");
-      document.getElementById("empStatsAdminOptions").innerHTML = "<span style='color:green'>سيتم عرض الإحصائيات لكل المستخدمين</span>";
-    };
-    document.getElementById("showUserStatsBtn").onclick = function() {
-      db.ref("users").once("value").then(snapshot => {
-        const users = snapshot.val() || {};
-        let html = "<b>اختر مستخدم:</b><br>";
-        Object.keys(users).forEach(u => {
-          html += `<button class=\"small-button\" style=\"margin:3px 2px;background:#007bff;color:white;\" onclick=\"window.setEmpStatsModeForUser('${u}')\">${u}</button>`;
-        });
-        document.getElementById("empStatsAdminOptions").innerHTML = html;
-      });
-    };
-    document.getElementById("showEmpStatsBtn").onclick = function() {
-      let html = "<b>اختر موظف:</b><br>";
-      employees.forEach(emp => {
-        html += `<button class=\"small-button\" style=\"margin:3px 2px;background:#ffc107;color:black;\" onclick=\"window.setEmpStatsModeForEmp('${emp}')\">${emp}</button>`;
-      });
-      document.getElementById("empStatsAdminOptions").innerHTML = html;
-    };
-    window.setEmpStatsModeForUser = function(username) {
-      setEmpStatsEnabled(true);
-      setEmpStatsMode("user", username);
-      document.getElementById("empStatsAdminOptions").innerHTML = `<span style='color:green'>سيتم عرض الإحصائيات فقط للمستخدم: <b>${username}</b></span>`;
-    };
-    window.setEmpStatsModeForEmp = function(emp) {
-      setEmpStatsEnabled(true);
-      setEmpStatsMode("employee", emp);
-      document.getElementById("empStatsAdminOptions").innerHTML = `<span style='color:green'>سيتم عرض إحصائيات الموظف <b>${emp}</b> فقط لكل المستخدمين</span>`;
-    };
-    getEmpStatsMode().then(modeObj => {
-      let txt = "";
-      if (modeObj.mode === "all") txt = "<span style='color:green'>سيتم عرض الإحصائيات لكل المستخدمين</span>";
-      else if (modeObj.mode === "user") txt = `<span style='color:green'>سيتم عرض الإحصائيات فقط للمستخدم: <b>${modeObj.value}</b></span>`;
-      else if (modeObj.mode === "employee") txt = `<span style='color:green'>سيتم عرض إحصائيات الموظف <b>${modeObj.value}</b> فقط لكل المستخدمين</span>`;
-      document.getElementById("empStatsAdminOptions").innerHTML = txt;
-    });
-  };
+  });
 }
-
-// ========== إحصائيات للمستخدمين ==========
-// ...تم حذف الكود القديم الخاص بإحصائيات المستخدمين...
+function tryShowUserEmpStats() {
+if (typeof window.monthEmployees !== "undefined" && window.monthEmployees.length > 0) renderUserEmpStats();
+}
+const origLoadEmployees = loadEmployees;
+loadEmployees = function() {
+  return origLoadEmployees.apply(this, arguments).then(() => {
+    if (typeof window.monthEmployees !== "undefined" && window.monthEmployees.length > 0) {
+      renderUserEmpStats();
+    }
+  });
+};
+if (localStorage.getItem('loggedUser')) tryShowUserEmpStats();
+db.ref("settings/empStatsMode").on("value", () => renderUserEmpStats());
 
 // ========== تغيير كلمة مرور المدير ==========
 // تعديل: السماح فقط للمدير بتغيير كلمة المرور
@@ -2487,6 +2975,7 @@ function changeAdminPassword() {
 // ========== حذف موظف ==========
 // تعديل: السماح فقط للمدير بالحذف والتحقق من وجود الموظف
 function deleteEmployee(index) {
+  if (!preventEditIfNotCurrentMonth()) return;
   if (currentUserRole !== "admin") {
     alert("❌ فقط المدير يمكنه حذف الموظفين.");
     return;
@@ -2497,8 +2986,10 @@ function deleteEmployee(index) {
     return;
   }
   showConfirmModal(`هل أنت متأكد من حذف الموظف "${empName}"؟ سيتم حذف جميع بيانات حضوره أيضا.`, () => {
+    if (!preventEditIfNotCurrentMonth()) return;
     employees.splice(index, 1);
-    db.ref("employees").set(employees)
+    const empKey = `employees_${year}_${(month+1).toString().padStart(2,'0')}`;
+    db.ref(empKey).set(employees)
       .then(() => {
         db.ref("attendance").once("value").then(snapshot => {
           const attendance = snapshot.val() || {};
