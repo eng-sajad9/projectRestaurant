@@ -7,6 +7,7 @@
   <meta name="description" content="نظام حضور وانصراف الموظفين - سجل حضور الموظفين وغيابهم بسهولة واحترافية. برنامج حضور وانصراف عربي مجاني وسهل الاستخدام.">
   <meta name="keywords" content="نظام حضور, نظام حضور وانصراف, برنامج حضور, برنامج حضور وانصراف, حضور الموظفين, نظام حضور هي هي, سجل حضور, attendance system, employee attendance, حضور الكتروني, برنامج دوام, نظام دوام, حضور وانصراف مجاني, حضور وانصراف عربي">
   <meta name="robots" content="index, follow">
+  <script src="crypto-utils.js"></script>
   <style>
     #adminPanel {
       box-shadow: 0 2px 12px rgba(151, 86, 86, 0.067);
@@ -1487,18 +1488,20 @@ function clearDatabase() {
   document.getElementById("adminPassConfirmBtn").onclick = function() {
     const adminPass = document.getElementById("adminPassInput").value;
     passModal.remove();
-    db.ref("users/admin/password").once("value").then(snapshot => {
+    db.ref("users/admin/password").once("value").then(async snapshot => {
       const realAdminPass = snapshot.val();
-      if (adminPass !== realAdminPass) {
+      const ok = await verifyPassword(realAdminPass, adminPass);
+      if (!ok) {
         alert("❌ كلمة المرور غير صحيحة!");
         return;
       }
       if (confirm('هل أنت متأكد من مسح جميع بيانات قاعدة البيانات؟')) {
         db.ref('/').remove()
-          .then(() => {
-            // إعادة إنشاء حساب المدير بعد المسح مباشرة
+          .then(async () => {
+            // إعادة إنشاء حساب المدير بعد المسح مباشرة بكلمة مرور مشفرة
+            const hashObj = await hashPassword('admin');
             db.ref('users/admin').set({
-              password: 'admin',
+              password: hashObj,
               role: 'admin',
               canEdit: true
             }).then(() => {
@@ -1631,10 +1634,17 @@ function login() {
   const password = document.getElementById("password").value.trim();
   if (!username || !password) return showMessage("❌ يرجى إدخال اسم المستخدم وكلمة المرور", true);
   showMessage("🔄 جاري تسجيل الدخول...");
-  db.ref("users/" + username).once("value").then(snapshot => {
+  db.ref("users/" + username).once("value").then(async snapshot => {
     if (!snapshot.exists()) throw new Error("User not found");
     const userData = snapshot.val();
-    if (userData.password !== password) throw new Error("Wrong password");
+    const storedPass = userData.password;
+    const ok = await verifyPassword(storedPass, password);
+    if (!ok) throw new Error("Wrong password");
+    // إذا legacy، حدث كلمة المرور فوراً إلى صيغة hash
+    if (typeof storedPass === 'string') {
+      const hashObj = await hashPassword(password);
+      await db.ref("users/" + username + "/password").set(hashObj);
+    }
     setSession({user: username, role: userData.role || "user", canEdit: userData.canEdit !== undefined ? userData.canEdit : true});
     showMessage("");
     document.getElementById("loginBox").style.display = "none";
@@ -2143,7 +2153,8 @@ async function addUser() {
     return;
   }
   try {
-    await db.ref("users/" + username).set({ password, role: "user", canEdit });
+    const hashObj = await hashPassword(password);
+    await db.ref("users/" + username).set({ password: hashObj, role: "user", canEdit });
     alert("✅ تم إنشاء المستخدم بنجاح");
     document.getElementById("newUserName").value = "";
     document.getElementById("newUserPass").value = "";
@@ -2677,59 +2688,59 @@ function advancedDelete() {
         </div>
       `;
       document.body.appendChild(passModal);
-      document.getElementById("adminPassConfirmBtn").onclick = function() {
+      document.getElementById("adminPassConfirmBtn").onclick = async function() {
         const adminPass = document.getElementById("adminPassInput").value;
         passModal.remove();
-        db.ref("users/admin/password").once("value").then(snapshot => {
-          const realAdminPass = snapshot.val();
-          if (adminPass !== realAdminPass) {
-            alert("❌ كلمة المرور غير صحيحة!");
-            return;
+        const snapshot = await db.ref("users/admin/password").once("value");
+        const realAdminPass = snapshot.val();
+        const ok = await verifyPassword(realAdminPass, adminPass);
+        if (!ok) {
+          alert("❌ كلمة المرور غير صحيحة!");
+          return;
+        }
+        // نافذة تأكيد نهائي
+        showConfirmModal("هل أنت متأكد من تنفيذ هذا الإجراء؟ لا يمكن التراجع عنه!", () => {
+          switch(choice) {
+            case "1":
+              db.ref("employees").remove()
+                .then(() => alert("✅ تم حذف الموظفين فقط."))
+                .catch(e => alert("❌ خطأ في حذف الموظفين: " + e.message));
+              break;
+            case "2":
+              db.ref("users").remove()
+                .then(() => alert("✅ تم حذف حسابات المستخدمين."))
+                .catch(e => alert("❌ خطأ في حذف حسابات المستخدمين: " + e.message));
+              break;
+            case "3":
+              db.ref("attendance").remove()
+                .then(() => alert("✅ تم حذف التاشيرات."))
+                .catch(e => alert("❌ خطأ في حذف التاشيرات: " + e.message));
+              break;
+            case "4":
+              db.ref("activityLog").remove()
+                .then(() => alert("✅ تم حذف سجل النشاطات."))
+                .catch(e => alert("❌ خطأ في حذف سجل النشاطات: " + e.message));
+              break;
+            case "5":
+              Promise.all([
+                db.ref("employees").remove(),
+                db.ref("attendance").remove(),
+                db.ref("activityLog").remove(),
+                db.ref("users").once("value").then(snapshot => {
+                  const users = snapshot.val() || {};
+                  const updates = {};
+                  Object.keys(users).forEach(username => {
+                    if (username !== currentUser) updates[username] = null;
+                  });
+                  return db.ref("users").update(updates);
+                })
+              ]).then(() => {
+                alert("✅ تم حذف كل البيانات ما عدا حسابك الحالي.");
+              }).catch(e => {
+                alert("❌ خطأ في حذف البيانات: " + e.message);
+              });
+              break;
           }
-          // نافذة تأكيد نهائي
-          showConfirmModal("هل أنت متأكد من تنفيذ هذا الإجراء؟ لا يمكن التراجع عنه!", () => {
-            switch(choice) {
-              case "1":
-                db.ref("employees").remove()
-                  .then(() => alert("✅ تم حذف الموظفين فقط."))
-                  .catch(e => alert("❌ خطأ في حذف الموظفين: " + e.message));
-                break;
-              case "2":
-                db.ref("users").remove()
-                  .then(() => alert("✅ تم حذف حسابات المستخدمين."))
-                  .catch(e => alert("❌ خطأ في حذف حسابات المستخدمين: " + e.message));
-                break;
-              case "3":
-                db.ref("attendance").remove()
-                  .then(() => alert("✅ تم حذف التاشيرات."))
-                  .catch(e => alert("❌ خطأ في حذف التاشيرات: " + e.message));
-                break;
-              case "4":
-                db.ref("activityLog").remove()
-                  .then(() => alert("✅ تم حذف سجل النشاطات."))
-                  .catch(e => alert("❌ خطأ في حذف سجل النشاطات: " + e.message));
-                break;
-              case "5":
-                Promise.all([
-                  db.ref("employees").remove(),
-                  db.ref("attendance").remove(),
-                  db.ref("activityLog").remove(),
-                  db.ref("users").once("value").then(snapshot => {
-                    const users = snapshot.val() || {};
-                    const updates = {};
-                    Object.keys(users).forEach(username => {
-                      if (username !== currentUser) updates[username] = null;
-                    });
-                    return db.ref("users").update(updates);
-                  })
-                ]).then(() => {
-                  alert("✅ تم حذف كل البيانات ما عدا حسابك الحالي.");
-                }).catch(e => {
-                  alert("❌ خطأ في حذف البيانات: " + e.message);
-                });
-                break;
-            }
-          });
         });
       };
       document.getElementById("closeAdminPassModalBtn").onclick = function() { passModal.remove(); };
@@ -3199,20 +3210,21 @@ function showChangePassForm() {
         <button id="changePassSubmit" style="background:#2196f3;color:white;width:100%;margin-top:8px;">تغيير كلمة المرور</button>`;
       formDiv.innerHTML = html;
       modal.style.display = "flex";
-      document.getElementById("changePassSubmit").onclick = function() {
+      document.getElementById("changePassSubmit").onclick = async function() {
         const user = document.getElementById("changePassUser").value;
         const oldPass = document.getElementById("changePassOld").value;
         const newPass = document.getElementById("changePassNew").value;
         if (!oldPass || !newPass) return statusDiv.textContent = "يرجى إدخال جميع الحقول.";
-        db.ref("users/" + user + "/password").once("value").then(snapshot => {
-          if (!snapshot.exists() || snapshot.val() !== oldPass) return statusDiv.textContent = "كلمة المرور الحالية غير صحيحة.";
-          db.ref("users/" + user + "/password").set(newPass).then(() => {
-            statusDiv.textContent = "✅ تم تغيير كلمة المرور بنجاح.";
-            logActivity("تغيير كلمة مرور", `تم تغيير كلمة المرور للمستخدم: ${user} بواسطة: ${currentUser}`);
-            document.getElementById("changePassOld").value = "";
-            document.getElementById("changePassNew").value = "";
-          });
-        });
+        const passSnap = await db.ref("users/" + user + "/password").once("value");
+        const stored = passSnap.val();
+        const ok = await verifyPassword(stored, oldPass);
+        if (!ok) return statusDiv.textContent = "كلمة المرور الحالية غير صحيحة.";
+        const hashObj = await hashPassword(newPass);
+        await db.ref("users/" + user + "/password").set(hashObj);
+        statusDiv.textContent = "✅ تم تغيير كلمة المرور بنجاح.";
+        logActivity("تغيير كلمة مرور", `تم تغيير كلمة المرور للمستخدم: ${user} بواسطة: ${currentUser}`);
+        document.getElementById("changePassOld").value = "";
+        document.getElementById("changePassNew").value = "";
       };
     });
   } else {
@@ -3222,19 +3234,20 @@ function showChangePassForm() {
       <button id="changePassSubmit" style="background:#2196f3;color:white;width:100%;margin-top:8px;">تغيير كلمة المرور</button>`;
     formDiv.innerHTML = html;
     modal.style.display = "flex";
-    document.getElementById("changePassSubmit").onclick = function() {
+    document.getElementById("changePassSubmit").onclick = async function() {
       const oldPass = document.getElementById("changePassOld").value;
       const newPass = document.getElementById("changePassNew").value;
       if (!oldPass || !newPass) return statusDiv.textContent = "يرجى إدخال جميع الحقول.";
-      db.ref("users/" + currentUser + "/password").once("value").then(snapshot => {
-        if (!snapshot.exists() || snapshot.val() !== oldPass) return statusDiv.textContent = "كلمة المرور الحالية غير صحيحة.";
-        db.ref("users/" + currentUser + "/password").set(newPass).then(() => {
-          statusDiv.textContent = "✅ تم تغيير كلمة المرور بنجاح.";
-          logActivity("تغيير كلمة مرور", `تم تغيير كلمة المرور للمستخدم: ${currentUser}`);
-          document.getElementById("changePassOld").value = "";
-          document.getElementById("changePassNew").value = "";
-        });
-      });
+      const passSnap = await db.ref("users/" + currentUser + "/password").once("value");
+      const stored = passSnap.val();
+      const ok = await verifyPassword(stored, oldPass);
+      if (!ok) return statusDiv.textContent = "كلمة المرور الحالية غير صحيحة.";
+      const hashObj = await hashPassword(newPass);
+      await db.ref("users/" + currentUser + "/password").set(hashObj);
+      statusDiv.textContent = "✅ تم تغيير كلمة المرور بنجاح.";
+      logActivity("تغيير كلمة مرور", `تم تغيير كلمة المرور للمستخدم: ${currentUser}`);
+      document.getElementById("changePassOld").value = "";
+      document.getElementById("changePassNew").value = "";
     };
   }
 }
