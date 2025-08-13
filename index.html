@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>نظام حضور الموظفين </title>
-  <meta name="description" content="نظام حضور وانصراف الموظفين - سجل حضور الموظفين وغيابهم بسهولة واحترافية. نظام الحاسبات.">
-  <meta name="keywords" content="نظام حضور, نظام حضور وانصراف, برنامج حضور, نظام هي هي, حضور الموظفين, نظام حضور هي هي, سجل حضور, attendance system, employee attendance, حضور الكتروني, برنامج دوام, نظام دوام, حضور وانصراف مجاني, حضور وانصراف عربي">
+  <meta name="description" content="نظام حضور وانصراف الموظفين - سجل حضور الموظفين وغيابهم بسهولة واحترافية. برنامج حضور وانصراف عربي مجاني وسهل الاستخدام.">
+  <meta name="keywords" content="نظام حضور, نظام حضور وانصراف, برنامج حضور, برنامج حضور وانصراف, حضور الموظفين, نظام حضور هي هي, سجل حضور, attendance system, employee attendance, حضور الكتروني, برنامج دوام, نظام دوام, حضور وانصراف مجاني, حضور وانصراف عربي">
   <meta name="robots" content="index, follow">
   <style>
     #adminPanel {
@@ -148,7 +148,7 @@
       background: #fff;
       box-shadow: -2px 0 12px #0002;
       overflow-x: hidden;
-      transition: 0.3s;
+  transition: width 0.13s cubic-bezier(.4,1.4,.6,1), padding-top 0.13s cubic-bezier(.4,1.4,.6,1);
       z-index: 5000;
       display: flex;
       flex-direction: column;
@@ -181,10 +181,11 @@
       color: #333;
       cursor: pointer;
       text-align: right;
-      transition: background 0.2s;
+  transition: background 0.08s;
     }
     #sidebarMenu button:hover {
       background: #e0e0e0;
+      transition: background 0.08s;
     }
     #sidebarToggleBtn, #sidebarCloseBtn {
       position: fixed;
@@ -222,7 +223,19 @@
       opacity: 1;
     }
     @media (max-width: 600px) {
-      #sidebarMenu.open { width: 90vw; }
+      #sidebarMenu.open {
+        width: 75vw;
+        max-width: 340px;
+        min-width: 180px;
+        border-top-left-radius: 18px;
+        border-bottom-left-radius: 18px;
+        transition: width 0.13s cubic-bezier(.4,1.4,.6,1);
+      }
+      #sidebarMenu {
+        transition: width 0.13s cubic-bezier(.4,1.4,.6,1), padding-top 0.13s cubic-bezier(.4,1.4,.6,1);
+        border-top-left-radius: 18px;
+        border-bottom-left-radius: 18px;
+      }
       #sidebarToggleBtn, #sidebarCloseBtn { right: 8px; top: 8px; }
     }
   </style>
@@ -250,7 +263,7 @@
     <table id="attendanceTable">
       <thead>
         <tr>
-          <th style="background: linear-gradient(90deg, #e3f0ff 0%, #cbe6ff 100%); color: #1976d2; font-weight: bold; font-size: 18px; border-bottom: 2.5px solid #90caf9; letter-spacing: 0.5px;">التاريخ</th>
+          <th id="dateHeaderTh" style="background: linear-gradient(90deg, #e3f0ff 0%, #cbe6ff 100%); color: #1976d2; font-weight: bold; font-size: 18px; border-bottom: 2.5px solid #90caf9; letter-spacing: 0.5px; display:none;">التاريخ</th>
         </tr>
       </thead>
       <tbody id="tableBody"></tbody>
@@ -1456,20 +1469,47 @@ const db = firebase.database();
 
 // دوال إدارة قاعدة البيانات
 function clearDatabase() {
-  if (confirm('هل أنت متأكد من مسح جميع بيانات قاعدة البيانات؟')) {
-    db.ref('/').remove()
-      .then(() => {
-        // إعادة إنشاء حساب المدير بعد المسح مباشرة
-        db.ref('users/admin').set({
-          password: 'admin',
-          role: 'admin',
-          canEdit: true
-        }).then(() => {
-          alert('تم مسح جميع البيانات بنجاح! تم إعادة إنشاء حساب المدير الافتراضي.');
-        });
-      })
-      .catch(err => alert('حدث خطأ أثناء المسح: ' + err.message));
-  }
+  // نافذة إدخال كلمة مرور المدير
+  let passModal = document.getElementById("adminPassModal");
+  if (passModal) passModal.remove();
+  passModal = document.createElement("div");
+  passModal.id = "adminPassModal";
+  passModal.style = `position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.35);z-index:9999;display:flex;align-items:center;justify-content:center;`;
+  passModal.innerHTML = `
+    <div style=\"background:#fff;max-width:350px;width:90vw;padding:22px 18px 18px 18px;border-radius:14px;box-shadow:0 8px 32px #0002;position:relative;text-align:center;\">
+      <button id=\"closeAdminPassModalBtn\" style=\"position:absolute;top:10px;left:10px;background:#dc3545;color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;\">✖</button>
+      <div style=\"font-size:17px;color:#333;margin-bottom:18px;\">يرجى إدخال كلمة مرور المدير للتأكيد:</div>
+      <input id=\"adminPassInput\" type=\"password\" style=\"width:90%;padding:8px 10px;font-size:16px;border-radius:6px;border:1px solid #ccc;margin-bottom:14px;\" />
+      <button id=\"adminPassConfirmBtn\" style=\"background:#007bff;color:white;padding:8px 18px;border:none;border-radius:6px;font-size:16px;cursor:pointer;\">تأكيد</button>
+    </div>
+  `;
+  document.body.appendChild(passModal);
+  document.getElementById("adminPassConfirmBtn").onclick = function() {
+    const adminPass = document.getElementById("adminPassInput").value;
+    passModal.remove();
+    db.ref("users/admin/password").once("value").then(snapshot => {
+      const realAdminPass = snapshot.val();
+      if (adminPass !== realAdminPass) {
+        alert("❌ كلمة المرور غير صحيحة!");
+        return;
+      }
+      if (confirm('هل أنت متأكد من مسح جميع بيانات قاعدة البيانات؟')) {
+        db.ref('/').remove()
+          .then(() => {
+            // إعادة إنشاء حساب المدير بعد المسح مباشرة
+            db.ref('users/admin').set({
+              password: 'admin',
+              role: 'admin',
+              canEdit: true
+            }).then(() => {
+              alert('تم مسح جميع البيانات بنجاح! تم إعادة إنشاء حساب المدير الافتراضي.');
+            });
+          })
+          .catch(err => alert('حدث خطأ أثناء المسح: ' + err.message));
+      }
+    });
+  };
+  document.getElementById("closeAdminPassModalBtn").onclick = function() { passModal.remove(); };
 }
 
 
@@ -1490,9 +1530,13 @@ document.addEventListener("DOMContentLoaded", function() {
     } else {
       document.getElementById("adminPanel").style.display = "none";
     }
-    loadEmployees().then(() => {
-      generateTable();
-      if (typeof tryShowUserEmpStats === "function") tryShowUserEmpStats();
+    // جلب صلاحيات allowedStatsEmps و canViewSalary وتخزينها في window.currentUserData
+    db.ref("users/"+currentUser).once("value").then(snap => {
+      window.currentUserData = snap.val() || {};
+      loadEmployees().then(() => {
+        generateTable();
+        if (typeof tryShowUserEmpStats === "function") tryShowUserEmpStats();
+      });
     });
     if (typeof checkForcedLogoutOnLogin === "function") checkForcedLogoutOnLogin(currentUser);
     if (typeof updateSidebarVisibility === "function") updateSidebarVisibility();
@@ -1505,6 +1549,11 @@ document.addEventListener("DOMContentLoaded", function() {
         const newCanEdit = !!snap.val();
         if (currentUserCanEdit !== newCanEdit) {
           currentUserCanEdit = newCanEdit;
+          // تحديث فوري لصلاحية التعديل في الذاكرة
+          if (!window.currentUserData) window.currentUserData = {};
+          window.currentUserData.canEdit = newCanEdit;
+          // تعطيل أو تفعيل جميع عناصر التعديل في الواجهة مباشرة
+          updateEditabilityUI(newCanEdit);
           generateTable();
           if (!currentUserCanEdit) {
             showPermissionRevokedModal();
@@ -1512,6 +1561,32 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       });
     }
+
+// دالة تحديث عناصر التعديل في الواجهة حسب الصلاحية
+function updateEditabilityUI(canEdit) {
+  // تعطيل أو تفعيل جميع الحقول أو الأزرار التي تعتمد على الصلاحية
+  // مثال: تعطيل جميع select الخاصة بالحضور
+  document.querySelectorAll('select[data-attendance-select]').forEach(sel => {
+    sel.disabled = !canEdit;
+  });
+  // تعطيل أزرار الحفظ أو الإضافة أو الحذف إذا لزم الأمر
+  document.querySelectorAll('.btn-edit, .btn-save, .btn-delete, .btn-add').forEach(btn => {
+    btn.disabled = !canEdit;
+    if (!canEdit) btn.classList.add('disabled');
+    else btn.classList.remove('disabled');
+  });
+}
+    // مراقبة صلاحيات allowedStatsEmps و canViewSalary وتحديثها في window.currentUserData فوراً
+    ["allowedStatsEmps","canViewSalary"].forEach(key => {
+      db.ref("users/"+currentUser+"/"+key).on("value", function(snap) {
+        if (!window.currentUserData) window.currentUserData = {};
+        window.currentUserData[key] = snap.val();
+        db.ref("attendance").once("value").then(snap2 => {
+          calculateStats(snap2.val() || {});
+          if (typeof renderUserEmpStats === "function") renderUserEmpStats();
+        });
+      });
+    });
   }
 });
 const statuses = ["", "شفت", "نص", "❌"];
@@ -1678,6 +1753,9 @@ function generateTable() {
   document.querySelector("#mainContent h2").textContent = `📋 جدول الحضور - ${arMonths[month]}`;
   const tbody = document.getElementById("tableBody");
   tbody.innerHTML = "";
+  // إخفاء رأس عمود التاريخ أثناء التحميل
+  var dateHeader = document.getElementById("dateHeaderTh");
+  if(dateHeader) dateHeader.style.display = "none";
   db.ref("attendance").once("value").then(snapshot => {
     const savedData = snapshot.val() || {};
     // الموظفين لهذا الشهر فقط من قاعدة البيانات الشهرية
@@ -1755,6 +1833,8 @@ function generateTable() {
     if (saveBtn) saveBtn.disabled = (!currentUserCanEdit || !isCurrentMonthSelected());
     calculateStats(savedData);
     if (typeof renderUserEmpStats === "function") renderUserEmpStats();
+    // إظهار رأس عمود التاريخ بعد اكتمال تحميل الجدول
+    if(dateHeader) dateHeader.style.display = "";
   });
   // تعطيل جميع select وinput وtextarea وأزرار الحفظ إذا فقدت الصلاحية (احتياطي)
   setTimeout(()=>{
@@ -2209,63 +2289,70 @@ async function downloadPDF() {
 
 // ========== إحصائيات ==========
 function calculateStats(savedData) {
-  const counts = {};
-  employees.forEach(e=>{ counts[e]={"شفت":0,"نص":0,"❌":0}; });
-  // تصفية البيانات حسب الشهر والسنة الحاليين
-  Object.entries(savedData).forEach(([dateStr, day]) => {
-    let parts = dateStr.split("-");
-    if (parts.length === 3) {
-      let dYear = parseInt(parts[0]);
-      let dMonth = parseInt(parts[1]) - 1; // month متغير يبدأ من 0
-      if (dYear === year && dMonth === month) {
-        employees.forEach(e=>{
-          const val = day[e];
-          if (val && counts[e][val] !== undefined) counts[e][val] += 1;
-        });
+  // جلب صلاحيات المستخدم الحالي
+  db.ref("users/" + currentUser).once("value").then(userSnap => {
+    const userData = userSnap.val() || {};
+    const isAdmin = userData.role === "admin";
+    const allowedEmps = isAdmin ? employees.slice() : (userData.allowedStatsEmps || []);
+    const canViewSalary = isAdmin ? true : !!userData.canViewSalary;
+    // بناء counts فقط للموظفين المسموحين
+    const counts = {};
+    allowedEmps.forEach(e=>{ counts[e]={'شفت':0,'نص':0,'❌':0}; });
+    // تصفية البيانات حسب الشهر والسنة الحاليين
+    Object.entries(savedData).forEach(([dateStr, day]) => {
+      let parts = dateStr.split("-");
+      if (parts.length === 3) {
+        let dYear = parseInt(parts[0]);
+        let dMonth = parseInt(parts[1]) - 1;
+        if (dYear === year && dMonth === month) {
+          allowedEmps.forEach(e=>{
+            const val = day[e];
+            if (val && counts[e][val] !== undefined) counts[e][val] += 1;
+          });
+        }
       }
+    });
+    const bestShift = Object.entries(counts).sort((a,b)=>b[1]["شفت"]-a[1]["شفت"])[0];
+    const bestHalf  = Object.entries(counts).sort((a,b)=>b[1]["نص"]-a[1]["نص"])[0];
+    const mostX     = Object.entries(counts).sort((a,b)=>b[1]["❌"]-a[1]["❌"])[0];
+    const statsDiv = document.getElementById('statsBox');
+    statsDiv.innerHTML = `
+      <p>أكثر موظف شفت: <b>${bestShift ? bestShift[0]+` (${bestShift[1]["شفت"]})` : '—'}</b></p>
+      <p>أكثر موظف نص: <b>${bestHalf ? bestHalf[0]+` (${bestHalf[1]["نص"]})` : '—'}</b></p>
+      <p>أكثر موظف ❌: <b>${mostX ? mostX[0]+` (${mostX[1]["❌"]})` : '—'}</b></p>`;
+
+    // عرض إحصائيات كل موظف أسفل الجدول بتصميم حديث مع الراتب
+    const empStatsDiv = document.getElementById('empStatsBelowTable');
+    if (empStatsDiv) {
+      let html = `<div class="emp-stats-bar-official">
+        <table class="emp-stats-table-official">
+          <thead>
+            <tr>
+              <th>الموظف</th>
+              <th>شفت</th>
+              <th>نص</th>
+              <th>إجازة</th>
+              ${canViewSalary ? '<th>الراتب الكلي</th>' : ''}
+            </tr>
+          </thead>
+          <tbody>`;
+      allowedEmps.forEach(emp => {
+        const shift = counts[emp]["شفت"] || 0;
+        const half = counts[emp]["نص"] || 0;
+        const vac = counts[emp]["❌"] || 0;
+        const salary = (shift * 20000) + (half * 10000);
+        html += `<tr>
+          <td class="emp-name-official">${emp}</td>
+          <td class="emp-stat-official shift">${shift}</td>
+          <td class="emp-stat-official half">${half}</td>
+          <td class="emp-stat-official vac">${vac}</td>
+          ${canViewSalary ? `<td class="emp-salary-official">${salary.toLocaleString()} د.ع</td>` : ''}
+        </tr>`;
+      });
+      html += `</tbody></table></div>`;
+      empStatsDiv.innerHTML = html;
     }
   });
-  const bestShift = Object.entries(counts).sort((a,b)=>b[1]["شفت"]-a[1]["شفت"])[0];
-  const bestHalf  = Object.entries(counts).sort((a,b)=>b[1]["نص"]-a[1]["نص"])[0];
-  const mostX     = Object.entries(counts).sort((a,b)=>b[1]["❌"]-a[1]["❌"])[0];
-  const statsDiv = document.getElementById('statsBox');
-  statsDiv.innerHTML = `
-    <p>أكثر موظف شفت: <b>${bestShift ? bestShift[0]+` (${bestShift[1]["شفت"]})` : '—'}</b></p>
-    <p>أكثر موظف نص: <b>${bestHalf ? bestHalf[0]+` (${bestHalf[1]["نص"]})` : '—'}</b></p>
-    <p>أكثر موظف ❌: <b>${mostX ? mostX[0]+` (${mostX[1]["❌"]})` : '—'}</b></p>`;
-
-  // عرض إحصائيات كل موظف أسفل الجدول بتصميم حديث مع الراتب
-  // حساب الراتب تلقائياً: كل شفت = 20000، كل نص = 10000
-  const empStatsDiv = document.getElementById('empStatsBelowTable');
-  if (empStatsDiv) {
-    let html = `<div class="emp-stats-bar-official">
-      <table class="emp-stats-table-official">
-        <thead>
-          <tr>
-            <th>الموظف</th>
-            <th>شفت</th>
-            <th>نص</th>
-            <th>إجازة</th>
-            <th>الراتب الكلي</th>
-          </tr>
-        </thead>
-        <tbody>`;
-    employees.forEach(emp => {
-      const shift = counts[emp]["شفت"] || 0;
-      const half = counts[emp]["نص"] || 0;
-      const vac = counts[emp]["❌"] || 0;
-      const salary = (shift * 20000) + (half * 10000);
-      html += `<tr>
-        <td class="emp-name-official">${emp}</td>
-        <td class="emp-stat-official shift">${shift}</td>
-        <td class="emp-stat-official half">${half}</td>
-        <td class="emp-stat-official vac">${vac}</td>
-        <td class="emp-salary-official">${salary.toLocaleString()} د.ع</td>
-      </tr>`;
-    });
-    html += `</tbody></table></div>`;
-    empStatsDiv.innerHTML = html;
-  }
     // CSS احترافي ومتجاوب
     if (!document.getElementById('empStatsProStyle')) {
       const style = document.createElement('style');
@@ -2763,10 +2850,11 @@ function renderEmpStatsTabContent() {
   contentDiv.innerHTML = "جاري التحميل...";
   Promise.all([
     db.ref("users").once("value"),
-    db.ref("employees").once("value")
+    db.ref(`employees_${year}_${(month+1).toString().padStart(2,'0')}`).once("value")
   ]).then(([usersSnap, empsSnap]) => {
     const users = usersSnap.val() || {};
-    const employeesList = empsSnap.val() || [];
+    // استخدم نفس منطق تحميل الموظفين الشهري
+    const employeesList = empsSnap.exists() ? Object.values(empsSnap.val()) : [];
     let html = `<div style='font-size:15px;color:#333;margin-bottom:10px;text-align:center;'>تحكم بعرض إحصائيات الموظفين للمستخدمين</div>`;
     html += `<table style='width:100%;border-collapse:collapse;'>
       <tr style='background:#f6f6f6;'>
@@ -2801,9 +2889,19 @@ function renderEmpStatsTabContent() {
       sel.onchange = function() {
         const user = sel.getAttribute("data-user");
         const selected = Array.from(sel.selectedOptions).map(opt => opt.value);
+        // تحديث قاعدة البيانات
         db.ref("users/"+user+"/allowedStatsEmps").set(selected).then(()=>{
           logActivity("تغيير صلاحية إحصائيات الموظفين","تم تغيير الموظفين المسموح عرضهم للمستخدم: "+user+" إلى: "+selected.join(", "));
         });
+        // إذا كان المستخدم الحالي هو المتأثر، حدث الإحصائيات فوراً (بدون انتظار قاعدة البيانات)
+        if (user === currentUser) {
+          // تحديث صلاحيات المستخدم الحالي في الذاكرة
+          if (window.currentUserData) window.currentUserData.allowedStatsEmps = selected;
+          // إعادة حساب الإحصائيات فوراً
+          db.ref("attendance").once("value").then(snap => {
+            calculateStats(snap.val() || {});
+          });
+        }
       };
     });
     // حفظ خيار الرواتب عند التغيير
@@ -2811,11 +2909,30 @@ function renderEmpStatsTabContent() {
       chk.onchange = function() {
         const user = chk.getAttribute("data-user");
         const val = chk.checked;
+        // تحديث قاعدة البيانات
         db.ref("users/"+user+"/canViewSalary").set(val).then(()=>{
           logActivity("تغيير صلاحية الرواتب","تم تغيير صلاحية عرض الرواتب للمستخدم: "+user+" إلى: "+(val?"نعم":"لا"));
         });
+        // إذا كان المستخدم الحالي هو المتأثر، حدث الإحصائيات فوراً (بدون انتظار قاعدة البيانات)
+        if (user === currentUser) {
+          if (window.currentUserData) window.currentUserData.canViewSalary = val;
+          db.ref("attendance").once("value").then(snap => {
+            calculateStats(snap.val() || {});
+          });
+        }
       };
     });
+    // مراقبة تغييرات صلاحيات المستخدم الحالي بشكل فوري (Realtime)
+    if (typeof window._statsPermsListenerSet === "undefined") {
+      window._statsPermsListenerSet = true;
+      ["allowedStatsEmps","canViewSalary"].forEach(key => {
+        db.ref("users/"+currentUser+"/"+key).on("value", function() {
+          db.ref("attendance").once("value").then(snap => {
+            calculateStats(snap.val() || {});
+          });
+        });
+      });
+    }
   });
 }
 
@@ -2862,69 +2979,71 @@ function renderUserEmpStats() {
     gridDiv.innerHTML = "<div style='text-align:center;width:100%;color:#888;'>جاري التحميل...</div>";
     db.ref("attendance").once("value").then(snapshot => {
       const data = snapshot.val() || {};
-      // جلب صلاحيات الموظفين لهذا المستخدم
-      db.ref("users/"+currentUser).once("value").then(userSnap => {
-        const userData = userSnap.val() || {};
-        let allowedEmps = userData.allowedStatsEmps || [];
-        // إذا كان المدير، يرى الجميع
-        let showEmps = (currentUserRole === "admin") ? window.monthEmployees : allowedEmps;
-        // إذا لم يتم تحديد صلاحيات، يرى الجميع
-        if (!Array.isArray(showEmps) || showEmps.length === 0) showEmps = window.monthEmployees;
-        // تحقق من وجود موظفين
-        if (!Array.isArray(showEmps) || showEmps.length === 0) {
-          gridDiv.innerHTML = "<div style='text-align:center;width:100%;color:#888;'>لا يوجد موظفون لهذا الشهر.</div>";
-          userEmpStatsDiv.style.display = "block";
-          return;
+      // استخدم صلاحيات المستخدم الحالي من الذاكرة إذا كان هو المتأثر
+      let allowedEmps, canViewSalary;
+      if (typeof window.currentUserData !== "undefined") {
+        allowedEmps = window.currentUserData.allowedStatsEmps || [];
+        canViewSalary = !!window.currentUserData.canViewSalary;
+      } else {
+        allowedEmps = [];
+        canViewSalary = false;
+      }
+      // إذا كان المدير، يرى الجميع
+      let showEmps = (currentUserRole === "admin") ? window.monthEmployees : allowedEmps;
+      // إذا لم يتم تحديد صلاحيات، يرى الجميع
+      if (!Array.isArray(showEmps) || showEmps.length === 0) showEmps = window.monthEmployees;
+      // تحقق من وجود موظفين
+      if (!Array.isArray(showEmps) || showEmps.length === 0) {
+        gridDiv.innerHTML = "<div style='text-align:center;width:100%;color:#888;'>لا يوجد موظفون لهذا الشهر.</div>";
+        userEmpStatsDiv.style.display = "block";
+        return;
+      }
+      // تحقق من وجود بيانات حضور للشهر الحالي
+      let hasAttendance = false;
+      Object.entries(data).forEach(([dateStr, day]) => {
+        let parts = dateStr.split("-");
+        if (parts.length === 3) {
+          let dYear = parseInt(parts[0]);
+          let dMonth = parseInt(parts[1]) - 1;
+          if (dYear === year && dMonth === month) hasAttendance = true;
         }
-        // تحقق من وجود بيانات حضور للشهر الحالي
-        let hasAttendance = false;
+      });
+      if (!hasAttendance) {
+        gridDiv.innerHTML = "<div style='text-align:center;width:100%;color:#888;'>لا توجد بيانات حضور لهذا الشهر.</div>";
+        userEmpStatsDiv.style.display = "block";
+        return;
+      }
+      gridDiv.innerHTML = "";
+      showEmps.forEach(emp => {
+        if (onlyEmp && emp !== onlyEmp) return;
+        let shift=0, half=0, x=0;
         Object.entries(data).forEach(([dateStr, day]) => {
           let parts = dateStr.split("-");
           if (parts.length === 3) {
             let dYear = parseInt(parts[0]);
             let dMonth = parseInt(parts[1]) - 1;
-            if (dYear === year && dMonth === month) hasAttendance = true;
+            if (dYear === year && dMonth === month) {
+              if (day[emp] === "شفت") shift++;
+              if (day[emp] === "نص") half++;
+              if (day[emp] === "❌") x++;
+            }
           }
         });
-        if (!hasAttendance) {
-          gridDiv.innerHTML = "<div style='text-align:center;width:100%;color:#888;'>لا توجد بيانات حضور لهذا الشهر.</div>";
-          userEmpStatsDiv.style.display = "block";
-          return;
-        }
-        gridDiv.innerHTML = "";
-        showEmps.forEach(emp => {
-          if (onlyEmp && emp !== onlyEmp) return;
-          let shift=0, half=0, x=0;
-          Object.entries(data).forEach(([dateStr, day]) => {
-            let parts = dateStr.split("-");
-            if (parts.length === 3) {
-              let dYear = parseInt(parts[0]);
-              let dMonth = parseInt(parts[1]) - 1;
-              if (dYear === year && dMonth === month) {
-                if (day[emp] === "شفت") shift++;
-                if (day[emp] === "نص") half++;
-                if (day[emp] === "❌") x++;
-              }
-            }
-          });
-          const salary = (shift * 20000) + (half * 10000);
-          const card = document.createElement("div");
-          card.className = "emp-card";
-          card.innerHTML = `
-            <div class='emp-name'>${emp}</div>
-            <div class='emp-stats'>
-              <div class='stat shift'>✅ شفت: <b>${shift}</b></div>
-              <div class='stat half'>🌓 نص: <b>${half}</b></div>
-              <div class='stat absent'>🏖️ اجازة: <b>${x}</b></div>
-            </div>
-            <div class='emp-salary' style='margin-top:8px;font-size:15px;color:#222;background:#e3f7e3;padding:6px 0;border-radius:7px;width:100%;text-align:center;'>
-              💰 الراتب الكلي: <b>${salary.toLocaleString()} د.ع</b>
-            </div>
-          `;
-          gridDiv.appendChild(card);
-        });
-        userEmpStatsDiv.style.display = "block";
+        const salary = (shift * 20000) + (half * 10000);
+        const card = document.createElement("div");
+        card.className = "emp-card";
+        card.innerHTML = `
+          <div class='emp-name'>${emp}</div>
+          <div class='emp-stats'>
+            <div class='stat shift'>✅ شفت: <b>${shift}</b></div>
+            <div class='stat half'>🌓 نص: <b>${half}</b></div>
+            <div class='stat absent'>🏖️ اجازة: <b>${x}</b></div>
+          </div>
+          ${canViewSalary || currentUserRole === "admin" ? `<div class='emp-salary' style='margin-top:8px;font-size:15px;color:#222;background:#e3f7e3;padding:6px 0;border-radius:7px;width:100%;text-align:center;'>💰 الراتب الكلي: <b>${salary.toLocaleString()} د.ع</b></div>` : ""}
+        `;
+        gridDiv.appendChild(card);
       });
+      userEmpStatsDiv.style.display = "block";
     });
   });
 }
