@@ -1598,9 +1598,10 @@ function clearDatabase() {
 let employees = [];
 // ========== استرجاع الجلسة عند تحديث الصفحة ========== (مع مراقبة صلاحية التعديل)
 document.addEventListener("DOMContentLoaded", function() {
-  // إظهار علامة التحميل مباشرة عند فتح النظام
-  document.getElementById("loaderSpinner").style.display = "flex";
+  // إظهار علامة التحميل فقط إذا كان المستخدم مسجل دخول
+  var loader = document.getElementById("loaderSpinner");
   if (localStorage.getItem('loggedUser')) {
+    loader.style.display = "flex";
     const userObj = JSON.parse(localStorage.getItem('loggedUser'));
     currentUser = userObj.user;
     currentUserRole = userObj.role;
