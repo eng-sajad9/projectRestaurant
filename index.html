@@ -243,6 +243,28 @@
 </head>
 <body>
 <div class="container">
+  <!-- نافذة تفاصيل اليوم -->
+  <div id="dayDetailsModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);z-index:10000;align-items:center;justify-content:center;">
+    <div style="background:#fff;max-width:420px;width:97vw;max-height:90vh;overflow:auto;border-radius:16px;box-shadow:0 8px 32px #0002;padding:28px 18px 18px 18px;position:relative;display:flex;flex-direction:column;">
+      <button id="closeDayDetailsModal" style="position:absolute;top:10px;left:10px;background:#dc3545;color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;">✖</button>
+      <div id="dayDetailsTitle" style="font-size:20px;color:#1976d2;font-weight:600;text-align:center;margin-bottom:12px;"></div>
+      <div id="dayDetailsTable"></div>
+      <div id="dayDetailsStatus" style="margin-top:10px;font-size:14px;text-align:center;"></div>
+    </div>
+  </div>
+  <!-- عنصر التحميل الاحترافي -->
+  <div id="loaderSpinner" style="display:none;justify-content:center;align-items:center;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(255,255,255,0.55);z-index:99999;">
+    <div style="display:flex;flex-direction:column;align-items:center;">
+      <svg width="70" height="70" viewBox="0 0 50 50" style="margin-bottom:14px;">
+        <circle cx="25" cy="25" r="20" fill="none" stroke="#e3eafc" stroke-width="6"/>
+        <circle cx="25" cy="25" r="20" fill="none" stroke="#1976d2" stroke-width="6" stroke-linecap="round" stroke-dasharray="60 90" stroke-dashoffset="0">
+          <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="0.8s" repeatCount="indefinite"/>
+        </circle>
+      </svg>
+      <div style="color:#1976d2;font-size:20px;font-weight:600;letter-spacing:0.5px;">يرجى الانتظار...</div>
+      <div style="color:#555;font-size:15px;margin-top:7px;">يتم تحميل البيانات بشكل آمن</div>
+    </div>
+  </div>
 
   <!-- تسجيل الدخول -->
   <div id="loginBox">
@@ -269,6 +291,15 @@
       </thead>
       <tbody id="tableBody"></tbody>
     </table>
+<style>
+  .day-details-table { width:100%; border-collapse:collapse; margin-bottom:8px; }
+  .day-details-table th, .day-details-table td { border:1px solid #e0e0e0; padding:7px 4px; text-align:center; }
+  .day-details-table th { background:#e3f0ff; color:#1976d2; font-size:16px; }
+  .day-details-select { width:100%; padding:6px; border-radius:6px; border:1px solid #ccc; font-size:15px; }
+  .day-details-user { font-size:13px; color:#888; }
+  .day-details-time { font-size:12px; color:#aaa; }
+  @media (max-width:600px) { .day-details-table th, .day-details-table td { font-size:13px; padding:5px 2px; } }
+</style>
     <button onclick="saveData()">💾 حفظ التعديلات</button>
     <button onclick="logout()" style="background-color: #dc3545; margin-top: 10px;">🚪 تسجيل خروج</button>
   <h3 style="margin-top:20px;">📊 الإحصائيات</h3>
@@ -379,7 +410,7 @@
 <button id="sidebarCloseBtn" style="display:none;">✖</button>
 <div id="sidebarMenu">
   <div class="sidebar-header" id="sidebarUserName"></div>
-  <button onclick="saveData()" style="background:#006400;color:white;"> 💾 حفظ التعديلات</button>
+  <button onclick="saveData()" style="background:#0dc149;color:white;"> 💾 حفظ التعديلات</button>
   <button onclick="logout()" style="background:#dc3545;color:white;">🚪 تسجيل خروج</button>
   <button id="sidebarAdminBtn" style="background:#000000;color:white;display:none;">⚙️ لوحة التحكم</button>
   <button id="sidebarMonthsManagerBtn" style="background:#1976d2;color:white;display:none;margin-top:2px;">📅 إدارة الأشهر</button>
@@ -398,6 +429,55 @@
 
 </div>
 <script>
+// دالة فتح نافذة تفاصيل اليوم
+function showDayDetailsModal(dayKey, dayLabel) {
+  const modal = document.getElementById("dayDetailsModal");
+  const titleDiv = document.getElementById("dayDetailsTitle");
+  const tableDiv = document.getElementById("dayDetailsTable");
+  const statusDiv = document.getElementById("dayDetailsStatus");
+  titleDiv.textContent = `تفاصيل يوم: ${dayLabel}`;
+  statusDiv.textContent = "";
+  // جلب بيانات اليوم من قاعدة البيانات
+  const monthKey = `${year}_${(month+1).toString().padStart(2,'0')}`;
+  db.ref(`dayDetails/${monthKey}/${dayKey}`).once("value").then(snap => {
+    const data = snap.val() || {};
+    let html = `<table class='day-details-table'><tr><th>الموظف</th><th>الاختيار</th><th>آخر تعديل</th></tr>`;
+    employees.forEach(emp => {
+      const val = data[emp]?.value || "";
+      const user = data[emp]?.user || "—";
+      const time = data[emp]?.time || "—";
+      html += `<tr><td>${emp}</td><td>`;
+      html += `<select class='day-details-select' data-emp='${emp}'>
+          <option value=''>—</option>
+          <option value='600' ${val==="600"?"selected":""}>600</option>
+          <option value='22' ${val==="22"?"selected":""}>22</option>
+          <option value='مشتركة' ${val==="مشتركة"?"selected":""}>مشتركة</option>
+          <option value='❌' ${val==="❌"?"selected":""}>❌</option>
+        </select>`;
+      html += `</td><td><span class='day-details-user'>${user}</span><br><span class='day-details-time'>${time}</span></td></tr>`;
+    });
+    html += `</table>`;
+    html += `<button id='saveDayDetailsBtn' style='background:#1976d2;color:white;padding:8px 18px;border:none;border-radius:7px;font-size:16px;margin-top:8px;cursor:pointer;'>💾 حفظ التعديلات</button>`;
+    tableDiv.innerHTML = html;
+    modal.style.display = "flex";
+    // زر إغلاق
+    document.getElementById("closeDayDetailsModal").onclick = function() { modal.style.display = "none"; };
+    // زر حفظ
+    document.getElementById("saveDayDetailsBtn").onclick = function() {
+      const selects = tableDiv.querySelectorAll(".day-details-select");
+      const updates = {};
+      selects.forEach(sel => {
+        const emp = sel.getAttribute("data-emp");
+        const value = sel.value;
+        updates[emp] = { value, user: currentUser, time: new Date().toLocaleString('ar-EG') };
+      });
+      db.ref(`dayDetails/${monthKey}/${dayKey}`).set(updates).then(()=>{
+        statusDiv.textContent = "✅ تم حفظ التعديلات";
+        setTimeout(()=>{ modal.style.display = "none"; }, 900);
+      });
+    };
+  });
+}
 // دالة تتحقق أن الشهر المعروض هو الشهر الحالي
 function isCurrentMonthSelected() {
   const now = new Date();
@@ -1518,6 +1598,8 @@ function clearDatabase() {
 let employees = [];
 // ========== استرجاع الجلسة عند تحديث الصفحة ========== (مع مراقبة صلاحية التعديل)
 document.addEventListener("DOMContentLoaded", function() {
+  // إظهار علامة التحميل مباشرة عند فتح النظام
+  document.getElementById("loaderSpinner").style.display = "flex";
   if (localStorage.getItem('loggedUser')) {
     const userObj = JSON.parse(localStorage.getItem('loggedUser'));
     currentUser = userObj.user;
@@ -1535,6 +1617,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // جلب صلاحيات allowedStatsEmps و canViewSalary وتخزينها في window.currentUserData
     db.ref("users/"+currentUser).once("value").then(snap => {
       window.currentUserData = snap.val() || {};
+      // عند تحميل الموظفين والجدول، إخفِ علامة التحميل فقط بعد اكتمال الجدول
       loadEmployees().then(() => {
         generateTable();
         if (typeof tryShowUserEmpStats === "function") tryShowUserEmpStats();
@@ -1551,10 +1634,8 @@ document.addEventListener("DOMContentLoaded", function() {
         const newCanEdit = !!snap.val();
         if (currentUserCanEdit !== newCanEdit) {
           currentUserCanEdit = newCanEdit;
-          // تحديث فوري لصلاحية التعديل في الذاكرة
           if (!window.currentUserData) window.currentUserData = {};
           window.currentUserData.canEdit = newCanEdit;
-          // تعطيل أو تفعيل جميع عناصر التعديل في الواجهة مباشرة
           updateEditabilityUI(newCanEdit);
           generateTable();
           if (!currentUserCanEdit) {
@@ -1564,21 +1645,16 @@ document.addEventListener("DOMContentLoaded", function() {
       });
     }
 
-// دالة تحديث عناصر التعديل في الواجهة حسب الصلاحية
-function updateEditabilityUI(canEdit) {
-  // تعطيل أو تفعيل جميع الحقول أو الأزرار التي تعتمد على الصلاحية
-  // مثال: تعطيل جميع select الخاصة بالحضور
-  document.querySelectorAll('select[data-attendance-select]').forEach(sel => {
-    sel.disabled = !canEdit;
-  });
-  // تعطيل أزرار الحفظ أو الإضافة أو الحذف إذا لزم الأمر
-  document.querySelectorAll('.btn-edit, .btn-save, .btn-delete, .btn-add').forEach(btn => {
-    btn.disabled = !canEdit;
-    if (!canEdit) btn.classList.add('disabled');
-    else btn.classList.remove('disabled');
-  });
-}
-    // مراقبة صلاحيات allowedStatsEmps و canViewSalary وتحديثها في window.currentUserData فوراً
+    function updateEditabilityUI(canEdit) {
+      document.querySelectorAll('select[data-attendance-select]').forEach(sel => {
+        sel.disabled = !canEdit;
+      });
+      document.querySelectorAll('.btn-edit, .btn-save, .btn-delete, .btn-add').forEach(btn => {
+        btn.disabled = !canEdit;
+        if (!canEdit) btn.classList.add('disabled');
+        else btn.classList.remove('disabled');
+      });
+    }
     ["allowedStatsEmps","canViewSalary"].forEach(key => {
       db.ref("users/"+currentUser+"/"+key).on("value", function(snap) {
         if (!window.currentUserData) window.currentUserData = {};
@@ -1637,7 +1713,11 @@ function login() {
     if (!snapshot.exists()) throw new Error("User not found");
     const userData = snapshot.val();
     const storedPass = userData.password;
+    console.log("[LOGIN DEBUG] username:", username);
+    console.log("[LOGIN DEBUG] entered password:", password);
+    console.log("[LOGIN DEBUG] stored password object:", storedPass);
     const ok = await verifyPassword(storedPass, password);
+    console.log("[LOGIN DEBUG] verifyPassword result:", ok);
     if (!ok) throw new Error("Wrong password");
     // إذا legacy، حدث كلمة المرور فوراً إلى صيغة hash
     if (typeof storedPass === 'string') {
@@ -1659,6 +1739,7 @@ function login() {
     checkForcedLogoutOnLogin(username);
   }).catch(error => {
     showMessage(error.message === "User not found" ? "❌ اسم المستخدم غير موجود" : "❌ كلمة المرور غير صحيحة", true);
+    console.error("[LOGIN ERROR]", error);
   });
 }
 
@@ -1675,6 +1756,8 @@ function logout() {
 // ========== تحميل الموظفين ==========
 function loadEmployees() {
   
+  // إظهار علامة التحميل
+  document.getElementById("loaderSpinner").style.display = "flex";
   // جلب قائمة الموظفين الخاصة بالشهر الحالي فقط
   const empKey = `employees_${year}_${(month+1).toString().padStart(2,'0')}`;
   return db.ref(empKey).once("value").then(snapshot => {
@@ -1710,6 +1793,8 @@ function loadEmployees() {
       theadRow.appendChild(th);
     });
     loadEmployeesTable();
+    // إخفاء علامة التحميل بعد اكتمال التحميل
+    setTimeout(function(){ document.getElementById("loaderSpinner").style.display = "none"; }, 350);
   });
 }
 
@@ -1757,6 +1842,8 @@ function getDays() {
 }
 
 function generateTable() {
+  // إظهار علامة التحميل
+  document.getElementById("loaderSpinner").style.display = "flex";
   const days = getDays();
   // تحديث عنوان الجدول باسم الشهر الحالي
   document.querySelector("#mainContent h2").textContent = `📋 جدول الحضور - ${arMonths[month]}`;
@@ -1781,7 +1868,8 @@ function generateTable() {
           🖊️ ${editor}${ts ? ' - ' + toEnglishNumbers(ts) : ''}
         </div>`;
       }
-      dateCell.innerHTML = dateContent;
+      // عند الضغط على اليوم، افتح نافذة التفاصيل
+      dateCell.innerHTML = `<span style='cursor:pointer;' onclick='showDayDetailsModal("${day.key}", "${day.label}")'>${dateContent}</span>`;
       row.appendChild(dateCell);
       monthEmployees.forEach((employee, empIndex) => {
         const cell = document.createElement("td");
@@ -1808,7 +1896,6 @@ function generateTable() {
           cell.style.color = "";
           select.style.color = "";
         }
-        // تعطيل التعديل إذا لم يكن الشهر الحالي أو لا يوجد صلاحية
         if (!currentUserCanEdit || !isCurrentMonthSelected()) {
           select.setAttribute('disabled','disabled');
           select.addEventListener('change', (e)=>{ e.target.value = savedData[day.key] ? savedData[day.key][employee] : ""; });
@@ -1844,6 +1931,8 @@ function generateTable() {
     if (typeof renderUserEmpStats === "function") renderUserEmpStats();
     // إظهار رأس عمود التاريخ بعد اكتمال تحميل الجدول
     if(dateHeader) dateHeader.style.display = "";
+    // إخفاء علامة التحميل بعد اكتمال التحميل
+    setTimeout(function(){ document.getElementById("loaderSpinner").style.display = "none"; }, 350);
   });
   // تعطيل جميع select وinput وtextarea وأزرار الحفظ إذا فقدت الصلاحية (احتياطي)
   setTimeout(()=>{
@@ -2280,23 +2369,6 @@ function enableEmployeeEdit(index) {
   nameTd.appendChild(saveBtn);
 }
 
-// ========== PDF ==========
-async function downloadPDF() {
-  const element = document.getElementById('attendanceTable');
-  const canvas = await html2canvas(element, {scale:2});
-  const imgData = canvas.toDataURL('image/png');
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF('l', 'pt', 'a4');
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
-  const imgProps = pdf.getImageProperties(imgData);
-  const ratio = Math.min(pageWidth / imgProps.width, pageHeight / imgProps.height);
-  const imgWidth = imgProps.width * ratio;
-  const imgHeight = imgProps.height * ratio;
-  pdf.addImage(imgData, 'PNG', (pageWidth - imgWidth)/2, 20, imgWidth, imgHeight);
-  pdf.save('attendance.pdf');
-}
-
 // ========== إحصائيات ==========
 function calculateStats(savedData) {
   // جلب صلاحيات المستخدم الحالي
@@ -2439,6 +2511,7 @@ function calculateStats(savedData) {
   // ...existing code...
 }
 
+  // زر لترحيل كلمات المرور القديمة
 // ========== Tabs للأشهر ==========
 
 // زر عائم للأشهر بشكل دائري حديث
