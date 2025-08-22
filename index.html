@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>نظام حضور هي هي </title>
+  <title>نظام حضور الموظفين </title>
   <meta name="description" content="نظام حضور وانصراف الموظفين - سجل حضور الموظفين وغيابهم بسهولة واحترافية. برنامج حضور وانصراف عربي مجاني وسهل الاستخدام.">
   <meta name="keywords" content="نظام حضور, نظام حضور وانصراف, برنامج حضور, برنامج حضور وانصراف, حضور الموظفين, نظام حضور هي هي, سجل حضور, attendance system, employee attendance, حضور الكتروني, برنامج دوام, نظام دوام, حضور وانصراف مجاني, حضور وانصراف عربي">
   <meta name="robots" content="index, follow">
@@ -437,40 +437,83 @@ function showDayDetailsModal(dayKey, dayLabel) {
   const statusDiv = document.getElementById("dayDetailsStatus");
   titleDiv.textContent = `تفاصيل يوم: ${dayLabel}`;
   statusDiv.textContent = "";
-  // جلب بيانات اليوم من قاعدة البيانات
   const monthKey = `${year}_${(month+1).toString().padStart(2,'0')}`;
   db.ref(`dayDetails/${monthKey}/${dayKey}`).once("value").then(snap => {
     const data = snap.val() || {};
-    let html = `<table class='day-details-table'><tr><th>الموظف</th><th>الاختيار</th><th>آخر تعديل</th></tr>`;
+    // استخدم DocumentFragment لتجميع الصفوف
+    const fragment = document.createDocumentFragment();
+    // رأس الجدول
+    const table = document.createElement('table');
+    table.className = 'day-details-table';
+    const thead = document.createElement('thead');
+    thead.innerHTML = `<tr><th>الموظف</th><th>الاختيار</th><th>آخر تعديل</th></tr>`;
+    table.appendChild(thead);
+    const tbody = document.createElement('tbody');
     employees.forEach(emp => {
       const val = data[emp]?.value || "";
       const user = data[emp]?.user || "—";
       const time = data[emp]?.time || "—";
-      html += `<tr><td>${emp}</td><td>`;
-      html += `<select class='day-details-select' data-emp='${emp}'>
-          <option value=''>—</option>
-          <option value='600' ${val==="600"?"selected":""}>600</option>
-          <option value='22' ${val==="22"?"selected":""}>22</option>
-          <option value='مشتركة' ${val==="مشتركة"?"selected":""}>مشتركة</option>
-          <option value='❌' ${val==="❌"?"selected":""}>❌</option>
-        </select>`;
-      html += `</td><td><span class='day-details-user'>${user}</span><br><span class='day-details-time'>${time}</span></td></tr>`;
+      const tr = document.createElement('tr');
+      // اسم الموظف
+      const tdEmp = document.createElement('td');
+      tdEmp.textContent = emp;
+      tr.appendChild(tdEmp);
+      // قائمة الاختيار
+      const tdSelect = document.createElement('td');
+      const select = document.createElement('select');
+      select.className = 'day-details-select';
+      select.setAttribute('data-emp', emp);
+      ["—", "600", "22", "مشتركة", "❌"].forEach(optionVal => {
+        const option = document.createElement('option');
+        option.value = optionVal === "—" ? "" : optionVal;
+        option.textContent = optionVal;
+        if (val === option.value) option.selected = true;
+        select.appendChild(option);
+      });
+      tdSelect.appendChild(select);
+      tr.appendChild(tdSelect);
+      // آخر تعديل
+      const tdEdit = document.createElement('td');
+      let userColor = (user === "admin") ? "#1fa745" : (user === "—" ? "#555" : "#dc3545");
+      function toEnglishDate(str) {
+        if (!str || str === "—") return "—";
+        return str.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/،/g, ",");
+      }
+      tdEdit.innerHTML = `<span class='day-details-user' style='color:${userColor};font-weight:bold;'>${user}</span><br><span class='day-details-time' style='color:#000;'>${toEnglishDate(time)}</span>`;
+      tr.appendChild(tdEdit);
+      tbody.appendChild(tr);
     });
-    html += `</table>`;
-    html += `<button id='saveDayDetailsBtn' style='background:#1976d2;color:white;padding:8px 18px;border:none;border-radius:7px;font-size:16px;margin-top:8px;cursor:pointer;'>💾 حفظ التعديلات</button>`;
-    tableDiv.innerHTML = html;
+    table.appendChild(tbody);
+    fragment.appendChild(table);
+    // زر الحفظ
+    const saveBtn = document.createElement('button');
+    saveBtn.id = 'saveDayDetailsBtn';
+    saveBtn.textContent = '💾 حفظ التعديلات';
+    saveBtn.style = 'background:#1976d2;color:white;padding:8px 18px;border:none;border-radius:7px;font-size:16px;margin-top:8px;cursor:pointer;';
+    fragment.appendChild(saveBtn);
+    tableDiv.innerHTML = '';
+    tableDiv.appendChild(fragment);
     modal.style.display = "flex";
-    // زر إغلاق
     document.getElementById("closeDayDetailsModal").onclick = function() { modal.style.display = "none"; };
-    // زر حفظ
-    document.getElementById("saveDayDetailsBtn").onclick = function() {
+    saveBtn.onclick = function() {
       const selects = tableDiv.querySelectorAll(".day-details-select");
       const updates = {};
-      selects.forEach(sel => {
-        const emp = sel.getAttribute("data-emp");
-        const value = sel.value;
-        updates[emp] = { value, user: currentUser, time: new Date().toLocaleString('ar-EG') };
+      let changed = false;
+      employees.forEach(emp => {
+        const sel = Array.from(selects).find(s => s.getAttribute("data-emp") === emp);
+        const newValue = sel ? sel.value : "";
+        const oldValue = data[emp]?.value || "";
+        if (newValue !== oldValue) {
+          updates[emp] = { value: newValue, user: currentUser, time: new Date().toLocaleString('ar-EG') };
+          changed = true;
+        } else if (data[emp]) {
+          updates[emp] = data[emp];
+        }
       });
+      if (!changed) {
+        statusDiv.textContent = "لا يوجد أي تعديل لحفظه.";
+        return;
+      }
       db.ref(`dayDetails/${monthKey}/${dayKey}`).set(updates).then(()=>{
         statusDiv.textContent = "✅ تم حفظ التعديلات";
         setTimeout(()=>{ modal.style.display = "none"; }, 900);
@@ -678,6 +721,10 @@ document.getElementById("sidebarNotesSettingsBtn").onclick = function() {
   }
   // عرض الملاحظات أسفل الجدول تلقائياً بعد تحميل الصفحة إذا كان للمستخدم صلاحية
   document.addEventListener("DOMContentLoaded", function() {
+  // هجرة كلمات المرور القديمة تلقائيًا عند بدء النظام
+  if (typeof migrateAllPlaintextUsers === "function") {
+    migrateAllPlaintextUsers();
+  }
     db.ref("users/"+currentUser).once("value").then(snap=>{
       const data = snap.val()||{};
       const perm = data.notesPermission || "edit";
@@ -1579,13 +1626,12 @@ function clearDatabase() {
           .then(async () => {
             // إعادة إنشاء حساب المدير بعد المسح مباشرة بكلمة مرور مشفرة
             const hashObj = await hashPassword('admin');
-            db.ref('users/admin').set({
+            await db.ref('users/admin').set({
               password: hashObj,
               role: 'admin',
               canEdit: true
-            }).then(() => {
-              alert('تم مسح جميع البيانات بنجاح! تم إعادة إنشاء حساب المدير الافتراضي.');
             });
+            alert('تم مسح جميع البيانات بنجاح! تم إعادة إنشاء حساب المدير الافتراضي.');
           })
           .catch(err => alert('حدث خطأ أثناء المسح: ' + err.message));
       }
@@ -2128,6 +2174,20 @@ async function deleteUser(username) {
   showDeleteUserModal(username);
 }
 
+// دالة لضمان بقاء حساب المدير دائماً
+async function ensureAdminAccount() {
+  const snap = await db.ref("users").once("value");
+  const users = snap.val() || {};
+  if (!users.admin) {
+    const hashObj = await hashPassword('admin');
+    await db.ref('users/admin').set({
+      password: hashObj,
+      role: 'admin',
+      canEdit: true
+    });
+  }
+}
+
 function showDeleteUserModal(username) {
   let oldModal = document.getElementById("deleteUserModal");
   if (oldModal) oldModal.remove();
@@ -2154,6 +2214,7 @@ function showDeleteUserModal(username) {
   document.body.appendChild(modal);
   document.getElementById("deleteUserConfirmBtn").onclick = async () => {
     await db.ref("users/" + username).remove();
+    await ensureAdminAccount();
     await db.ref("forcedLogout/" + username).set(true);
     if (username === currentUser) {
       localStorage.setItem('accountDeleted', 'true');
@@ -3272,44 +3333,102 @@ function showChangePassForm() {
   if (currentUserRole === "admin") {
     db.ref("users").once("value").then(snapshot => {
       const users = snapshot.val() || {};
-      let html = `<label>اختر المستخدم:</label>
+      let html = `<div style='margin-bottom:10px;font-size:15px;color:#1976d2;font-weight:bold;'>إدارة المستخدمين وكلمات المرور</div>
+        <label style='font-size:14px;'>اختر المستخدم:</label>
         <select id="changePassUser" style="width:100%;margin-bottom:10px;">`;
       Object.keys(users).forEach(u => {
         html += `<option value="${u}" ${u===currentUser?'selected':''}>${u}${u==='admin'?' (مدير)':''}</option>`;
       });
       html += `</select>
-        <input type="password" id="changePassOld" placeholder="كلمة المرور الحالية" style="margin-bottom:8px;" />
-        <input type="password" id="changePassNew" placeholder="كلمة المرور الجديدة" style="margin-bottom:8px;" />
-        <button id="changePassSubmit" style="background:#2196f3;color:white;width:100%;margin-top:8px;">تغيير كلمة المرور</button>`;
+        <label style='font-size:14px;'>اسم مستخدم جديد:</label>
+        <input type="text" id="changeUserName" placeholder="اكتب اسم المستخدم الجديد (اختياري)" style="margin-bottom:8px;" />
+        <label style='font-size:14px;'>كلمة مرور جديدة:</label>
+        <input type="password" id="changePassNew" placeholder="اكتب كلمة المرور الجديدة (اختياري)" style="margin-bottom:8px;" />
+        <button id="changeUserSubmit" style="background:#2196f3;color:white;width:100%;margin-top:8px;font-size:16px;">حفظ التغييرات</button>
+        <button id="resetPassBtn" style="background:#ff9800;color:white;width:100%;margin-top:8px;font-size:16px;">إعادة ضبط كلمة المرور (بدون الحاجة للكلمة القديمة)</button>
+        <div style='margin-top:10px;font-size:13px;color:#555;'>يمكنك تغيير اسم المستخدم أو كلمة المرور لأي مستخدم بسهولة.<br>زر إعادة الضبط يسمح لك بتعيين كلمة مرور جديدة مباشرة إذا نسي المستخدم كلمة المرور القديمة.</div>`;
       formDiv.innerHTML = html;
       modal.style.display = "flex";
-      document.getElementById("changePassSubmit").onclick = async function() {
+      // تغيير اسم المستخدم أو كلمة المرور بدون الحاجة لكلمة المرور القديمة
+      document.getElementById("changeUserSubmit").onclick = async function() {
         const user = document.getElementById("changePassUser").value;
-        const oldPass = document.getElementById("changePassOld").value;
         const newPass = document.getElementById("changePassNew").value;
-        if (!oldPass || !newPass) return statusDiv.textContent = "يرجى إدخال جميع الحقول.";
-        const passSnap = await db.ref("users/" + user + "/password").once("value");
-        const stored = passSnap.val();
-        const ok = await verifyPassword(stored, oldPass);
-        if (!ok) return statusDiv.textContent = "كلمة المرور الحالية غير صحيحة.";
-        const hashObj = await hashPassword(newPass);
-        await db.ref("users/" + user + "/password").set(hashObj);
-        statusDiv.textContent = "✅ تم تغيير كلمة المرور بنجاح.";
-        logActivity("تغيير كلمة مرور", `تم تغيير كلمة المرور للمستخدم: ${user} بواسطة: ${currentUser}`);
-        document.getElementById("changePassOld").value = "";
+        const newUserName = document.getElementById("changeUserName").value.trim();
+        let changed = false;
+        // تغيير اسم المستخدم إذا تم إدخال اسم جديد ولم يكن مستخدم مسبقًا
+        if (newUserName && !users[newUserName]) {
+          const userDataSnap = await db.ref("users/" + user).once("value");
+          const userData = userDataSnap.val();
+          await db.ref("users/" + newUserName).set(userData);
+          await db.ref("users/" + user).remove();
+          statusDiv.textContent = `✅ تم تغيير اسم المستخدم إلى: ${newUserName}`;
+          logActivity("تغيير اسم مستخدم", `تم تغيير اسم المستخدم من ${user} إلى ${newUserName} بواسطة: ${currentUser}`);
+          changed = true;
+        } else if (newUserName && users[newUserName]) {
+          statusDiv.textContent = "❌ اسم المستخدم الجديد مستخدم بالفعل.";
+          return;
+        }
+        // تغيير كلمة المرور إذا تم إدخال كلمة مرور جديدة
+        if (newPass) {
+          const hashObj = await hashPassword(newPass);
+          const targetUser = newUserName && !users[newUserName] ? newUserName : user;
+          await db.ref("users/" + targetUser + "/password").set(hashObj);
+          statusDiv.textContent += (changed ? "<br>" : "") + "✅ تم تغيير كلمة المرور بنجاح.";
+          logActivity("تغيير كلمة مرور", `تم تغيير كلمة المرور للمستخدم: ${targetUser} بواسطة: ${currentUser}`);
+          changed = true;
+        }
+        if (!changed) {
+          statusDiv.textContent = "يرجى إدخال اسم مستخدم جديد أو كلمة مرور جديدة.";
+        }
         document.getElementById("changePassNew").value = "";
+        document.getElementById("changeUserName").value = "";
+      };
+      // إعادة ضبط كلمة المرور بدون الحاجة للكلمة القديمة
+      document.getElementById("resetPassBtn").onclick = async function() {
+        const user = document.getElementById("changePassUser").value;
+        let newPass = "";
+        // نافذة احترافية لإدخال كلمة المرور الجديدة
+        let passModal = document.createElement("div");
+        passModal.style = "position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);z-index:9999;display:flex;align-items:center;justify-content:center;";
+        passModal.innerHTML = `<div style='background:#fff;max-width:340px;width:95vw;border-radius:12px;box-shadow:0 8px 32px #0002;padding:22px 18px 18px 18px;position:relative;text-align:center;'>
+          <h3 style='color:#ff9800;margin-bottom:12px;'>إعادة ضبط كلمة المرور</h3>
+          <div style='margin-bottom:10px;font-size:15px;'>أدخل كلمة المرور الجديدة للمستخدم <b style='color:#1976d2;'>${user}</b>:</div>
+          <input type='password' id='newPassInput' style='width:90%;padding:8px 10px;font-size:16px;border-radius:6px;border:1px solid #ccc;margin-bottom:14px;' placeholder='كلمة المرور الجديدة' />
+          <button id='confirmNewPassBtn' style='background:#2196f3;color:white;padding:8px 18px;border:none;border-radius:6px;font-size:16px;cursor:pointer;'>تأكيد</button>
+          <button id='cancelNewPassBtn' style='background:#dc3545;color:white;padding:8px 18px;border:none;border-radius:6px;font-size:16px;cursor:pointer;margin-left:8px;'>إلغاء</button>
+        </div>`;
+        document.body.appendChild(passModal);
+        document.getElementById('confirmNewPassBtn').onclick = async function() {
+          newPass = document.getElementById('newPassInput').value;
+          if (!newPass) {
+            statusDiv.textContent = "يرجى إدخال كلمة مرور جديدة.";
+            passModal.remove();
+            return;
+          }
+          const hashObj = await hashPassword(newPass);
+          await db.ref("users/" + user + "/password").set(hashObj);
+          statusDiv.textContent = "✅ تم إعادة ضبط كلمة المرور بنجاح.";
+          logActivity("إعادة ضبط كلمة مرور", `تم إعادة ضبط كلمة المرور للمستخدم: ${user} بواسطة: ${currentUser}`);
+          passModal.remove();
+        };
+        document.getElementById('cancelNewPassBtn').onclick = function() {
+          passModal.remove();
+        };
       };
     });
   } else {
     let html = `
+      <input type="text" id="changeUserName" placeholder="اسم مستخدم جديد (اختياري)" style="margin-bottom:8px;" />
       <input type="password" id="changePassOld" placeholder="كلمة المرور الحالية" style="margin-bottom:8px;" />
       <input type="password" id="changePassNew" placeholder="كلمة المرور الجديدة" style="margin-bottom:8px;" />
-      <button id="changePassSubmit" style="background:#2196f3;color:white;width:100%;margin-top:8px;">تغيير كلمة المرور</button>`;
+      <button id="changePassSubmit" style="background:#2196f3;color:white;width:100%;margin-top:8px;">تغيير كلمة المرور</button>
+      <button id="resetPassBtn" style="background:#ff9800;color:white;width:100%;margin-top:8px;">إعادة ضبط كلمة المرور (إذا نسيت القديمة)</button>`;
     formDiv.innerHTML = html;
     modal.style.display = "flex";
     document.getElementById("changePassSubmit").onclick = async function() {
       const oldPass = document.getElementById("changePassOld").value;
       const newPass = document.getElementById("changePassNew").value;
+      const newUserName = document.getElementById("changeUserName").value.trim();
       if (!oldPass || !newPass) return statusDiv.textContent = "يرجى إدخال جميع الحقول.";
       const passSnap = await db.ref("users/" + currentUser + "/password").once("value");
       const stored = passSnap.val();
@@ -3317,10 +3436,32 @@ function showChangePassForm() {
       if (!ok) return statusDiv.textContent = "كلمة المرور الحالية غير صحيحة.";
       const hashObj = await hashPassword(newPass);
       await db.ref("users/" + currentUser + "/password").set(hashObj);
-      statusDiv.textContent = "✅ تم تغيير كلمة المرور بنجاح.";
+      // تغيير اسم المستخدم إذا تم إدخال اسم جديد ولم يكن مستخدم مسبقًا
+      const usersSnap = await db.ref("users").once("value");
+      const users = usersSnap.val() || {};
+      if (newUserName && !users[newUserName]) {
+        const userDataSnap = await db.ref("users/" + currentUser).once("value");
+        const userData = userDataSnap.val();
+        await db.ref("users/" + newUserName).set(userData);
+        await db.ref("users/" + currentUser).remove();
+        statusDiv.textContent = `✅ تم تغيير كلمة المرور واسم المستخدم إلى: ${newUserName}`;
+        logActivity("تغيير اسم مستخدم", `تم تغيير اسم المستخدم من ${currentUser} إلى ${newUserName}`);
+      } else {
+        statusDiv.textContent = "✅ تم تغيير كلمة المرور بنجاح.";
+      }
       logActivity("تغيير كلمة مرور", `تم تغيير كلمة المرور للمستخدم: ${currentUser}`);
       document.getElementById("changePassOld").value = "";
       document.getElementById("changePassNew").value = "";
+      document.getElementById("changeUserName").value = "";
+    };
+    // إعادة ضبط كلمة المرور إذا نسيت القديمة
+    document.getElementById("resetPassBtn").onclick = async function() {
+      const newPass = prompt("أدخل كلمة المرور الجديدة:");
+      if (!newPass) return statusDiv.textContent = "يرجى إدخال كلمة مرور جديدة.";
+      const hashObj = await hashPassword(newPass);
+      await db.ref("users/" + currentUser + "/password").set(hashObj);
+      statusDiv.textContent = "✅ تم إعادة ضبط كلمة المرور بنجاح.";
+      logActivity("إعادة ضبط كلمة مرور", `تم إعادة ضبط كلمة المرور للمستخدم: ${currentUser}`);
     };
   }
 }
