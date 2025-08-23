@@ -1825,8 +1825,8 @@ function showMessage(message, isError = false) {
 function login() {
   const username = document.getElementById("username").value.trim().toLowerCase();
   const password = document.getElementById("password").value.trim();
-  if (!username || !password) return showMessage("❌ يرجى إدخال اسم المستخدم وكلمة المرور", true);
-  showMessage("🔄 جاري تسجيل الدخول...");
+  if (!username || !password) return showMessage(" يرجى إدخال اسم المستخدم وكلمة المرور", true);
+  showMessage(" جاري تسجيل الدخول...");
   db.ref("users/" + username).once("value").then(async snapshot => {
     if (!snapshot.exists()) throw new Error("User not found");
     const userData = snapshot.val();
