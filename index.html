@@ -3633,50 +3633,6 @@ document.getElementById("sidebarUserControlBtn").onclick = function() {
   });
 }
 
-import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-// دالة لتحويل كلمة مرور إلى SHA-256
-async function hashPassword(password) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
-// إنشاء حساب المدير (فقط إذا ما موجود)
-async function createAdminAccount() {
-  const db = getDatabase();
-  const dbRef = ref(db);
-
-  const username = "admin"; // اسم المستخدم (تقدر تغيره)
-  const plainPassword = "admin123"; // كلمة المرور
-
-  // فحص إذا المستخدم موجود أصلاً
-  const snapshot = await get(child(dbRef, `users/${username}`));
-  if (snapshot.exists()) {
-    console.log("⚠️ الحساب موجود مسبقاً، ما راح ينشأ من جديد.");
-    return;
-  }
-
-  const hashedPassword = await hashPassword(plainPassword);
-
-  set(ref(db, `users/${username}`), {
-    canEdit: true,
-    password: {
-      alg: "sha256",
-      hash: hashedPassword
-    },
-    role: "admin"
-  }).then(() => {
-    console.log("✅ حساب المدير انشأ بنجاح");
-  }).catch((error) => {
-    console.error("❌ خطأ أثناء الإنشاء:", error);
-  });
-}
-
-// استدعاء الدالة
-createAdminAccount();
 </script>
 
 </body>
