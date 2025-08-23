@@ -3632,6 +3632,40 @@ document.getElementById("sidebarUserControlBtn").onclick = function() {
     };
   });
 }
+import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+// دالة لتحويل كلمة مرور إلى SHA-256
+async function hashPassword(password) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+// إنشاء حساب المدير
+async function createAdminAccount() {
+  const db = getDatabase();
+
+  const plainPassword = "admin123"; // كلمة المرور العادية
+  const hashedPassword = await hashPassword(plainPassword);
+
+  set(ref(db, "users/Admin"), {
+    canEdit: true,
+    password: {
+      alg: "sha256",
+      hash: hashedPassword
+    },
+    role: "admin"
+  }).then(() => {
+    console.log("✅ حساب المدير انشأ بنجاح");
+  }).catch((error) => {
+    console.error("❌ خطأ أثناء الإنشاء:", error);
+  });
+}
+
+// استدعاء الدالة مرة وحدة
+createAdminAccount();
 </script>
 
 </body>
