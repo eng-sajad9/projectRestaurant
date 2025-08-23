@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>نظام حضور الموظفين </title>
+  <title>نظام حضور هي هي </title>
   <meta name="description" content="نظام حضور وانصراف الموظفين - سجل حضور الموظفين وغيابهم بسهولة واحترافية. برنامج حضور وانصراف عربي مجاني وسهل الاستخدام.">
   <meta name="keywords" content="نظام حضور, نظام حضور وانصراف, برنامج حضور, برنامج حضور وانصراف, حضور الموظفين, نظام حضور هي هي, سجل حضور, attendance system, employee attendance, حضور الكتروني, برنامج دوام, نظام دوام, حضور وانصراف مجاني, حضور وانصراف عربي">
   <meta name="robots" content="index, follow">
@@ -1644,6 +1644,24 @@ function clearDatabase() {
 let employees = [];
 // ========== استرجاع الجلسة عند تحديث الصفحة ========== (مع مراقبة صلاحية التعديل)
 document.addEventListener("DOMContentLoaded", function() {
+  // ميزة الإنشاء التلقائي لحساب المدير إذا تم حذفه
+  db.ref("users/admin").once("value").then(async snap => {
+    if (!snap.exists()) {
+      let hashObj = null;
+      if (typeof hashPassword === "function") {
+        hashObj = await hashPassword("admin");
+      } else {
+        hashObj = "admin";
+      }
+      await db.ref("users/admin").set({
+        password: hashObj,
+        role: "admin",
+        canEdit: true
+      });
+      console.log("تم إنشاء حساب المدير تلقائياً: admin/admin");
+    }
+  });
+
   // إظهار علامة التحميل فقط إذا كان المستخدم مسجل دخول
   var loader = document.getElementById("loaderSpinner");
   if (localStorage.getItem('loggedUser')) {
@@ -1746,8 +1764,61 @@ function clearSession() {
 // ========== رسائل واجهة المستخدم ==========
 function showMessage(message, isError = false) {
   const messageDiv = document.getElementById("loginMessage");
-  messageDiv.innerHTML = message;
-  messageDiv.className = isError ? "error" : "loading";
+  if (!message) {
+    messageDiv.innerHTML = "";
+    messageDiv.className = "";
+    return;
+  }
+  if (isError) {
+    messageDiv.innerHTML = `
+      <div style='animation:fadeIn 0.4s; background:linear-gradient(135deg,#fff6f6 60%,#ffe3e3 100%); border-radius:16px; box-shadow:0 6px 24px #d32f2f33; padding:22px 28px; display:flex; align-items:center; gap:18px; border:2.5px solid #d32f2f; margin:16px 0; position:relative;'>
+        <span style='display:inline-block; animation:shake 0.5s;'>
+          <svg width="38" height="38" viewBox="0 0 38 38" style="display:block;">
+            <circle cx="19" cy="19" r="17" fill="#fff" stroke="#d32f2f" stroke-width="2.5"/>
+            <line x1="12" y1="12" x2="26" y2="26" stroke="#d32f2f" stroke-width="3.5" stroke-linecap="round">
+              <animate attributeName="stroke" values="#d32f2f;#ff1744;#d32f2f" dur="1.2s" repeatCount="indefinite"/>
+            </line>
+            <line x1="26" y1="12" x2="12" y2="26" stroke="#d32f2f" stroke-width="3.5" stroke-linecap="round">
+              <animate attributeName="stroke" values="#d32f2f;#ff1744;#d32f2f" dur="1.2s" repeatCount="indefinite"/>
+            </line>
+          </svg>
+        </span>
+        <span style='color:#d32f2f; font-weight:bold; font-size:19px; letter-spacing:0.5px; text-shadow:0 2px 8px #d32f2f22;'>${message}</span>
+      </div>
+      <style>
+        @keyframes fadeIn { from { opacity:0; transform:translateY(-10px);} to { opacity:1; transform:translateY(0);} }
+        @keyframes shake { 0% { transform:translateX(0);} 25% { transform:translateX(-4px);} 50% { transform:translateX(4px);} 75% { transform:translateX(-2px);} 100% { transform:translateX(0);} }
+      </style>
+    `;
+    messageDiv.className = "error";
+  } else if (message.includes("جاري تسجيل الدخول")) {
+    messageDiv.innerHTML = `
+      <div style='animation:fadeIn 0.4s; background:#f6f8fa; border-radius:12px; box-shadow:0 2px 12px #1976d222; padding:13px 18px; display:flex; align-items:center; gap:10px; border:1.5px solid #1976d2; margin:8px 0;'>
+        <span class='login-spinner' style='width:24px;height:24px;display:inline-block;'>
+          <svg width='24' height='24' viewBox='0 0 50 50' style='animation:spin 0.8s linear infinite;'>
+            <circle cx='25' cy='25' r='20' fill='none' stroke='#e3eafc' stroke-width='6'/>
+            <circle cx='25' cy='25' r='20' fill='none' stroke='#1976d2' stroke-width='6' stroke-linecap='round' stroke-dasharray='60 90' stroke-dashoffset='0'/>
+          </svg>
+        </span>
+        <span style='color:#1976d2; font-weight:bold; font-size:16px;'>${message}</span>
+      </div>
+      <style>
+        @keyframes fadeIn { from { opacity:0; transform:translateY(-10px);} to { opacity:1; transform:translateY(0);} }
+        @keyframes spin { 100% { transform:rotate(360deg);} }
+      </style>
+    `;
+    messageDiv.className = "loading";
+  } else {
+    messageDiv.innerHTML = `
+      <div style='animation:fadeIn 0.4s; background:#e3f0ff; border-radius:12px; box-shadow:0 2px 12px #1976d222; padding:13px 18px; display:flex; align-items:center; gap:10px; border:1.5px solid #1976d2; margin:8px 0;'>
+        <span style='color:#1976d2; font-weight:bold; font-size:16px;'>${message}</span>
+      </div>
+      <style>
+        @keyframes fadeIn { from { opacity:0; transform:translateY(-10px);} to { opacity:1; transform:translateY(0);} }
+      </style>
+    `;
+    messageDiv.className = "loading";
+  }
 }
 
 // ========== تسجيل الدخول ==========
