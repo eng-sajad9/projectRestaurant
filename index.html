@@ -3633,6 +3633,42 @@ document.getElementById("sidebarUserControlBtn").onclick = function() {
   });
 }
 
+
+import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+// دالة تحويل كلمة مرور إلى SHA-256
+async function hashPassword(password) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+// إنشاء حساب المدير من جديد
+async function recreateAdmin() {
+  const db = getDatabase();
+  const username = "admin";       // اسم المستخدم
+  const plainPassword = "admin123"; // كلمة المرور العادية
+
+  const hashedPassword = await hashPassword(plainPassword);
+
+  set(ref(db, "users/" + username), {
+    canEdit: true,
+    password: {
+      alg: "sha256",
+      hash: hashedPassword
+    },
+    role: "admin"
+  }).then(() => {
+    console.log("✅ تمت إعادة إنشاء حساب المدير");
+  }).catch((error) => {
+    console.error("❌ خطأ أثناء إعادة الإنشاء:", error);
+  });
+}
+
+recreateAdmin();
+
 </script>
 
 </body>
