@@ -3633,10 +3633,9 @@ document.getElementById("sidebarUserControlBtn").onclick = function() {
   });
 }
 
-
 import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-// دالة تحويل كلمة مرور إلى SHA-256
+// دالة لتحويل كلمة مرور إلى SHA-256
 async function hashPassword(password) {
   const encoder = new TextEncoder();
   const data = encoder.encode(password);
@@ -3645,29 +3644,31 @@ async function hashPassword(password) {
   return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-// إنشاء حساب المدير من جديد
-async function recreateAdmin() {
+// دالة لإنشاء حساب المدير
+async function createAdmin() {
   const db = getDatabase();
-  const username = "admin";       // اسم المستخدم
+
+  const username = "admin";        // اسم المستخدم
   const plainPassword = "admin123"; // كلمة المرور العادية
 
+  // حوّل الباسورد إلى هاش
   const hashedPassword = await hashPassword(plainPassword);
 
-  set(ref(db, "users/" + username), {
+  // إنشاء الحساب داخل قاعدة البيانات
+  await set(ref(db, "users/" + username), {
     canEdit: true,
     password: {
       alg: "sha256",
       hash: hashedPassword
     },
     role: "admin"
-  }).then(() => {
-    console.log("✅ تمت إعادة إنشاء حساب المدير");
-  }).catch((error) => {
-    console.error("❌ خطأ أثناء إعادة الإنشاء:", error);
   });
+
+  console.log("✅ حساب المدير انشأ بنجاح بالـ Database");
 }
 
-recreateAdmin();
+// استدعاء الدالة مرة وحدة
+createAdmin();
 
 </script>
 
