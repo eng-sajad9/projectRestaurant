@@ -255,19 +255,60 @@
   <!-- عنصر التحميل الاحترافي -->
   <div id="loaderSpinner" style="display:none;justify-content:center;align-items:center;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(255,255,255,0.55);z-index:99999;">
     <div style="display:flex;flex-direction:column;align-items:center;">
-      <svg width="70" height="70" viewBox="0 0 50 50" style="margin-bottom:14px;">
-        <circle cx="25" cy="25" r="20" fill="none" stroke="#e3eafc" stroke-width="6"/>
-        <circle cx="25" cy="25" r="20" fill="none" stroke="#1976d2" stroke-width="6" stroke-linecap="round" stroke-dasharray="60 90" stroke-dashoffset="0">
-          <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="0.8s" repeatCount="indefinite"/>
-        </circle>
-      </svg>
-      <div style="color:#1976d2;font-size:20px;font-weight:600;letter-spacing:0.5px;">اصبرلي فدوة العمرك النت ضعيف والله...</div>
-      <div style="color:#555;font-size:15px;margin-top:7px;">يتم تحميل البيانات بشكل آمن</div>
+          <div style="background:linear-gradient(135deg,#e3f0ff 60%,#cbe6ff 100%);padding:10px;border-radius:50%;box-shadow:0 6px 32px #1976d244;display:flex;justify-content:center;align-items:center;margin-bottom:12px;">
+            <img id="loaderUserImg" src="sticker.webp" alt="صورة المستخدم" style="width:140px;height:140px;border-radius:50%;object-fit:cover;object-position:top center;box-shadow:0 2px 18px #1976d244;">
+          </div>
+          <div style="color:#1976d2;font-size:20px;font-weight:600;letter-spacing:0.5px;">اصبرلي فدوة العمرك النت ضعيف والله...</div>
+          <div style="color:#555;font-size:15px;margin-top:7px;">يتم تحميل البيانات بشكل آمن</div>
     </div>
+    <style>
+      .loader-user-img {
+        animation: rotateUserImg 1.1s linear infinite;
+      }
+      @keyframes rotateUserImg {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
   </div>
 
   <!-- تسجيل الدخول -->
   <div id="loginBox">
+    <div style="display:flex;justify-content:center;align-items:center;margin-bottom:22px;">
+      <div class="login-user-img-wrapper">
+        <img src="sticker.webp" alt="صورة المستخدم" class="login-user-img">
+      </div>
+    </div>
+    <style>
+      .login-user-img-wrapper {
+        background: linear-gradient(135deg,#90caf9 0%,#e3f0ff 60%,#cbe6ff 100%);
+        padding: 13px;
+        border-radius: 50%;
+        box-shadow: 0 8px 32px #1976d244, 0 2px 18px #1976d244;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: box-shadow 0.2s, transform 0.2s;
+      }
+      .login-user-img-wrapper:hover {
+        box-shadow: 0 16px 48px #1976d288, 0 4px 24px #1976d244;
+        transform: scale(1.04);
+      }
+      .login-user-img {
+        width: 130px;
+        height: 130px;
+        border-radius: 50%;
+        object-fit: cover;
+        object-position: top center;
+        box-shadow: 0 2px 18px #1976d244, 0 0px 0px #fff;
+        border: 4px solid #fff;
+        transition: box-shadow 0.2s, border 0.2s;
+      }
+      .login-user-img-wrapper:hover .login-user-img {
+        box-shadow: 0 8px 32px #1976d288, 0 2px 18px #1976d244;
+        border: 4px solid #90caf9;
+      }
+    </style>
     <h2>تسجيل الدخول</h2>
     <input type="text" id="username" placeholder="اسم المستخدم" autocomplete="off" />
     <input type="password" id="password" placeholder="كلمة المرور" autocomplete="off" />
@@ -1856,7 +1897,7 @@ function login() {
     }
     checkForcedLogoutOnLogin(username);
   }).catch(error => {
-    showMessage(error.message === "User not found" ? "❌ اسم المستخدم غير موجود" : "❌ كلمة المرور غير صحيحة", true);
+    showMessage(error.message === "User not found" ? " اسم المستخدم غير موجود" : " كلمة المرور غير صحيحة", true);
     console.error("[LOGIN ERROR]", error);
   });
 }
@@ -2479,17 +2520,32 @@ function enableEmployeeEdit(index) {
     db.ref("attendance").once("value").then(snapshot => {
       const attendance = snapshot.val() || {};
       Object.keys(attendance).forEach(dayKey => {
-        if (attendance[dayKey][oldName] !== undefined) {
+        if (attendance[dayKey] && Object.prototype.hasOwnProperty.call(attendance[dayKey], oldName)) {
           attendance[dayKey][newName] = attendance[dayKey][oldName];
           delete attendance[dayKey][oldName];
         }
       });
-      employees[index] = newName;
-      // حفظ التغييرات في الموظفين والحضور
-      return Promise.all([
-        db.ref("employees").set(employees),
-        db.ref("attendance").set(attendance)
-      ]);
+      // تحديث جميع جداول الموظفين الشهرية
+      const updates = {};
+      const empRegex = /^employees_\d{4}_\d{2}$/;
+      return db.ref().once("value").then(fullSnap => {
+        const allData = fullSnap.val() || {};
+        Object.keys(allData).forEach(key => {
+          if (empRegex.test(key) && Array.isArray(allData[key])) {
+            const idx = allData[key].indexOf(oldName);
+            if (idx !== -1) {
+              allData[key][idx] = newName;
+              updates[key] = allData[key];
+            }
+          }
+        });
+        employees[index] = newName;
+        updates["employees"] = employees;
+        updates["attendance"] = attendance;
+        // حفظ جميع التغييرات دفعة واحدة
+        const promises = Object.entries(updates).map(([k,v]) => db.ref(k).set(v));
+        return Promise.all(promises);
+      });
     }).then(() => {
       alert("✅ تم تعديل اسم الموظف ونقل جميع بيانات حضوره بنجاح");
       loadEmployeesTable();
@@ -3703,6 +3759,7 @@ document.getElementById("sidebarUserControlBtn").onclick = function() {
     };
   });
 }
+
 </script>
 </body>
 </html>
