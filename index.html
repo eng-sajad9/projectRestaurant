@@ -1683,6 +1683,7 @@ function clearDatabase() {
 
 
 let employees = [];
+let employeeIds = [];
 // ========== استرجاع الجلسة عند تحديث الصفحة ========== (مع مراقبة صلاحية التعديل)
 document.addEventListener("DOMContentLoaded", function() {
   // ميزة الإنشاء التلقائي لحساب المدير إذا تم حذفه
@@ -1724,7 +1725,8 @@ document.addEventListener("DOMContentLoaded", function() {
     db.ref("users/"+currentUser).once("value").then(snap => {
       window.currentUserData = snap.val() || {};
       // عند تحميل الموظفين والجدول، إخفِ علامة التحميل فقط بعد اكتمال الجدول
-      loadEmployees().then(() => {
+      const empKey = `employees_${year}_${(month+1).toString().padStart(2,'0')}`;
+      loadEmployees(empKey).then(() => {
         generateTable();
         if (typeof tryShowUserEmpStats === "function") tryShowUserEmpStats();
       });
@@ -1887,7 +1889,8 @@ function login() {
     showMessage("");
     document.getElementById("loginBox").style.display = "none";
     document.getElementById("mainContent").style.display = "block";
-    loadEmployees().then(generateTable);
+  const empKey = `employees_${year}_${(month+1).toString().padStart(2,'0')}`;
+  loadEmployees(empKey).then(generateTable);
     if (currentUserRole === "admin") {
       document.getElementById("adminPanel").style.display = "block";
       loadUsers();
@@ -1917,21 +1920,23 @@ function loadEmployees() {
   
   // إظهار علامة التحميل
   document.getElementById("loaderSpinner").style.display = "flex";
-  // جلب قائمة الموظفين الخاصة بالشهر الحالي فقط
+  // جلب قائمة الموظفين الخاصة بالشهر الحالي فقط من المفتاح العام
   const empKey = `employees_${year}_${(month+1).toString().padStart(2,'0')}`;
-  return db.ref(empKey).once("value").then(snapshot => {
-    employees = snapshot.exists() ? Object.values(snapshot.val()) : [];
+  return db.ref("employees/" + empKey).once("value").then(snapshot => {
+    const empObj = snapshot.exists() ? snapshot.val() : {};
+  // ترتيب حسب الإضافة وليس أبجدي
+  // Object.values(empObj) يحافظ على ترتيب الإضافة في جافاسكريبت
+  employees = Object.values(empObj);
+  employeeIds = Object.keys(empObj);
     const theadRow = document.querySelector("#attendanceTable thead tr");
     while (theadRow.children.length > 1) theadRow.removeChild(theadRow.lastChild);
-    // Make all header cells (including 'التاريخ') unified in color and style
-    // First, update the first th ("التاريخ")
     if (theadRow.children.length > 0) {
       const firstTh = theadRow.children[0];
-      firstTh.style.background = '#e3f0ff'; // calm blue
-      firstTh.style.color = '#222'; // black text
+      firstTh.style.background = '#e3f0ff';
+      firstTh.style.color = '#222';
       firstTh.style.fontWeight = 'bold';
       firstTh.style.fontSize = '17px';
-      firstTh.style.border = '1px solid #b0bec5'; // add grid border
+      firstTh.style.border = '1px solid #b0bec5';
       firstTh.style.boxShadow = 'none';
       firstTh.style.letterSpacing = '0.5px';
       firstTh.style.borderRadius = '0';
@@ -1940,11 +1945,11 @@ function loadEmployees() {
     employees.forEach(emp => {
       const th = document.createElement("th");
       th.textContent = emp;
-      th.style.background = '#e3f0ff'; // calm blue
-      th.style.color = '#222'; // black text
+      th.style.background = '#e3f0ff';
+      th.style.color = '#222';
       th.style.fontWeight = 'bold';
       th.style.fontSize = '17px';
-      th.style.border = '1px solid #b0bec5'; // add grid border
+      th.style.border = '1px solid #b0bec5';
       th.style.boxShadow = 'none';
       th.style.letterSpacing = '0.5px';
       th.style.borderRadius = '0';
@@ -1952,7 +1957,6 @@ function loadEmployees() {
       theadRow.appendChild(th);
     });
     loadEmployeesTable();
-    // إخفاء علامة التحميل بعد اكتمال التحميل
     setTimeout(function(){ document.getElementById("loaderSpinner").style.display = "none"; }, 350);
   });
 }
@@ -1962,28 +1966,8 @@ function loadEmployees() {
 function ensureMonthEmployees() {
   const empKey = `employees_${year}_${(month+1).toString().padStart(2, '0')}`;
   // تحقق من إعدادات الأشهر
-  return db.ref('monthsSettings').once('value').then(settingsSnap => {
-    const settings = settingsSnap.val() || { auto: true };
-    const key = `${year}-${month}`;
-    // إذا الشهر مخفي أو مغلق لا تنشئه تلقائياً
-    if ((settings.hidden && settings.hidden[key]) || (settings.closed && settings.closed[key])) return;
-    // إذا الوضع التلقائي معطل، لا تنشئ الشهر إلا إذا كان في القائمة اليدوية
-    if (settings.auto === false && (!settings.manual || !settings.manual.includes(key))) return;
-    return db.ref(empKey).once("value").then(snap => {
-      if (!snap.exists()) {
-        // جلب قائمة الشهر السابق
-        let prevMonth = month - 1;
-        let prevYear = year;
-        if (prevMonth < 0) { prevMonth = 11; prevYear -= 1; }
-        const prevEmpKey = `employees_${prevYear}_${(prevMonth+1).toString().padStart(2, '0')}`;
-        return db.ref(prevEmpKey).once("value").then(prevSnap => {
-          if (prevSnap.exists()) {
-            return db.ref(empKey).set(prevSnap.val());
-          }
-        });
-      }
-    });
-  });
+  // لم يعد هناك نسخ تلقائي للموظفين من الشهر السابق
+  return Promise.resolve();
 }
 
 // استدعاء الدالة عند تغيير الشهر أو السنة
@@ -2112,15 +2096,23 @@ function generateTable() {
 }
 
 // ========== حفظ البيانات ==========
-async function saveData() {
+
+// Unified permission check for editing current month
+function canEditCurrentMonth() {
   if (!isCurrentMonthSelected()) {
     alert("❌ لا يمكن تعديل جدول الحضور لشهر سابق.");
-    return;
+    return false;
   }
   if (!currentUserCanEdit) {
     alert("❌ ليس لديك صلاحية تعديل الجدول.");
-    return;
+    return false;
   }
+  return true;
+}
+
+// Unified save function for attendance (days/employees)
+async function saveAttendanceData() {
+  if (!canEditCurrentMonth()) return;
   const days = getDays();
   try {
     const attendanceSnapshot = await db.ref("attendance").once("value");
@@ -2169,15 +2161,15 @@ async function saveData() {
       logActivity(
         "تعديل جدول الحضور",
         `
-          <span style="color:#007bff;font-weight:bold;">${change.user}</span>
+          <span style=\"color:#007bff;font-weight:bold;\">${change.user}</span>
           قام بتعديل حضور الموظف
-          <span style="color:#673ab7;font-weight:bold;">${change.employee}</span>
+          <span style=\"color:#673ab7;font-weight:bold;\">${change.employee}</span>
           في اليوم
-          <span style="color:#009688;font-weight:bold;">${change.day}</span>
+          <span style=\"color:#009688;font-weight:bold;\">${change.day}</span>
           من
-          <span style="background:#d4edda;padding:2px 6px;border-radius:5px;">${change.old || "بدون"}</span>
+          <span style=\"background:#d4edda;padding:2px 6px;border-radius:5px;\">${change.old || "بدون"}</span>
           إلى
-          <span style="background:#fff9db;padding:2px 6px;border-radius:5px;">${change.new || "بدون"}</span>
+          <span style=\"background:#fff9db;padding:2px 6px;border-radius:5px;\">${change.new || "بدون"}</span>
         `,
         { time: change.time, user: change.user }
       );
@@ -2186,6 +2178,38 @@ async function saveData() {
     console.error("خطأ في حفظ البيانات:", error);
     alert("❌ خطأ في حفظ البيانات");
   }
+}
+
+// Unified save function for employees (add/update/delete)
+async function saveEmployees(newEmployees) {
+  if (!canEditCurrentMonth()) return;
+  const empKey = `employees_${year}_${(month+1).toString().padStart(2,'0')}`;
+  try {
+    // توليد معرفات فريدة للموظفين الجدد إذا لم تكن موجودة
+    let empObj = {};
+    newEmployees.forEach((name, idx) => {
+      // إذا كان الاسم موجود بالفعل بنفس المعرف، احتفظ به
+      let id = employeeIds[idx] || ("id" + Date.now() + "_" + Math.floor(Math.random()*10000));
+      empObj[id] = name;
+    });
+    await db.ref("employees/" + empKey).set(empObj);
+  // ترتيب حسب الإضافة وليس أبجدي
+  employees = Object.values(empObj);
+  employeeIds = Object.keys(empObj);
+    window.monthEmployees = employees.slice();
+    loadEmployeesTable();
+    generateTable();
+    alert("✅ تم تحديث الموظفين لهذا الشهر فقط");
+    logActivity("تحديث الموظفين", `تم تحديث قائمة الموظفين لهذا الشهر: ${employees.join(", ")}`);
+  } catch (err) {
+    console.error(err);
+    alert("❌ حدث خطأ أثناء تحديث الموظفين");
+  }
+}
+
+// Replace old saveData with unified function
+function saveData() {
+  saveAttendanceData();
 }
 
 // ========== إدارة المستخدمين والموظفين ==========
@@ -2430,45 +2454,14 @@ async function addUser() {
 
 // ========== إدارة الموظفين ==========
 function addEmployee() {
-  if (!preventEditIfNotCurrentMonth()) return;
+  if (!canEditCurrentMonth()) return;
   const name = document.getElementById("newEmployeeName").value.trim();
   if (!name) { alert("❌ يرجى إدخال اسم الموظف"); return; }
   if (employees.includes(name)) { alert("❌ الموظف موجود مسبقاً"); return; }
-  employees.push(name);
-  const empKey = `employees_${year}_${(month+1).toString().padStart(2,'0')}`;
-  db.ref(empKey).set(employees).then(() => {
-    // إضافة الموظف فقط إلى أيام الشهر الحالي المعروض وليس كل attendance
-    if (!isCurrentMonthSelected()) {
-      alert("✅ تم إضافة الموظف بنجاح (لن يظهر في أي جدول حضور)");
-      document.getElementById("newEmployeeName").value = "";
-      loadEmployeesTable();
-      generateTable();
-      return;
-    }
-    db.ref("attendance").once("value").then(snapshot => {
-      const attendance = snapshot.val() || {};
-      // أضف الموظف فقط لأيام الشهر الحالي المعروض
-      Object.keys(attendance).forEach(dayKey => {
-        const parts = dayKey.split("-");
-        if (parts.length === 3) {
-          const dYear = parseInt(parts[0]);
-          const dMonth = parseInt(parts[1]) - 1;
-          if (dYear === year && dMonth === month) {
-            if (!attendance[dayKey][name]) attendance[dayKey][name] = "";
-          }
-        }
-      });
-      return db.ref("attendance").set(attendance);
-    }).then(() => {
-      alert("✅ تم إضافة الموظف بنجاح (لن يظهر في الأشهر السابقة)");
-      document.getElementById("newEmployeeName").value = "";
-      loadEmployeesTable();
-      generateTable();
-    });
-  }).catch(err => {
-    console.error(err);
-    alert("❌ حدث خطأ أثناء إضافة الموظف");
-  });
+  // الموظف الجديد دائماً يظهر في نهاية الجدول (بدون ترتيب أبجدي)
+  const newEmployees = [...employees, name];
+  saveEmployees(newEmployees);
+  document.getElementById("newEmployeeName").value = "";
 }
 function loadEmployeesTable() {
   const tbody = document.getElementById("employeesBody");
@@ -2498,7 +2491,7 @@ function loadEmployeesTable() {
   });
 }
 function enableEmployeeEdit(index) {
-  if (!preventEditIfNotCurrentMonth()) return;
+  if (!canEditCurrentMonth()) return;
   const nameTd = document.getElementById(`employeeName_${index}`);
   const oldName = nameTd.textContent;
   nameTd.innerHTML = "";
@@ -2511,49 +2504,26 @@ function enableEmployeeEdit(index) {
   saveBtn.textContent = "💾 حفظ";
   saveBtn.className = "small-button btn-edit";
   saveBtn.style.marginLeft = "5px";
-  saveBtn.onclick = () => {
-    if (!preventEditIfNotCurrentMonth()) return;
+  saveBtn.onclick = async () => {
+    if (!canEditCurrentMonth()) return;
     const newName = input.value.trim();
     if (!newName) { alert("❌ اسم الموظف لا يمكن أن يكون فارغاً"); return; }
     if (employees.includes(newName)) { alert("❌ اسم الموظف موجود مسبقاً"); return; }
-    // نقل بيانات الحضور من الاسم القديم إلى الاسم الجديد
-    db.ref("attendance").once("value").then(snapshot => {
-      const attendance = snapshot.val() || {};
-      Object.keys(attendance).forEach(dayKey => {
-        if (attendance[dayKey] && Object.prototype.hasOwnProperty.call(attendance[dayKey], oldName)) {
-          attendance[dayKey][newName] = attendance[dayKey][oldName];
-          delete attendance[dayKey][oldName];
-        }
-      });
-      // تحديث جميع جداول الموظفين الشهرية
-      const updates = {};
-      const empRegex = /^employees_\d{4}_\d{2}$/;
-      return db.ref().once("value").then(fullSnap => {
-        const allData = fullSnap.val() || {};
-        Object.keys(allData).forEach(key => {
-          if (empRegex.test(key) && Array.isArray(allData[key])) {
-            const idx = allData[key].indexOf(oldName);
-            if (idx !== -1) {
-              allData[key][idx] = newName;
-              updates[key] = allData[key];
-            }
-          }
-        });
-        employees[index] = newName;
-        updates["employees"] = employees;
-        updates["attendance"] = attendance;
-        // حفظ جميع التغييرات دفعة واحدة
-        const promises = Object.entries(updates).map(([k,v]) => db.ref(k).set(v));
-        return Promise.all(promises);
-      });
-    }).then(() => {
-      alert("✅ تم تعديل اسم الموظف ونقل جميع بيانات حضوره بنجاح");
-      loadEmployeesTable();
-      generateTable();
-    }).catch(err => {
-      console.error(err);
-      alert("❌ حدث خطأ أثناء تعديل اسم الموظف");
+    // تحديث بيانات الحضور فقط لأيام الشهر الحالي
+    const days = getDays();
+    const attendanceSnapshot = await db.ref("attendance").once("value");
+    const attendance = attendanceSnapshot.val() || {};
+    days.forEach(day => {
+      const dayKey = day.key;
+      if (attendance[dayKey] && Object.prototype.hasOwnProperty.call(attendance[dayKey], oldName)) {
+        attendance[dayKey][newName] = attendance[dayKey][oldName];
+        delete attendance[dayKey][oldName];
+      }
     });
+    await db.ref("attendance").set(attendance);
+    const newEmployees = employees.slice();
+    newEmployees[index] = newName;
+    saveEmployees(newEmployees);
   };
   nameTd.appendChild(saveBtn);
 }
@@ -2735,6 +2705,10 @@ function loadAvailableMonths() {
       }
     });
     manual.forEach(m => monthsSet.add(m));
+    // أضف الشهر الحالي دائماً
+    const now = new Date();
+    const currentMonthKey = `${now.getFullYear()}-${now.getMonth()}`;
+    monthsSet.add(currentMonthKey);
     let monthsArr = Array.from(monthsSet).sort((a,b)=>{
       const [ya,ma]=a.split('-').map(Number), [yb,mb]=b.split('-').map(Number);
       return ya!==yb?ya-yb:ma-mb;
@@ -2792,9 +2766,12 @@ function renderMonthFab(months) {
     btn.onclick = function() {
       month = parseInt(mo);
       window.year = parseInt(y);
-      generateTable();
-      renderMonthFab(months);
-      fabList.style.display = "none";
+      const empKey = `employees_${year}_${(month+1).toString().padStart(2,'0')}`;
+      loadEmployees(empKey).then(() => {
+        generateTable();
+        renderMonthFab(months);
+        fabList.style.display = "none";
+      });
     };
     fabList.appendChild(btn);
   });
@@ -2962,21 +2939,29 @@ function advancedDelete() {
         // نافذة تأكيد نهائي
         showConfirmModal("هل أنت متأكد من تنفيذ هذا الإجراء؟ لا يمكن التراجع عنه!", () => {
           switch(choice) {
-            case "1":
-              db.ref("employees").remove()
-                .then(() => alert("✅ تم حذف الموظفين فقط."))
+            case "1": {
+              // حذف موظفي الشهر الحالي فقط
+              const empKey = `employees_${year}_${(month+1).toString().padStart(2,'0')}`;
+              db.ref("employees/" + empKey).remove()
+                .then(() => alert("✅ تم حذف موظفي الشهر الحالي فقط."))
                 .catch(e => alert("❌ خطأ في حذف الموظفين: " + e.message));
               break;
+            }
             case "2":
               db.ref("users").remove()
                 .then(() => alert("✅ تم حذف حسابات المستخدمين."))
                 .catch(e => alert("❌ خطأ في حذف حسابات المستخدمين: " + e.message));
               break;
-            case "3":
-              db.ref("attendance").remove()
-                .then(() => alert("✅ تم حذف التاشيرات."))
+            case "3": {
+              // حذف التاشيرات (الحضور) للشهر الحالي فقط
+              const days = getDays();
+              const updates = {};
+              days.forEach(day => { updates[day.key] = null; });
+              db.ref("attendance").update(updates)
+                .then(() => alert("✅ تم حذف تاشيرات الشهر الحالي فقط."))
                 .catch(e => alert("❌ خطأ في حذف التاشيرات: " + e.message));
               break;
+            }
             case "4":
               db.ref("activityLog").remove()
                 .then(() => alert("✅ تم حذف سجل النشاطات."))
@@ -3366,7 +3351,7 @@ function changeAdminPassword() {
 // ========== حذف موظف ==========
 // تعديل: السماح فقط للمدير بالحذف والتحقق من وجود الموظف
 function deleteEmployee(index) {
-  if (!preventEditIfNotCurrentMonth()) return;
+  if (!canEditCurrentMonth()) return;
   if (currentUserRole !== "admin") {
     alert("❌ فقط المدير يمكنه حذف الموظفين.");
     return;
@@ -3376,31 +3361,21 @@ function deleteEmployee(index) {
     alert("❌ الموظف غير موجود.");
     return;
   }
-  showConfirmModal(`هل أنت متأكد من حذف الموظف "${empName}"؟ سيتم حذف جميع بيانات حضوره أيضا.`, () => {
-    if (!preventEditIfNotCurrentMonth()) return;
-    employees.splice(index, 1);
-    const empKey = `employees_${year}_${(month+1).toString().padStart(2,'0')}`;
-    db.ref(empKey).set(employees)
-      .then(() => {
-        db.ref("attendance").once("value").then(snapshot => {
-          const attendance = snapshot.val() || {};
-          Object.keys(attendance).forEach(dayKey => {
-            if (attendance[dayKey][empName] !== undefined) {
-              delete attendance[dayKey][empName];
-            }
-          });
-          return db.ref("attendance").set(attendance);
-        }).then(() => {
-          alert("✅ تم حذف الموظف وجميع بيانات حضوره بنجاح.");
-          loadEmployeesTable();
-          generateTable();
-          logActivity("حذف موظف", `تم حذف الموظف: ${empName} وجميع بيانات حضوره`);
-        });
-      })
-      .catch(err => {
-        console.error(err);
-        alert("❌ حدث خطأ أثناء حذف الموظف.");
-      });
+  showConfirmModal(`هل أنت متأكد من حذف الموظف \"${empName}\"؟ سيتم حذف جميع بيانات حضوره أيضا.`, async () => {
+    if (!canEditCurrentMonth()) return;
+    const newEmployees = employees.slice();
+    newEmployees.splice(index, 1);
+    // Remove employee attendance
+    const attendanceSnapshot = await db.ref("attendance").once("value");
+    const attendance = attendanceSnapshot.val() || {};
+    Object.keys(attendance).forEach(dayKey => {
+      if (attendance[dayKey][empName] !== undefined) {
+        delete attendance[dayKey][empName];
+      }
+    });
+    await db.ref("attendance").set(attendance);
+    saveEmployees(newEmployees);
+    logActivity("حذف موظف", `تم حذف الموظف: ${empName} وجميع بيانات حضوره`);
   });
 }
 
