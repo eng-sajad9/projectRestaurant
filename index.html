@@ -2008,7 +2008,7 @@ function generateTable() {
         const editor = savedData[day.key].__editor;
         const color = (editor === "admin") ? "#1fa745" : "#dc3545";
         dateContent += `<div class='editor-tag' style="color:${color};font-weight:bold;">
-          🖊️ ${editor}${ts ? ' - ' + toEnglishNumbers(ts) : ''}
+          📝 ${editor}${ts ? ' - ' + toEnglishNumbers(ts) : ''}
         </div>`;
       }
       // عند الضغط على اليوم، افتح نافذة التفاصيل
