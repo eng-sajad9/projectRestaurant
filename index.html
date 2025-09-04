@@ -663,87 +663,97 @@
         border-collapse: separate;
         border-spacing: 0;
         margin-top: 10px;
-        background: #f9fafb;
-        box-shadow: 0 2px 12px #e0e0e0;
-        border-radius: 12px;
-        overflow: hidden;
-        font-family: 'Segoe UI', Arial, sans-serif;
-        transition: box-shadow 0.2s;
+  background: #fff;
+  border: 1.5px solid #ccc;
+  border-radius: 7px;
+  box-shadow: none;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  overflow: hidden;
+  transition: border 0.2s;
       }
       .kadah-stats-table th, .kadah-head {
-        padding: 10px 7px;
-        text-align: center;
-        font-weight: bold;
-        font-size: 16px;
-        letter-spacing: 0.3px;
-        border-bottom: 2px solid #e0e0e0;
-        border-top-left-radius: 12px;
-        border-top-right-radius: 12px;
-        background: #1976d2;
-        color: #fff;
+  padding: 10px 7px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 16px;
+  letter-spacing: 0.3px;
+  border-bottom: 1.5px solid #ccc;
+  border-right: 1px solid #ccc;
+  border-left: 1px solid #ccc;
+  border-top-left-radius: 7px;
+  border-top-right-radius: 7px;
+  background: linear-gradient(90deg, #283e51 0%, #6a82fb 100%);
+  color: #fff;
+  box-shadow: 0 2px 12px #6a82fb44;
       }
       .kadah-stats-table th:first-child {
-        background: #e3f7ee;
-        color: #009688;
-        border-top-left-radius: 12px;
+  background: #c8e6c9;
+  color: #388e3c;
+  border-top-left-radius: 10px;
       }
       .kadah-stats-table th:nth-child(2) {
-        background: #fffbe3;
-        color: #ff9800;
+  background: #ffe0b2;
+  color: #f57c00;
       }
       .kadah-stats-table th:nth-child(3) {
-        background: #e3eafc;
-        color: #1976d2;
+  background: #bbdefb;
+  color: #1976d2;
       }
       .kadah-stats-table th:last-child {
-        background: #f3e3ff;
-        color: #673ab7;
-        border-top-right-radius: 12px;
+  background: #e1bee7;
+  color: #8e24aa;
+  border-top-right-radius: 10px;
       }
       .kadah-stats-table td {
-        padding: 8px 5px;
-        text-align: center;
-        font-size: 13px;
-        background: #fff;
-        color: #444;
-        border-bottom: 1px solid #e0e0e0;
-        transition: background 0.2s, color 0.2s;
-        font-weight: 500;
+  padding: 8px 5px;
+  text-align: center;
+  font-size: 13px;
+  background: #fff;
+  color: #444;
+  border-bottom: 1px solid #ccc;
+  border-right: 1px solid #ccc;
+  border-left: 1px solid #ccc;
+  transition: background 0.2s, color 0.2s;
+  font-weight: 500;
       }
       .kadah-stats-table tr {
         transition: box-shadow 0.2s;
       }
       .kadah-stats-table tr:nth-child(even) td {
-        background: #f7f7fa;
+  background: #f7f7fa;
       }
       .kadah-stats-table tr:hover td {
-        background: #e3eafc;
-        color: #222;
+  background: #e3eafc;
+  color: #222;
       }
       .kadah-stats-table td:first-child {
-        font-weight: 600;
-        color: #009688;
-        font-size: 13px;
-        background: #e3f7ee;
-        border-radius: 8px;
+  font-weight: 600;
+  color: #009688;
+  font-size: 16px;
+  background: #e3f7ee;
+  border-radius: 12px;
+  border-right: 1px solid #e0eafc;
       }
       .kadah-stats-table td.kadah-600 {
-        background: #fffbe3;
-        color: #ff9800;
-        border-radius: 6px;
-        font-weight: 500;
+  background: #fffbe3;
+  color: #ff9800;
+  border-radius: 12px;
+  font-weight: 500;
+  border-right: 1px solid #e0eafc;
       }
       .kadah-stats-table td.kadah-22 {
-        background: #e3eafc;
-        color: #1976d2;
-        border-radius: 6px;
-        font-weight: 500;
+  background: #e3eafc;
+  color: #1976d2;
+  border-radius: 12px;
+  font-weight: 500;
+  border-right: 1px solid #e0eafc;
       }
       .kadah-stats-table td.kadah-msh {
-        background: #f3e3ff;
-        color: #673ab7;
-        border-radius: 6px;
-        font-weight: 500;
+  background: #f3e3ff;
+  color: #673ab7;
+  border-radius: 12px;
+  font-weight: 500;
+  border-right: 1px solid #e0eafc;
       }
       @media (max-width: 767px) {
         .kadah-stats-table th {
