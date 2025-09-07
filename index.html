@@ -1067,12 +1067,6 @@
         ⚙️ لوحة التحكم
       </button>
       <button
-        id="sidebarKadahPermsBtn"
-        style="background: #8e24aa; color: white; display: none; margin-bottom: 2px;"
-      >
-        🛡️ صلاحيات الكعده والتفاصيل
-      </button>
-      <button
         id="sidebarMonthsManagerBtn"
         style="
           background: #1976d2;
@@ -1137,22 +1131,8 @@
       <!-- أزرار إدارة قاعدة البيانات -->
     </div>
     <script>
-      // ================== تنظيم وتعليقات رئيسية ==================
-      // جميع الدوال والأحداث الأساسية ستوضع هنا بشكل منظم
-      // ==========================================================
-
-      // دالة آمنة لإدخال نص في innerHTML (تمنع XSS)
-      function safeText(text) {
-        return String(text)
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/\"/g, "&quot;")
-          .replace(/'/g, "&#39;");
-      }
-
-      // دالة عرض/إخفاء جدول احصائيات الكعده مع تبديل الأزرار وحركة scroll (تظهر فقط إذا كان للمستخدم صلاحية)
-      function setupKadahStatsTableEvents() {
+      // دالة عرض/إخفاء جدول احصائيات الكعده مع تبديل الأزرار وحركة scroll
+      document.addEventListener("DOMContentLoaded", function () {
         var kadahBtn = document.getElementById("showKadahStatsBtn");
         var closeBtn = document.getElementById("closeKadahStatsBtn");
         var wrapper = document.getElementById("kadahStatsTableWrapper");
@@ -1166,7 +1146,6 @@
               wrapper.scrollIntoView({ behavior: "smooth" });
               kadahBtn.style.display = "none";
               closeBtn.style.display = "inline-block";
-              kadahBtn.setAttribute('data-kadah-hidden', '1');
             }, 50);
           };
           closeBtn.onclick = function (e) {
@@ -1176,133 +1155,48 @@
               wrapper.style.display = "none";
               kadahBtn.style.display = "inline-block";
               closeBtn.style.display = "none";
-              kadahBtn.removeAttribute('data-kadah-hidden');
               kadahBtn.scrollIntoView({ behavior: "smooth" });
             }, 400);
           };
         }
-      }
-
-      // دالة تحديث ظهور زر احصائيه الكعده حسب الصلاحية
-      function updateKadahStatsBtnVisibility() {
-        var kadahBtn = document.getElementById("showKadahStatsBtn");
-        var closeBtn = document.getElementById("closeKadahStatsBtn");
-        if (!currentUser) {
-          kadahBtn.style.display = "none";
-          closeBtn.style.display = "none";
-          return;
-        }
-        db.ref("users/" + currentUser).once("value").then(function(snap) {
-          var data = snap.val() || {};
-          // لا تظهر الزر إذا الجدول ظاهر حاليًا
-          if (kadahBtn.getAttribute('data-kadah-hidden') === '1') {
-            kadahBtn.style.display = "none";
-            closeBtn.style.display = "inline-block";
-            return;
-          }
-          if (data.canKadahStats || currentUserRole === "admin") {
-            kadahBtn.style.display = "inline-block";
-          } else {
-            kadahBtn.style.display = "none";
-            closeBtn.style.display = "none";
-            document.getElementById("kadahStatsTableWrapper").style.display = "none";
-          }
-        });
-      }
-
-      // عند تحميل الصفحة: ربط الأحداث مرة واحدة فقط
-      document.addEventListener("DOMContentLoaded", function () {
-        setupKadahStatsTableEvents();
-        // مراقبة صلاحية زر احصائيه الكعده بشكل live
-        if (window.kadahStatsPermListener) window.kadahStatsPermListener.off();
-        if (typeof db !== 'undefined' && typeof currentUser !== 'undefined' && currentUser) {
-          window.kadahStatsPermListener = db.ref("users/" + currentUser);
-          window.kadahStatsPermListener.on("value", function(snap) {
-            var data = snap.val() || {};
-            var kadahBtn = document.getElementById("showKadahStatsBtn");
-            var closeBtn = document.getElementById("closeKadahStatsBtn");
-            if (!kadahBtn || !closeBtn) return;
-            // لا تظهر الزر إذا الجدول ظاهر حاليًا
-            if (kadahBtn.getAttribute('data-kadah-hidden') === '1') {
-              kadahBtn.style.display = "none";
-              closeBtn.style.display = "inline-block";
-              return;
-            }
-            if (data.canKadahStats || (typeof currentUserRole !== 'undefined' && currentUserRole === "admin")) {
-              kadahBtn.style.display = "inline-block";
-            } else {
-              kadahBtn.style.display = "none";
-              closeBtn.style.display = "none";
-              document.getElementById("kadahStatsTableWrapper").style.display = "none";
-            }
-          });
-        }
-        // مراقبة صلاحية التعديل للمستخدمين في لوحة التحكم بشكل live
-        if (window.usersPermListener) window.usersPermListener.off && window.usersPermListener.off();
-        if (typeof db !== 'undefined') {
-          window.usersPermListener = db.ref("users");
-          window.usersPermListener.on("value", function() {
-            if (typeof loadUsers === 'function') loadUsers();
-          });
-        }
       });
 
-      // دالة حساب وعرض احصائيات الكعده لكل موظف (مع حماية النصوص)
+      // دالة حساب وعرض احصائيات الكعده لكل موظف
       function renderKadahStatsTable() {
-        // تفعيل live update لجدول احصائيه الكعده
+        // جلب بيانات تفاصيل الأيام من قاعدة البيانات
+        // إذا كان لديك متغير month و year و employees معرفين مسبقاً في الكود
         const monthKey = `${year}_${(month + 1).toString().padStart(2, "0")}`;
-        // إلغاء أي مستمع سابق
-        if (window.kadahStatsDaysListener) window.kadahStatsDaysListener.off && window.kadahStatsDaysListener.off();
-        if (window.kadahStatsAttListener) window.kadahStatsAttListener.off && window.kadahStatsAttListener.off();
-        // مراقبة بيانات days
-        window.kadahStatsDaysListener = db.ref(`dayDetails/${monthKey}`);
-        window.kadahStatsAttListener = db.ref("attendance");
-        function updateTable() {
-          Promise.all([
-            window.kadahStatsDaysListener.once("value"),
-            window.kadahStatsAttListener.once("value")
-          ]).then(([daysSnap, attSnap]) => {
-            const days = daysSnap.val() || {};
-            const attendance = attSnap.val() || {};
+        db.ref(`dayDetails/${monthKey}`)
+          .once("value")
+          .then((snap) => {
+            const days = snap.val() || {};
             const stats = {};
             employees.forEach((emp) => {
               stats[emp] = { "600": 0, "22": 0, "مشتركة": 0 };
             });
-            Object.entries(days).forEach(([dayKey, day]) => {
-              const attDay = attendance[dayKey] || {};
+            Object.values(days).forEach((day) => {
               employees.forEach((emp) => {
-                const attVal = attDay[emp] || "";
-                ["600", "22", "مشتركة"].forEach((type) => {
-                  const val = day[emp]?.value || "";
-                  if (val === type) {
-                    if (attVal === "نص") stats[emp][type] += 0.5;
-                    else if (attVal === "شفت") stats[emp][type] += 1;
-                  }
-                });
+                const val = day[emp]?.value || "";
+                if (val === "600") stats[emp]["600"]++;
+                if (val === "22") stats[emp]["22"]++;
+                if (val === "مشتركة") stats[emp]["مشتركة"]++;
               });
             });
+            // بناء صفوف الجدول
             const tbody = document.querySelector("#kadahStatsTable tbody");
             tbody.innerHTML = "";
             employees.forEach((emp) => {
-              const row = document.createElement("tr");
-              row.innerHTML = `
-                <td>${safeText(emp)}</td>
-                <td class='kadah-600'>${typeof stats[emp]["600"] === "number" ? stats[emp]["600"] : 0}</td>
-                <td class='kadah-22'>${typeof stats[emp]["22"] === "number" ? stats[emp]["22"] : 0}</td>
-                <td class='kadah-msh'>${typeof stats[emp]["مشتركة"] === "number" ? stats[emp]["مشتركة"] : 0}</td>
-              `;
-              tbody.appendChild(row);
+                const row = document.createElement("tr");
+                // Always apply the class for each column, even if the value is zero
+                row.innerHTML = `
+                  <td>${emp}</td>
+                  <td class='kadah-600'>${typeof stats[emp]["600"] === "number" ? stats[emp]["600"] : 0}</td>
+                  <td class='kadah-22'>${typeof stats[emp]["22"] === "number" ? stats[emp]["22"] : 0}</td>
+                  <td class='kadah-msh'>${typeof stats[emp]["مشتركة"] === "number" ? stats[emp]["مشتركة"] : 0}</td>
+                `;
+                tbody.appendChild(row);
             });
-            // إزالة عمود "المجموع" إذا كان موجوداً
-            const thead = document.querySelector("#kadahStatsTable thead tr");
-            if (thead && thead.children.length > 4) {
-              while (thead.children.length > 4) thead.removeChild(thead.lastChild);
-            }
           });
-        }
-        window.kadahStatsDaysListener.on("value", updateTable);
-        window.kadahStatsAttListener.on("value", updateTable);
-        updateTable(); // أول مرة
       }
       // دالة فتح نافذة تفاصيل اليوم
       function showDayDetailsModal(dayKey, dayLabel) {
@@ -1612,7 +1506,7 @@
             let isEmpty = noteVal.trim() === "";
             html += `<div class="note-box" style="border:1.5px solid #e3eafc; margin:18px 0 22px 0; border-radius:13px; background:linear-gradient(135deg,#f8fafc 70%,#e3eafc 100%); box-shadow:0 2px 12px #3f51b511; transition:box-shadow 0.2s;">`;
             // اسم الموظف
-            html += `<div style=\"font-weight:700; color:#3f51b5; font-size:18px; padding:13px 16px 0 16px; letter-spacing:0.2px;\">👤 ${safeText(emp)}</div>`;
+            html += `<div style=\"font-weight:700; color:#3f51b5; font-size:18px; padding:13px 16px 0 16px; letter-spacing:0.2px;\">👤 ${emp}</div>`;
             // خانة الملاحظة وزر الحفظ
             if (perm === "edit") {
               html += `<textarea id='noteInput_${emp}' style='width:94%;min-height:60px;margin:13px 3%;border-radius:8px;border:1.2px solid #bfc7e3;padding:9px;font-size:15.5px;resize:vertical;background:#fff;transition:border 0.2s;'>${noteVal}</textarea>`;
@@ -1693,7 +1587,6 @@
         // أزرار المدير فقط
         [
           "sidebarAdminBtn",
-          "sidebarKadahPermsBtn",
           "sidebarMonthsManagerBtn",
           "sidebarEmpStatsBtn",
           "sidebarDeleteDataBtn",
@@ -1701,7 +1594,7 @@
           "sidebarChangePassBtn",
           "sidebarUserControlBtn",
           "sidebarNotesSettingsBtn",
-          "sidebarNotificationsBtn"
+          "sidebarNotificationsBtn",
         ].forEach((id) => {
           // زر الإشعارات للمدير
           document.getElementById("sidebarNotificationsBtn").onclick =
@@ -1851,157 +1744,6 @@
           }
           const el = document.getElementById(id);
           if (el) el.style.display = isAdmin ? "block" : "none";
-  // تحديث زر احصائيه الكعده للمستخدمين
-  updateKadahStatsBtnVisibility();
-      // نافذة صلاحيات الكعده والتفاصيل
-      document.getElementById("sidebarKadahPermsBtn").onclick = function () {
-        document.getElementById("sidebarMenu").classList.remove("open");
-        setTimeout(showKadahPermsModal, 100);
-      };
-
-      function showKadahPermsModal() {
-        let modal = document.getElementById("kadahPermsModal");
-        if (modal) { modal.style.display = "flex"; return; }
-        modal = document.createElement("div");
-        modal.id = "kadahPermsModal";
-        modal.style = "position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);z-index:9001;display:flex;align-items:center;justify-content:center;";
-        modal.innerHTML = `
-  <div style='background:#fff;max-width:470px;width:97vw;border-radius:18px;box-shadow:0 8px 32px #8e24aa22;padding:32px 18px 18px 18px;position:relative;display:flex;flex-direction:column;animation:fadeIn 0.3s;'>
-    <button id="closeKadahPermsModal" style="position:absolute;top:10px;left:10px;background:#8e24aa;color:white;border:none;border-radius:50%;width:34px;height:34px;font-size:20px;cursor:pointer;transition:background 0.2s;">✖</button>
-    <div style="font-size:22px;color:#8e24aa;margin-bottom:18px;font-weight:700;text-align:center;letter-spacing:0.2px;">🛡️ إدارة صلاحيات الكعده وتفاصيل اليوم</div>
-    <div id="kadahPermsContent" style="overflow-y:auto;max-height:60vh;">جاري التحميل...</div>
-  </div>
-  <style>
-    @media (max-width: 600px) { #kadahPermsModal > div { max-width:99vw !important; padding:18px 2vw 18px 2vw !important; } #kadahPermsModal div { font-size:16px !important; } }
-    #closeKadahPermsModal:hover { background:#b71c1c !important; }
-    #kadahPermsContent table { border-radius:12px; overflow:hidden; box-shadow:0 2px 12px #8e24aa11; }
-    #kadahPermsContent th, #kadahPermsContent td { font-size:16px; padding:10px 6px; text-align:center; }
-    #kadahPermsContent th { background:#ede7f6; color:#8e24aa; font-weight:700; }
-    #kadahPermsContent td { background:#faf7fd; color:#333; }
-    #kadahPermsContent tr:nth-child(even) td { background:#f3eafc; }
-    .perm-switch { width:28px; height:28px; accent-color:#8e24aa; cursor:pointer; }
-    .perm-switch2 { width:28px; height:28px; accent-color:#1976d2; cursor:pointer; }
-    .user-cell { font-weight:600; color:#673ab7; font-size:17px; letter-spacing:0.2px; }
-    .perm-label { font-size:13px; color:#888; margin-top:2px; display:block; }
-  </style>
-`;
-        document.body.appendChild(modal);
-        document.getElementById("closeKadahPermsModal").onclick = function () { modal.style.display = "none"; };
-        // تحميل المستخدمين وصلاحياتهم
-        db.ref("users").once("value").then((snapshot) => {
-          const users = snapshot.val() || {};
-          let html = `<table style='width:100%;border-collapse:separate;border-spacing:0 2px;margin-bottom:10px;'>
-            <tr><th>المستخدم</th><th>إحصائية الكعده<br><span class='perm-label'>(رؤية الزر)</span></th><th>تعديل تفاصيل اليوم<br><span class='perm-label'>(لا يؤثر فعليًا)</span></th></tr>`;
-          Object.entries(users).forEach(([username, data]) => {
-            if (username === "admin") return;
-            html += `<tr>
-              <td class='user-cell'>${safeText(username)}</td>
-              <td>
-                <label class="perm-container">
-                  <input type='checkbox' data-user='${safeText(username)}' class='kadahPermChk' ${data.canKadahStats ? "checked" : ""} />
-                  <div class="checkmark"></div>
-                </label>
-              </td>
-              <td>
-                <label class="perm-container perm-blue">
-                  <input type='checkbox' data-user2='${safeText(username)}' class='dayDetailsPermChk' ${data.canEditDayDetails ? "checked" : ""} />
-                  <div class="checkmark"></div>
-                </label>
-              </td>
-            </tr>`;
-          });
-          html += `</table><div style='font-size:13px;color:#555;margin-top:7px;'>فعّل أو عطّل ظهور زر إحصائية الكعده لكل مستخدم. ملاحظة: صلاحية تعديل تفاصيل اليوم لا تؤثر فعليًا على التعديل.</div>`;
-          document.getElementById("kadahPermsContent").innerHTML = html;
-          // ربط الأحداث
-          Array.from(document.getElementsByClassName("kadahPermChk")).forEach((chk) => {
-            chk.onchange = function () {
-              const user = chk.getAttribute("data-user");
-              db.ref("users/" + user + "/canKadahStats").set(chk.checked);
-            };
-          });
-          Array.from(document.getElementsByClassName("dayDetailsPermChk")).forEach((chk) => {
-            chk.onchange = function () {
-              const user = chk.getAttribute("data-user2");
-              db.ref("users/" + user + "/canEditDayDetails").set(chk.checked);
-            };
-          });
-        // إضافة أنماط الأنميشن لمربعات التفعيل داخل نافذة الصلاحيات فقط
-        if (!document.getElementById('permCheckboxAnimStyle')) {
-          const style = document.createElement('style');
-          style.id = 'permCheckboxAnimStyle';
-          style.innerHTML = `
-          .perm-container {
-            display: block;
-            position: relative;
-            cursor: pointer;
-            font-size: 1.2rem;
-            user-select: none;
-            width: 1.7em;
-            height: 1.7em;
-            margin: auto;
-          }
-          .perm-container input {
-            position: absolute;
-            opacity: 0;
-            cursor: pointer;
-            height: 0;
-            width: 0;
-          }
-          .checkmark {
-            --clr: #8e24aa;
-            position: relative;
-            top: 0;
-            left: 0;
-            height: 1.3em;
-            width: 1.3em;
-            background-color: #ccc;
-            border-radius: 50%;
-            transition: 300ms;
-          }
-          .perm-blue .checkmark { --clr: #1976d2; }
-          .perm-container input:checked ~ .checkmark {
-            background-color: var(--clr);
-            border-radius: .5rem;
-            animation: perm-pulse 500ms ease-in-out;
-          }
-          .checkmark:after {
-            content: "";
-            position: absolute;
-            display: none;
-          }
-          .perm-container input:checked ~ .checkmark:after {
-            display: block;
-          }
-          .perm-container .checkmark:after {
-            left: 0.45em;
-            top: 0.25em;
-            width: 0.25em;
-            height: 0.5em;
-            border: solid #E0E0E2;
-            border-width: 0 0.15em 0.15em 0;
-            transform: rotate(45deg);
-          }
-          @keyframes perm-pulse {
-            0% { box-shadow: 0 0 0 #8e24aa90; rotate: 20deg; }
-            50% { rotate: -20deg; }
-            75% { box-shadow: 0 0 0 10px #8e24aa60; }
-            100% { box-shadow: 0 0 0 13px #8e24aa30; rotate: 0; }
-          }
-          .perm-blue input:checked ~ .checkmark {
-            background-color: #1976d2;
-            animation: perm-pulse-blue 500ms ease-in-out;
-          }
-          @keyframes perm-pulse-blue {
-            0% { box-shadow: 0 0 0 #1976d290; rotate: 20deg; }
-            50% { rotate: -20deg; }
-            75% { box-shadow: 0 0 0 10px #1976d260; }
-            100% { box-shadow: 0 0 0 13px #1976d230; rotate: 0; }
-          }
-          `;
-          document.head.appendChild(style);
-        }
-        });
-      }
         });
         // نافذة إدارة الأشهر الاحترافية
         document.getElementById("sidebarMonthsManagerBtn").onclick =
@@ -2564,7 +2306,7 @@
         // عرض اسم المستخدم أعلى القائمة
         const sidebarUserName = document.getElementById("sidebarUserName");
         sidebarUserName.textContent = currentUser
-          ? "👤 " + safeText(currentUser)
+          ? "👤 " + currentUser
           : "غير مسجل";
         updateSidebarVisibility();
       };
@@ -3146,9 +2888,8 @@
       }
 
       // ========== جلسة المستخدم ==========
-      // تعيين الجلسة مع حماية اسم المستخدم
       function setSession(userObj) {
-        currentUser = safeText(userObj.user);
+        currentUser = userObj.user;
         currentUserRole = userObj.role;
         currentUserCanEdit = userObj.canEdit;
         localStorage.setItem("loggedUser", JSON.stringify(userObj));
@@ -3161,7 +2902,6 @@
       }
 
       // ========== رسائل واجهة المستخدم ==========
-      // عرض رسالة للمستخدم مع حماية النص
       function showMessage(message, isError = false) {
         const messageDiv = document.getElementById("loginMessage");
         if (!message) {
@@ -3169,7 +2909,6 @@
           messageDiv.className = "";
           return;
         }
-        const safeMsg = safeText(message);
         if (isError) {
           messageDiv.innerHTML = `
       <div style='animation:fadeIn 0.4s; background:linear-gradient(135deg,#fff6f6 60%,#ffe3e3 100%); border-radius:16px; box-shadow:0 6px 24px #d32f2f33; padding:22px 28px; display:flex; align-items:center; gap:18px; border:2.5px solid #d32f2f; margin:16px 0; position:relative;'>
@@ -3184,7 +2923,7 @@
             </line>
           </svg>
         </span>
-        <span style='color:#d32f2f; font-weight:bold; font-size:19px; letter-spacing:0.5px; text-shadow:0 2px 8px #d32f2f22;'>${safeMsg}</span>
+        <span style='color:#d32f2f; font-weight:bold; font-size:19px; letter-spacing:0.5px; text-shadow:0 2px 8px #d32f2f22;'>${message}</span>
       </div>
       <style>
         @keyframes fadeIn { from { opacity:0; transform:translateY(-10px);} to { opacity:1; transform:translateY(0);} }
@@ -3201,7 +2940,7 @@
             <circle cx='25' cy='25' r='20' fill='none' stroke='#1976d2' stroke-width='6' stroke-linecap='round' stroke-dasharray='60 90' stroke-dashoffset='0'/>
           </svg>
         </span>
-        <span style='color:#1976d2; font-weight:bold; font-size:16px;'>${safeMsg}</span>
+        <span style='color:#1976d2; font-weight:bold; font-size:16px;'>${message}</span>
       </div>
       <style>
         @keyframes fadeIn { from { opacity:0; transform:translateY(-10px);} to { opacity:1; transform:translateY(0);} }
@@ -3212,7 +2951,7 @@
         } else {
           messageDiv.innerHTML = `
       <div style='animation:fadeIn 0.4s; background:#e3f0ff; border-radius:12px; box-shadow:0 2px 12px #1976d222; padding:13px 18px; display:flex; align-items:center; gap:10px; border:1.5px solid #1976d2; margin:8px 0;'>
-        <span style='color:#1976d2; font-weight:bold; font-size:16px;'>${safeMsg}</span>
+        <span style='color:#1976d2; font-weight:bold; font-size:16px;'>${message}</span>
       </div>
       <style>
         @keyframes fadeIn { from { opacity:0; transform:translateY(-10px);} to { opacity:1; transform:translateY(0);} }
@@ -3695,43 +3434,38 @@
       }
       // تحميل جدول المستخدمين
       async function loadUsers() {
-        // تفعيل live update لجدول المستخدمين
-        if (window.usersTableListener) window.usersTableListener.off && window.usersTableListener.off();
-        window.usersTableListener = db.ref("users");
-        window.usersTableListener.on("value", function(snapshot) {
-          const users = snapshot.val() || {};
-          const tbody = document.getElementById("usersBody");
-          tbody.innerHTML = "";
-          Object.entries(users).forEach(([username, data]) => {
-            const tr = document.createElement("tr");
-            const safeUser = safeText(username);
-            tr.innerHTML = `
-        <td>${safeUser}</td>
-        <td>${data.canEdit ? "نعم" : "لا"}</td>
-        <td>
-          <button class="small-button btn-toggle" onclick="toggleUserEdit('${safeUser}', ${
-              data.canEdit
-            })">
-            ${data.canEdit ? "قفل التعديل" : "فتح التعديل"}
-          </button>
-        </td>
-        <td>
-          ${
-            username === currentUser
-              ? "لا يمكن حذف نفسك"
-              : `<button class="small-button btn-delete" onclick="deleteUser('${safeUser}')">حذف</button>`
-          }
-        </td>
-        <td>
-          ${
-            username === currentUser
-              ? "—"
-              : `<button class="small-button btn-delete" style="background:#ff9800;" onclick="forceLogoutUser('${safeUser}')">تسجيل خروج</button>`
-          }
-        </td>
-      `;
-            tbody.appendChild(tr);
-          });
+        const snapshot = await db.ref("users").once("value");
+        const users = snapshot.val() || {};
+        const tbody = document.getElementById("usersBody");
+        tbody.innerHTML = "";
+        Object.entries(users).forEach(([username, data]) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+      <td>${username}</td>
+      <td>${data.canEdit ? "نعم" : "لا"}</td>
+      <td>
+        <button class="small-button btn-toggle" onclick="toggleUserEdit('${username}', ${
+            data.canEdit
+          })">
+          ${data.canEdit ? "قفل التعديل" : "فتح التعديل"}
+        </button>
+      </td>
+      <td>
+        ${
+          username === currentUser
+            ? "لا يمكن حذف نفسك"
+            : `<button class="small-button btn-delete" onclick="deleteUser('${username}')">حذف</button>`
+        }
+      </td>
+      <td>
+        ${
+          username === currentUser
+            ? "—"
+            : `<button class="small-button btn-delete" style="background:#ff9800;" onclick="forceLogoutUser('${username}')">تسجيل خروج</button>`
+        }
+      </td>
+    `;
+          tbody.appendChild(tr);
         });
       }
 
@@ -3951,7 +3685,7 @@
         employees.forEach((emp, idx) => {
           const tr = document.createElement("tr");
           const nameTd = document.createElement("td");
-          nameTd.textContent = safeText(emp);
+          nameTd.textContent = emp;
           nameTd.id = `employeeName_${idx}`;
           const actionsTd = document.createElement("td");
           const editBtn = document.createElement("button");
@@ -4012,6 +3746,17 @@
             }
           });
           await db.ref("attendance").set(attendance);
+          // تحديث اسم الموظف في allowedStatsEmps لجميع المستخدمين لهذا الشهر
+          const usersSnap = await db.ref("users").once("value");
+          const users = usersSnap.val() || {};
+          await Promise.all(Object.entries(users).map(async ([username, data]) => {
+            if (username === "admin") return;
+            const allowed = Array.isArray(data.allowedStatsEmps) ? data.allowedStatsEmps : [];
+            if (allowed.includes(oldName)) {
+              const updated = allowed.map(e => e === oldName ? newName : e);
+              await db.ref("users/" + username + "/allowedStatsEmps").set(updated);
+            }
+          }));
           const newEmployees = employees.slice();
           newEmployees[index] = newName;
           saveEmployees(newEmployees);
@@ -5065,10 +4810,21 @@
               }
             });
             await db.ref("attendance").set(attendance);
+            // Remove employee from allowedStatsEmps for all users
+            const usersSnap = await db.ref("users").once("value");
+            const users = usersSnap.val() || {};
+            await Promise.all(Object.entries(users).map(async ([username, data]) => {
+              if (username === "admin") return;
+              const allowed = Array.isArray(data.allowedStatsEmps) ? data.allowedStatsEmps : [];
+              if (allowed.includes(empName)) {
+                const updated = allowed.filter(e => e !== empName);
+                await db.ref("users/" + username + "/allowedStatsEmps").set(updated);
+              }
+            }));
             saveEmployees(newEmployees);
             logActivity(
               "حذف موظف",
-              `تم حذف الموظف: ${empName} وجميع بيانات حضوره`
+              `تم حذف الموظف: ${empName} وجميع بيانات حضوره وصلاحيات ظهوره للمستخدمين`
             );
           }
         );
