@@ -1293,7 +1293,7 @@
                   updates[emp] = {
                     value: newValue,
                     user: currentUser,
-                    time: new Date().toLocaleString("ar-EG"),
+                    time: formatDateTimeNoSeconds(new Date()),
                   };
                   changed = true;
                 } else if (data[emp]) {
@@ -1833,16 +1833,38 @@
             db.ref("monthsSettings").once("value"),
             db.ref("attendance").once("value"),
             db.ref("employees").once("value"),
+            db.ref("months").once("value"),
             db.ref("monthsNotes").once("value"),
             db.ref("activityLog").once("value"),
-          ]).then(([settingsSnap, attSnap, empSnap, notesSnap, logSnap]) => {
+          ]).then(([
+            settingsSnap,
+            attSnap,
+            empSnap,
+            monthsSnap,
+            notesSnap,
+            logSnap,
+          ]) => {
             const settings = settingsSnap.val() || {
               auto: true,
               closed: {},
               hidden: {},
             };
             const data = attSnap.val() || {};
-            const allEmployees = empSnap.val() || {};
+            const legacyEmployees = empSnap.val() || {};
+            const monthsTree = monthsSnap.val() || {};
+            // Merge employees from legacy `employees` root and new `months` structured nodes
+            const allEmployees = Object.assign({}, legacyEmployees);
+            Object.entries(monthsTree).forEach(([y, monthsObj]) => {
+              Object.entries(monthsObj || {}).forEach(([mm, monthObj]) => {
+                if (monthObj && monthObj.employees) {
+                  Object.entries(monthObj.employees).forEach(([id, val]) => {
+                    // if structured as object {name:..}, extract name, else take value
+                    const name = typeof val === "string" ? val : val.name || "";
+                    if (name) allEmployees[id] = name;
+                  });
+                }
+              });
+            });
             const monthsNotes = notesSnap.val() || {};
             const activityLog = logSnap.val() || {};
             const monthsSet = new Set();
@@ -2416,10 +2438,8 @@
       // سجل النشاطات
       function logActivity(action, details, extra = {}) {
         const now = new Date();
-        const time =
-          toEnglishNumbers(now.toLocaleDateString("ar-EG")) +
-          " " +
-          toEnglishNumbers(now.toLocaleTimeString("ar-EG"));
+        // format without seconds
+        const time = formatDateTimeNoSeconds(now);
         let style = "";
         if (extra && extra.type === "note") {
           style = "background:#fffde7;border-left:5px solid #ffb300;";
@@ -2437,6 +2457,20 @@
       // تحويل الأرقام العربية إلى إنجليزية
       function toEnglishNumbers(str) {
         return str.replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
+      }
+
+      // Format a Date to 'DD/MM/YYYY HH:MM' (Arabic locale) without seconds
+      function formatDateTimeNoSeconds(d) {
+        try {
+          const datePart = toEnglishNumbers(d.toLocaleDateString("ar-EG"));
+          const timePart = toEnglishNumbers(
+            d.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })
+          );
+          return datePart + " " + timePart;
+        } catch (e) {
+          // fallback
+          return toEnglishNumbers(d.toLocaleDateString("ar-EG")) + " " + toEnglishNumbers(d.toLocaleTimeString("ar-EG"));
+        }
       }
 
       // حفظ التعديلات فقط عند وجود تغيير فعلي
@@ -2476,7 +2510,7 @@
                     employee,
                     old: oldValue,
                     new: newValue,
-                    time: new Date().toLocaleString("ar-EG"),
+                    time: formatDateTimeNoSeconds(new Date()),
                   });
                 }
               }
@@ -2484,11 +2518,7 @@
             if (dayChanged) {
               updatedData[day.key].__editor = currentUser;
               const now = new Date();
-              const ts =
-                now.toLocaleDateString("ar-EG") +
-                " " +
-                now.toLocaleTimeString("ar-EG");
-              updatedData[day.key].__editedAt = ts;
+              updatedData[day.key].__editedAt = formatDateTimeNoSeconds(now);
             }
           });
           if (!anyChange) {
@@ -2978,8 +3008,6 @@
             const userData = snapshot.val();
             const storedPass = userData.password;
             console.log("[LOGIN DEBUG] username:", username);
-            console.log("[LOGIN DEBUG] entered password:", password);
-            console.log("[LOGIN DEBUG] stored password object:", storedPass);
             const ok = await verifyPassword(storedPass, password);
             console.log("[LOGIN DEBUG] verifyPassword result:", ok);
             if (!ok) throw new Error("Wrong password");
@@ -3034,24 +3062,71 @@
       function loadEmployees() {
         // إظهار علامة التحميل
         document.getElementById("loaderSpinner").style.display = "flex";
-        // جلب قائمة الموظفين الخاصة بالشهر الحالي فقط من المفتاح العام
-        const empKey = `employees_${year}_${(month + 1)
-          .toString()
-          .padStart(2, "0")}`;
+        // new structured path: months/<year>/<MM>/employees
+        const mm = (month + 1).toString().padStart(2, "0");
+        const empKey = `employees_${year}_${mm}`;
+        const newPath = `months/${year}/${mm}/employees`;
+
+        // Helper to migrate a single month from old path to new path (non-destructive)
+        function migrateEmployeesForMonthIfNeeded(yearArg, monthArg, oldEmpKey, newPathArg) {
+          // Copy data from old path to new path only if new path is empty
+          return db
+            .ref(newPathArg)
+            .once("value")
+            .then((newSnap) => {
+              if (newSnap.exists()) return Promise.resolve(false); // already migrated
+              return db.ref("employees/" + oldEmpKey).once("value").then((oldSnap) => {
+                if (!oldSnap.exists()) return false;
+                const oldObj = oldSnap.val() || {};
+                const toWrite = {};
+                Object.entries(oldObj).forEach(([id, name]) => {
+                  // store as object for future extensibility but keep name exact
+                  toWrite[id] = { name: name, migratedFrom: `employees/${oldEmpKey}` };
+                });
+                // write copy to new structured path (non-destructive to old data)
+                return db
+                  .ref(newPathArg)
+                  .set(toWrite)
+                  .then(() => true)
+                  .catch((e) => {
+                    console.error("Migration write failed:", e);
+                    return false;
+                  });
+              });
+            });
+        }
+
+        // Try new structured path first, fallback to legacy path if missing.
         return db
-          .ref("employees/" + empKey)
+          .ref(newPath)
           .once("value")
           .then((snapshot) => {
-            const empObj = snapshot.exists() ? snapshot.val() : {};
-            // ترتيب حسب الإضافة وليس أبجدي
-            // Object.values(empObj) يحافظ على ترتيب الإضافة في جافاسكريبت
-            employees = Object.values(empObj);
-            employeeIds = Object.keys(empObj);
-            const theadRow = document.querySelector(
-              "#attendanceTable thead tr"
-            );
-            while (theadRow.children.length > 1)
-              theadRow.removeChild(theadRow.lastChild);
+            if (snapshot.exists()) {
+              const empObj = snapshot.val() || {};
+              // empObj may have values either as objects {name:..} or plain strings
+              employees = Object.values(empObj).map((v) => (typeof v === "string" ? v : v.name));
+              employeeIds = Object.keys(empObj);
+              // continue with UI updates below
+              return { migrated: false };
+            }
+            // new path empty -> fallback to old legacy path
+            return db
+              .ref("employees/" + empKey)
+              .once("value")
+              .then((oldSnap) => {
+                const empObj = oldSnap.exists() ? oldSnap.val() : {};
+                employees = Object.values(empObj);
+                employeeIds = Object.keys(empObj);
+                // attempt to copy to new structured path in background (non-destructive)
+                migrateEmployeesForMonthIfNeeded(year, month, empKey, newPath).then((ok) => {
+                  if (ok) console.log(`Migrated employees for ${year}-${mm} to ${newPath}`);
+                });
+                return { migrated: true };
+              });
+          })
+          .then(() => {
+            const theadRow = document.querySelector("#attendanceTable thead tr");
+            while (theadRow.children.length > 1) theadRow.removeChild(theadRow.lastChild);
             if (theadRow.children.length > 0) {
               const firstTh = theadRow.children[0];
               firstTh.style.background = "#e3f0ff";
@@ -3299,7 +3374,7 @@
                     employee,
                     old: oldValue,
                     new: newValue,
-                    time: new Date().toLocaleString("ar-EG"),
+                    time: formatDateTimeNoSeconds(new Date()),
                   });
                 }
               }
@@ -3307,11 +3382,7 @@
             if (dayChanged) {
               updatedData[day.key].__editor = currentUser;
               const now = new Date();
-              const ts =
-                now.toLocaleDateString("ar-EG") +
-                " " +
-                now.toLocaleTimeString("ar-EG");
-              updatedData[day.key].__editedAt = ts;
+              updatedData[day.key].__editedAt = formatDateTimeNoSeconds(now);
             }
           });
           if (!anyChange) {
@@ -3353,9 +3424,9 @@
       // Unified save function for employees (add/update/delete)
       async function saveEmployees(newEmployees) {
         if (!canEditCurrentMonth()) return;
-        const empKey = `employees_${year}_${(month + 1)
-          .toString()
-          .padStart(2, "0")}`;
+        const mm = (month + 1).toString().padStart(2, "0");
+        const empKey = `employees_${year}_${mm}`;
+        const newPath = `months/${year}/${mm}/employees`;
         try {
           // توليد معرفات فريدة للموظفين الجدد إذا لم تكن موجودة
           let empObj = {};
@@ -3364,11 +3435,22 @@
             let id =
               employeeIds[idx] ||
               "id" + Date.now() + "_" + Math.floor(Math.random() * 10000);
-            empObj[id] = name;
+            // store as object for new structured format
+            empObj[id] = { name: name };
           });
-          await db.ref("employees/" + empKey).set(empObj);
+          // write primary copy to new structured path
+          await db.ref(newPath).set(empObj);
+          // ALSO keep a legacy-compatible plain string copy under employees/<empKey>
+          const legacyObj = {};
+          Object.entries(empObj).forEach(([id, obj]) => {
+            legacyObj[id] = obj.name;
+          });
+          await db.ref("employees/" + empKey).set(legacyObj).catch((e) => {
+            // non-fatal: log but continue
+            console.warn("Failed to write legacy copy for employees:", e);
+          });
           // ترتيب حسب الإضافة وليس أبجدي
-          employees = Object.values(empObj);
+          employees = Object.values(empObj).map((v) => v.name);
           employeeIds = Object.keys(empObj);
           window.monthEmployees = employees.slice();
           loadEmployeesTable();
@@ -3836,7 +3918,7 @@
                 const shift = counts[emp]["شفت"] || 0;
                 const half = counts[emp]["نص"] || 0;
                 const vac = counts[emp]["❌"] || 0;
-                const salary = shift * 22000 + half * 11000;
+                const salary = shift * 20000 + half * 10000;
                 html += `<tr>
           <td class="emp-name-official">${emp}</td>
           <td class="emp-stat-official shift">${shift}</td>
@@ -4452,17 +4534,18 @@
       function renderEmpStatsTabContent() {
         const contentDiv = document.getElementById("empStatsTabContent");
         contentDiv.innerHTML = "جاري التحميل...";
+        // Ensure we always fetch the up-to-date employee list for the currently
+        // selected month/year from the same path that loadEmployees() uses
+        // (employees/<empKey>). Previously this used a wrong/refactored path
+        // which could return stale/incomplete data.
+        const empKey = `employees_${year}_${(month + 1).toString().padStart(2, "0")}`;
         Promise.all([
           db.ref("users").once("value"),
-          db
-            .ref(`employees_${year}_${(month + 1).toString().padStart(2, "0")}`)
-            .once("value"),
+          db.ref("employees/" + empKey).once("value"),
         ]).then(([usersSnap, empsSnap]) => {
           const users = usersSnap.val() || {};
           // استخدم نفس منطق تحميل الموظفين الشهري
-          const employeesList = empsSnap.exists()
-            ? Object.values(empsSnap.val())
-            : [];
+          const employeesList = empsSnap.exists() ? Object.values(empsSnap.val()) : [];
           let html = `<div style='font-size:15px;color:#333;margin-bottom:10px;text-align:center;'>تحكم بعرض إحصائيات الموظفين للمستخدمين</div>`;
           html += `<table style='width:100%;border-collapse:collapse;'>
       <tr style='background:#f6f6f6;'>
@@ -4760,24 +4843,31 @@
         }
         db.ref("users/admin/password")
           .once("value")
-          .then((snapshot) => {
-            if (!snapshot.exists() || snapshot.val() !== oldPass) {
-              statusDiv.textContent = "كلمة المرور الحالية غير صحيحة.";
-              return;
+          .then(async (snapshot) => {
+            try {
+              const stored = snapshot.val();
+              // use verifyPassword to support hashed and legacy formats
+              const ok = await verifyPassword(stored, oldPass);
+              if (!ok) {
+                statusDiv.textContent = "كلمة المرور الحالية غير صحيحة.";
+                return;
+              }
+              const hashObj = await hashPassword(newPass);
+              await db.ref("users/admin/password").set(hashObj);
+              statusDiv.textContent = "✅ تم تغيير كلمة المرور بنجاح.";
+              document.getElementById("adminOldPass").value = "";
+              document.getElementById("adminNewPass").value = "";
+              logActivity(
+                "تغيير كلمة مرور المدير",
+                `تم تغيير كلمة المرور من قبل: ${currentUser}`
+              );
+            } catch (err) {
+              console.error("Error changing admin password:", err);
+              statusDiv.textContent = "❌ حدث خطأ أثناء تغيير كلمة المرور.";
             }
-            db.ref("users/admin/password")
-              .set(newPass)
-              .then(() => {
-                statusDiv.textContent = "✅ تم تغيير كلمة المرور بنجاح.";
-                document.getElementById("adminOldPass").value = "";
-                document.getElementById("adminNewPass").value = "";
-                logActivity(
-                  "تغيير كلمة مرور المدير",
-                  `تم تغيير كلمة المرور من قبل: ${currentUser}`
-                );
-              });
           })
-          .catch(() => {
+          .catch((err) => {
+            console.error("Error reading admin password:", err);
             statusDiv.textContent = "❌ حدث خطأ أثناء تغيير كلمة المرور.";
           });
       }
@@ -4835,14 +4925,29 @@
       function backupData() {
         document.getElementById("backupStatus").textContent =
           "جاري تجهيز النسخة...";
-        Promise.all([
+          Promise.all([
           db.ref("employees").once("value"),
+          db.ref("months").once("value"),
           db.ref("attendance").once("value"),
           db.ref("users").once("value"),
         ])
-          .then(([empSnap, attSnap, usersSnap]) => {
+          .then(([empSnap, monthsSnap, attSnap, usersSnap]) => {
+            const legacyEmployees = empSnap.val() || {};
+            const monthsTree = monthsSnap.val() || {};
+            const mergedEmployees = Object.assign({}, legacyEmployees);
+            Object.entries(monthsTree).forEach(([y, monthsObj]) => {
+              Object.entries(monthsObj || {}).forEach(([mm, monthObj]) => {
+                if (monthObj && monthObj.employees) {
+                  Object.entries(monthObj.employees).forEach(([id, val]) => {
+                    const name = typeof val === "string" ? val : val.name || "";
+                    if (name) mergedEmployees[id] = name;
+                  });
+                }
+              });
+            });
             const data = {
-              employees: empSnap.val() || {},
+              employees: mergedEmployees,
+              months: monthsTree,
               attendance: attSnap.val() || {},
               users: usersSnap.val() || {},
             };
