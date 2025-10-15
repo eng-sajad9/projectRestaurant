@@ -1050,8 +1050,8 @@
     </div>
 
     <!-- تم حذف الأنماط المكررة للـ sidebarMenu لتقليل التكرار -->
-    <button id="sidebarToggleBtn" style="display: none">☰</button>
-    <button id="sidebarCloseBtn" style="display: none">✖</button>
+  <button id="sidebarToggleBtn" style="display: none; z-index:5101; position:fixed; top:14px; right:14px">☰</button>
+  <button id="sidebarCloseBtn" style="display: none; z-index:5101; position:fixed; top:14px; right:14px">✖</button>
     <div id="sidebarMenu">
       <div class="sidebar-header" id="sidebarUserName"></div>
       <button onclick="saveData()" style="background: #0dc149; color: white">
@@ -1088,6 +1088,14 @@
         style="background: #ff4081; color: white; display: none"
       >
         🔔 الإشعارات
+      </button>
+      <!-- Admin-only Announcements button -->
+      <button
+        id="sidebarAnnouncementsBtn"
+        style="background: #ff6f00; color: white; display: none; margin-top:6px;"
+        title="إعلانات المدير"
+      >
+        📢 الإعلانات
       </button>
       <button
         id="sidebarDeleteDataBtn"
@@ -2431,6 +2439,56 @@
       window.addEventListener("focus", updateSidebarVisibility);
       setInterval(updateSidebarVisibility, 1000);
     </script>
+    <!-- Announcement modal -->
+    <div
+      id="announceModal"
+      style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.35);z-index:7000;align-items:center;justify-content:center;">
+      <div style="background:#fff;max-width:420px;width:94vw;border-radius:12px;padding:18px;box-shadow:0 8px 32px #0002;position:relative;">
+        <button id="closeAnnounceModal" style="position:absolute;top:10px;left:10px;background:#dc3545;color:#fff;border:none;border-radius:50%;width:30px;height:30px;">✖</button>
+        <h3 style="text-align:center;color:#ff6f00;margin-bottom:10px;">📢 إنشاء إعلان</h3>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <textarea id="announceText" placeholder="اكتب رسالة موجزة للموظفين" style="width:100%;min-height:80px;padding:8px;border:1px solid #ccc;border-radius:8px;font-size:15px;resize:vertical;"></textarea>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <label style="font-size:14px;margin:0;">حجم الخط:</label>
+            <select id="announceFontSize" style="flex:1;padding:8px;border-radius:8px;border:1px solid #ccc;">
+              <option value="16">صغير (16px)</option>
+              <option value="18" selected>افتراضي (18px)</option>
+              <option value="20">متوسط (20px)</option>
+              <option value="24">كبير (24px)</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <label style="font-size:14px;margin:0;">لون خلفية مؤقت:</label>
+            <input id="announceBgColor" type="color" value="#ff8a00" style="width:56px;height:36px;border-radius:6px;border:1px solid #ccc;padding:2px;" />
+            <span style="font-size:12px;color:#fff;background:#0000;padding:0 6px;">&nbsp;</span>
+          </div>
+          <label style="font-size:14px;">المدة:</label>
+          <select id="announceDuration" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ccc;">
+            <option value="5">5 دقائق</option>
+            <option value="15">15 دقيقة</option>
+            <option value="30">30 دقيقة</option>
+            <option value="60">1 ساعة</option>
+            <option value="180">3 ساعات</option>
+            <option value="720">12 ساعة</option>
+            <option value="1440">24 ساعة</option>
+            <option value="custom">أخرى (دقائق)</option>
+          </select>
+          <div style="display:flex;gap:8px;">
+            <button id="publishAnnounceBtn" style="flex:1;background:#ff6f00;color:white;border:none;padding:10px;border-radius:8px;">نشر</button>
+            <button id="previewAnnounceBtn" style="flex:1;background:#1976d2;color:white;border:none;padding:10px;border-radius:8px;">معاينة</button>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:6px;">
+            <button id="deleteCurrentAnnounceBtn" style="flex:1;background:#e53935;color:white;border:none;padding:8px;border-radius:8px;display:none;">حذف الإعلان الحالي</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Announcement bar (fixed at top) -->
+    <div id="announcementBar" style="display:none;position:fixed;top:0;left:0;right:0;height:auto;background:linear-gradient(90deg,#ff8a00,#ff6f00);color:#fff;z-index:2000;align-items:center;overflow:visible;padding:8px 14px;">
+      <div id="announcementInner" style="white-space:normal;display:block;padding:0 12px;font-weight:700;font-size:18px;line-height:1.2;font-family:'Segoe UI', Tahoma, Arial, sans-serif;letter-spacing:0.2px;text-align:center;">&nbsp;</div>
+      <button id="closeAnnouncementBar" aria-label="إغلاق الإعلان" title="إغلاق" style="position:absolute;right:10px;top:8px;width:36px;height:36px;background:rgba(255,255,255,0.08);border:none;color:#fff;border-radius:8px;font-size:18px;display:none;align-items:center;justify-content:center;cursor:pointer;">✖</button>
+    </div>
     <!-- نهاية الإضافة -->
 
     <!-- سجل النشاطات - تحسين التفاصيل -->
@@ -2825,6 +2883,9 @@
             checkForcedLogoutOnLogin(currentUser);
           if (typeof updateSidebarVisibility === "function")
             updateSidebarVisibility();
+          // ensure announcements button visibility is updated after session restore
+          if (typeof updateAnnouncementsVisibility === "function")
+            updateAnnouncementsVisibility();
           if (typeof loadAvailableMonths === "function") loadAvailableMonths();
           listenForNotifications();
 
@@ -2923,6 +2984,15 @@
         currentUserRole = userObj.role;
         currentUserCanEdit = userObj.canEdit;
         localStorage.setItem("loggedUser", JSON.stringify(userObj));
+        // Ensure UI elements that depend on role (like announcements) update immediately
+        try {
+          if (typeof updateAnnouncementsVisibility === "function")
+            updateAnnouncementsVisibility();
+          if (typeof updateSidebarVisibility === "function")
+            updateSidebarVisibility();
+        } catch (e) {
+          console.warn("Failed to update UI after setSession:", e);
+        }
       }
       function clearSession() {
         currentUser = "";
@@ -3035,6 +3105,9 @@
             } else {
               document.getElementById("adminPanel").style.display = "none";
             }
+            // update announcements visibility immediately after login UI changes
+            if (typeof updateAnnouncementsVisibility === "function")
+              updateAnnouncementsVisibility();
             checkForcedLogoutOnLogin(username);
           })
           .catch((error) => {
@@ -3918,7 +3991,7 @@
                 const shift = counts[emp]["شفت"] || 0;
                 const half = counts[emp]["نص"] || 0;
                 const vac = counts[emp]["❌"] || 0;
-                const salary = shift * 22000 + half * 11000;
+                const salary = shift * 20000 + half * 10000;
                 html += `<tr>
           <td class="emp-name-official">${emp}</td>
           <td class="emp-stat-official shift">${shift}</td>
@@ -5262,6 +5335,273 @@
         document.getElementById("sidebarToggleBtn").style.display = "flex";
         updateSidebarVisibility();
       };
+
+    // Announcements feature (admin-only)
+    function updateAnnouncementsVisibility() {
+      const btn = document.getElementById("sidebarAnnouncementsBtn");
+      if (!btn) return;
+      btn.style.display = currentUserRole === "admin" ? "block" : "none";
+      // Only show the local close button for admin users. Regular users cannot close the announcement.
+      const closeBtn = document.getElementById('closeAnnouncementBar');
+      if (closeBtn) {
+        if (currentUserRole === 'admin') {
+          closeBtn.style.display = 'flex';
+          // delegate precise positioning to a dedicated helper so it can
+          // be re-used on resize and other layout changes.
+          try {
+            if (typeof positionAnnouncementCloseButton === 'function')
+              positionAnnouncementCloseButton();
+          } catch (e) {
+            // fallback: ensure it's visible in the top-right
+            closeBtn.style.position = 'absolute';
+            closeBtn.style.right = '10px';
+            closeBtn.style.top = '8px';
+          }
+        } else {
+          closeBtn.style.display = 'none';
+        }
+      }
+    }
+    // call on load and when user role changes
+    try {
+      updateAnnouncementsVisibility();
+    } catch (e) {}
+
+    // Helper: position the admin-only announcement close button next to the
+    // sidebar toggle. This is called from updateAnnouncementsVisibility and
+    // on window resize to keep it aligned.
+    function positionAnnouncementCloseButton() {
+      const closeBtn = document.getElementById('closeAnnouncementBar');
+      const toggle = document.getElementById('sidebarToggleBtn');
+      if (!closeBtn) return;
+      // Default placement (top-right) in case toggle isn't visible
+      closeBtn.style.position = 'absolute';
+      closeBtn.style.right = '10px';
+      closeBtn.style.top = '8px';
+      try {
+        if (toggle && toggle.getBoundingClientRect) {
+          const rect = toggle.getBoundingClientRect();
+          // prefer fixed positioning so it follows viewport
+          closeBtn.style.position = 'fixed';
+          // align vertically with the toggle button
+          closeBtn.style.top = rect.top + 'px';
+          // place it to the left of the toggle by a small margin
+          const leftPos = rect.left - (closeBtn.offsetWidth + 8);
+          // if left would go off-screen, keep in top-right
+          if (leftPos > 8) {
+            closeBtn.style.left = leftPos + 'px';
+            closeBtn.style.right = 'auto';
+          } else {
+            closeBtn.style.left = 'auto';
+            closeBtn.style.right = '10px';
+          }
+        }
+      } catch (err) {
+        // ignore and keep default
+      }
+    }
+
+    // Keep the close button positioned on resize and when the DOM is ready
+    window.addEventListener('resize', function () {
+      try {
+        positionAnnouncementCloseButton();
+      } catch (e) {}
+    });
+    document.addEventListener('DOMContentLoaded', function () {
+      try {
+        positionAnnouncementCloseButton();
+      } catch (e) {}
+    });
+
+    // Non-invasive debug helper: shows current session info in console when
+    // developer toggles `window.showSessionDebug()` in the console.
+    window.showSessionDebug = function () {
+      console.log('[SESSION DEBUG] currentUser:', currentUser);
+      console.log('[SESSION DEBUG] role:', currentUserRole);
+      console.log('[SESSION DEBUG] canEdit:', currentUserCanEdit);
+      db.ref('announcements/current').once('value').then(snap => console.log('[SESSION DEBUG] announcement:', snap.val()));
+    };
+
+    document.getElementById("sidebarAnnouncementsBtn").onclick = function () {
+      document.getElementById("sidebarMenu").classList.remove("open");
+      document.getElementById("announceModal").style.display = "flex";
+      document.getElementById("announceText").focus();
+      // show delete button only to admin
+      try {
+        const delBtn = document.getElementById('deleteCurrentAnnounceBtn');
+        if (delBtn) delBtn.style.display = currentUserRole === 'admin' ? 'block' : 'none';
+      } catch (e) {}
+    };
+    document.getElementById("closeAnnounceModal").onclick = function () {
+      document.getElementById("announceModal").style.display = "none";
+    };
+
+    // custom duration input handling
+    (function() {
+      const durSel = document.getElementById('announceDuration');
+      const modalInner = document.getElementById('announceModal').querySelector('div');
+      let customInput = null;
+      durSel.addEventListener('change', function() {
+        if (this.value === 'custom') {
+          if (!customInput) {
+            customInput = document.createElement('input');
+            customInput.type = 'number';
+            customInput.min = '1';
+            customInput.placeholder = 'أدخل عدد الدقائق (مثال: 90)';
+            customInput.style = 'padding:8px;border-radius:6px;border:1px solid #ccc;width:100%;margin-top:6px;';
+            durSel.parentNode.insertBefore(customInput, durSel.nextSibling);
+          }
+        } else {
+          if (customInput) {
+            customInput.remove();
+            customInput = null;
+          }
+        }
+      });
+    })();
+
+    // Announcement publish logic with DB persistence and listener
+    let announcementTimer = null;
+    let announceAnimation = null; // kept for backward compatibility but unused for static mode
+    function showAnnouncementLocal(text, minutes, opts) {
+      if (!text || !text.trim()) return;
+      const bar = document.getElementById("announcementBar");
+      const inner = document.getElementById("announcementInner");
+      // set static text and allow wrapping
+      inner.textContent = text.trim();
+      // apply formatting options when provided
+      if (opts && opts.fontSize) inner.style.fontSize = opts.fontSize + 'px';
+      else inner.style.fontSize = '18px';
+      if (opts && opts.bgColor) bar.style.background = opts.bgColor;
+      else bar.style.background = 'linear-gradient(90deg,#ff8a00,#ff6f00)';
+      // make bar visible and allow it to size to content
+      bar.style.display = "flex";
+      bar.style.alignItems = "center";
+      bar.style.justifyContent = "center";
+      inner.style.transform = "none";
+      // clear any previous timers/animations
+      if (announceAnimation) {
+        cancelAnimationFrame(announceAnimation);
+        announceAnimation = null;
+      }
+      if (announcementTimer) clearTimeout(announcementTimer);
+      const hideMs = minutes > 0 ? minutes * 60 * 1000 : 30 * 1000;
+      // ensure the bar height can expand to the text content
+      inner.style.display = 'block';
+  inner.style.maxWidth = 'calc(100% - 100px)';
+      inner.style.overflow = 'visible';
+      // schedule hide
+      announcementTimer = setTimeout(() => {
+        bar.style.display = "none";
+        // restore default background when hiding
+        bar.style.background = 'linear-gradient(90deg,#ff8a00,#ff6f00)';
+        inner.style.fontSize = '18px';
+      }, hideMs);
+    }
+
+    // Persist announcement to DB under announcements/current
+    function publishAnnouncement(text, minutes, persist = true, opts) {
+      if (!text || !text.trim()) return;
+      const payload = {
+        text: text.trim(),
+        minutes: minutes,
+        from: currentUser || "admin",
+        ts: Date.now(),
+        opts: opts || {},
+      };
+      // write to DB so it survives refresh across clients
+      if (persist) {
+        db.ref('announcements/current').set(payload).catch((e) => console.warn('Failed to persist announcement', e));
+      }
+  // show immediately locally (apply formatting if provided)
+  showAnnouncementLocal(payload.text, payload.minutes, payload.opts);
+      // schedule removal from DB when expired (only if persisted)
+      if (persist && minutes > 0) {
+        setTimeout(() => {
+          // only remove if unchanged
+          db.ref('announcements/current').once('value').then(snap => {
+            const cur = snap.val();
+            if (!cur) return;
+            if (cur.ts === payload.ts && cur.text === payload.text) {
+              db.ref('announcements/current').remove().catch(() => {});
+            }
+          });
+        }, minutes * 60 * 1000 + 2000);
+      }
+    }
+
+    // close button handler
+    document.getElementById('closeAnnouncementBar').onclick = function() {
+      const bar = document.getElementById('announcementBar');
+      bar.style.display = 'none';
+      if (announceAnimation) cancelAnimationFrame(announceAnimation);
+      announceAnimation = null;
+      if (announcementTimer) clearTimeout(announcementTimer);
+      // If admin closed the bar, remove the persisted announcement so it
+      // disappears for everyone.
+      try {
+        if (currentUserRole === 'admin') {
+          db.ref('announcements/current').remove().catch(() => {});
+        }
+      } catch (e) {}
+    };
+
+    // Listen for announcement changes so they persist across refresh
+    db.ref('announcements/current').on('value', function(snap) {
+      const val = snap.val();
+      if (!val) {
+        // clear UI
+        const bar = document.getElementById('announcementBar');
+        if (bar) bar.style.display = 'none';
+        if (announceAnimation) cancelAnimationFrame(announceAnimation);
+        announceAnimation = null;
+        if (announcementTimer) clearTimeout(announcementTimer);
+        return;
+      }
+      // calculate remaining time based on ts and minutes
+      const elapsed = (Date.now() - (val.ts || 0)) / 60000; // minutes
+      const remaining = (val.minutes || 0) - elapsed;
+      // If already expired, remove from DB
+      if (val.minutes > 0 && remaining <= 0) {
+        db.ref('announcements/current').remove().catch(() => {});
+        return;
+      }
+      showAnnouncementLocal(val.text, remaining > 0 ? remaining : 0.5);
+    });
+
+    document.getElementById("publishAnnounceBtn").onclick = function () {
+      const text = document.getElementById("announceText").value;
+      const durEl = document.getElementById("announceDuration");
+      let minutes = durEl.value === 'custom' && durEl.nextSibling && durEl.nextSibling.value ? parseInt(durEl.nextSibling.value, 10) : parseInt(durEl.value || "60", 10);
+      if (!minutes || minutes <= 0) minutes = 60;
+      const fontSize = parseInt(document.getElementById('announceFontSize').value, 10) || 18;
+      const bgColor = document.getElementById('announceBgColor').value || '';
+      const opts = { fontSize, bgColor };
+      publishAnnouncement(text, minutes, true, opts);
+      document.getElementById("announceModal").style.display = "none";
+    };
+    document.getElementById("previewAnnounceBtn").onclick = function () {
+      const text = document.getElementById("announceText").value;
+      const fontSize = parseInt(document.getElementById('announceFontSize').value, 10) || 18;
+      const bgColor = document.getElementById('announceBgColor').value || '';
+      const opts = { fontSize, bgColor };
+      // preview should not persist — 12 seconds
+      publishAnnouncement(text, 0.2, false, opts); // short preview (~12s)
+    };
+
+    // Delete current announcement button handler (in modal)
+    document.getElementById('deleteCurrentAnnounceBtn').onclick = function() {
+      if (!confirm('هل أنت متأكد من حذف الإعلان الحالي؟')) return;
+      db.ref('announcements/current').remove()
+        .then(() => {
+          alert('✅ تم حذف الإعلان الحالي');
+          document.getElementById('announceModal').style.display = 'none';
+        })
+        .catch((e) => {
+          console.error(e);
+          alert('❌ فشل حذف الإعلان');
+        });
+    };
 
       // ========== ربط أزرار القائمة الجانبية بأزرار الموقع الأصلية ==========
       document.getElementById("sidebarAdminBtn").onclick = () => {
