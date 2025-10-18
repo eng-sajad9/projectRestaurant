@@ -2378,8 +2378,11 @@
           <h4>سجل النشاطات</h4>
           <div id="activityLogBox">جاري التحميل...</div>
         </div>
-        <div class="feature-section">
-          <h4>معلومات النظام</h4>
+        <div class="feature-section" style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <h4 style="margin:0">معلومات النظام</h4>
+            <div id="featuresShowMorePlaceholder"></div>
+          </div>
           <ul style="margin:0;padding:0 0 0 15px;">
             <li>عدد الموظفين الحالي: <b>${employees.length}</b></li>
             <li>اسم المستخدم الحالي: <b>${currentUser}</b></li>
@@ -2392,25 +2395,33 @@
             .once("value")
             .then((snapshot) => {
               const log = snapshot.val() || {};
-              let html = `<table class="activity-log-table">
+              // use shared renderer
+              if (typeof renderActivityLog === 'function') {
+                renderActivityLog(30, 'activityLogBox');
+              } else {
+                // fallback: basic rendering
+                let html = `<table class="activity-log-table">
           <tr>
             <th>الوقت</th>
             <th>المستخدم</th>
             <th>النشاط</th>
             <th>الوصف</th>
           </tr>`;
-              Object.values(log)
-                .reverse()
-                .forEach((item) => {
-                  html += `<tr>
+                Object.values(log)
+                  .reverse()
+                  .forEach((item) => {
+                    html += `<tr>
             <td>${toEnglishNumbers(item.time || "")}</td>
             <td>${item.user || ""}</td>
             <td>${item.action || ""}</td>
             <td>${item.details || ""}</td>
           </tr>`;
-                });
-              html += `</table>`;
-              document.getElementById("activityLogBox").innerHTML = html;
+                  });
+                html += `</table>`;
+                document.getElementById("activityLogBox").innerHTML = html;
+              }
+              // ensure a single well-styled 'عرض المزيد' button exists and is attached
+              ensureFeaturesShowMoreButton('activityLogBox');
             });
           // زر إغلاق التبويبة
           const closeBtn = document.getElementById("closeFeaturesTab");
@@ -2627,9 +2638,12 @@
       <h4>سجل النشاطات</h4>
       <div id="activityLogBox">جاري التحميل...</div>
     </div>
-    <div class="feature-section">
-      <h4>معلومات النظام</h4>
-      <ul style="margin:0;padding:0 0 0 15px;">
+        <div class="feature-section" style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <h4 style="margin:0">معلومات النظام</h4>
+            <div id="featuresShowMorePlaceholder"></div>
+          </div>
+          <ul style="margin:0;padding:0 0 0 15px;">
         <li>عدد الموظفين الحالي: <b>${employees.length}</b></li>
         <li>اسم المستخدم الحالي: <b>${currentUser}</b></li>
         <li>الدور: <b>${currentUserRole}</b></li>
@@ -2660,6 +2674,7 @@
               });
             html += `</table>`;
             document.getElementById("activityLogBox").innerHTML = html;
+            ensureFeaturesShowMoreButton('activityLogBox');
           });
         // زر إغلاق التبويبة
         const closeBtn = document.getElementById("closeFeaturesTab");
@@ -2669,6 +2684,109 @@
           };
         }
       };
+
+      // Helper: render activity log into a container with a 'عرض المزيد' button
+      function renderActivityLog(limit, containerId) {
+        limit = limit || 30;
+        const container = document.getElementById(containerId || 'activityLogBox');
+        if (!container) return;
+        container.innerHTML = 'جاري التحميل...';
+        db.ref('activityLog')
+          .limitToLast(limit)
+          .once('value')
+          .then((snapshot) => {
+            const log = snapshot.val() || {};
+            let html = `<table class="activity-log-table" style="width:100%;border-collapse:collapse;">
+              <tr>
+                <th style='background:#f0f0f0;padding:7px;'>الوقت</th>
+                <th style='background:#f0f0f0;padding:7px;'>المستخدم</th>
+                <th style='background:#f0f0f0;padding:7px;'>النشاط</th>
+                <th style='background:#f0f0f0;padding:7px;'>الوصف</th>
+              </tr>`;
+            Object.values(log).reverse().forEach((item) => {
+              html += `<tr style='${item.style || ""}'>
+                <td>${toEnglishNumbers(item.time || "")}</td>
+                <td>${item.user || ""}</td>
+                <td>${item.action || ""}</td>
+                <td>${item.details || ""}</td>
+              </tr>`;
+            });
+            html += `</table>`;
+            // add 'عرض المزيد' button only when limit < 80
+            if (limit < 80) {
+              html += `<div style="display:flex;justify-content:center;margin-top:12px;">
+                <button id="showMoreActivityBtn" style="background:linear-gradient(90deg,#6a82fb,#283e51);color:#fff;border:none;padding:10px 16px;border-radius:8px;cursor:pointer;box-shadow:0 4px 12px #6a82fb33;font-weight:700;">عرض المزيد</button>
+              </div>`;
+            }
+            container.innerHTML = html;
+            // attach click handler
+            const moreBtn = document.getElementById('showMoreActivityBtn');
+            if (moreBtn) {
+              moreBtn.onclick = function () {
+                // load last 80 edits
+                renderActivityLog(80, containerId);
+                // smooth scroll to the log container
+                setTimeout(() => {
+                  container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 120);
+              };
+            }
+          })
+          .catch((err) => {
+            container.innerHTML = '<div style="color:#d32f2f;text-align:center;">❌ خطأ في تحميل السجل</div>';
+            console.error('Error loading activity log:', err);
+          });
+      }
+
+      // Ensure a single, well-styled 'عرض المزيد' button is present in the features tab
+      function ensureFeaturesShowMoreButton(containerId) {
+        try {
+          const placeholder = document.getElementById('featuresShowMorePlaceholder');
+          if (!placeholder) return;
+          // Remove any existing global buttons with the same id to avoid duplicates
+          const existing = Array.from(document.querySelectorAll('#featuresShowMoreBtn'));
+          existing.forEach((el) => {
+            // if it's already inside the current placeholder, keep it
+            if (el.parentElement !== placeholder) el.remove();
+          });
+          // If button already exists inside placeholder, reuse it
+          let btn = placeholder.querySelector('#featuresShowMoreBtn');
+          if (!btn) {
+            btn = document.createElement('button');
+            btn.id = 'featuresShowMoreBtn';
+            btn.className = 'features-show-more-btn';
+            btn.textContent = 'عرض المزيد';
+            placeholder.appendChild(btn);
+          }
+          // attach handler (idempotent)
+          btn.onclick = function () {
+            // visually disable while loading
+            btn.disabled = true;
+            const oldText = btn.textContent;
+            btn.textContent = 'جاري التحميل...';
+            renderActivityLog(80, containerId || 'activityLogBox');
+            setTimeout(() => {
+              btn.textContent = oldText;
+              btn.disabled = false;
+              // hide the button after loading 80 entries
+              try { btn.style.display = 'none'; } catch(e){}
+            }, 800);
+          };
+        } catch (e) {
+          console.error('ensureFeaturesShowMoreButton error', e);
+        }
+      }
+
+      // Responsive styling for the features-show-more button
+      if (!document.getElementById('featuresShowMoreStyles')) {
+        const fs = document.createElement('style');
+        fs.id = 'featuresShowMoreStyles';
+        fs.innerHTML = `
+          .features-show-more-btn{ background:linear-gradient(90deg,#5b6bff,#2b3b71); color:#fff; border:none; padding:7px 10px; border-radius:6px; cursor:pointer; box-shadow:0 6px 18px rgba(43,59,113,0.14); font-weight:700; font-size:13px; }
+          @media (max-width:600px){ .features-show-more-btn{ padding:6px 8px; font-size:12px; border-radius:6px; box-shadow:none; } }
+        `;
+        document.head.appendChild(fs);
+      }
 
       // نافذة تحكم صلاحيات سجل النشاطات للمدير
       document.getElementById("sidebarUserControlBtn").onclick = function () {
@@ -5566,7 +5684,8 @@
         db.ref('announcements/current').remove().catch(() => {});
         return;
       }
-      showAnnouncementLocal(val.text, remaining > 0 ? remaining : 0.5);
+      // pass stored opts (bgColor, fontSize, etc.) so formatting persists across reloads
+      showAnnouncementLocal(val.text, remaining > 0 ? remaining : 0.5, val.opts || {});
     });
 
     document.getElementById("publishAnnounceBtn").onclick = function () {
@@ -5627,8 +5746,11 @@
       <h4>سجل النشاطات</h4>
       <div id="activityLogBox">جاري التحميل...</div>
     </div>
-    <div class="feature-section">
-      <h4>معلومات النظام</h4>
+    <div class="feature-section" style="display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <h4 style="margin:0">معلومات النظام</h4>
+        <div id="featuresShowMorePlaceholder"></div>
+      </div>
       <ul style="margin:0;padding:0 0 0 15px;">
         <li>عدد الموظفين الحالي: <b>${employees.length}</b></li>
         <li>اسم المستخدم الحالي: <b>${currentUser}</b></li>
@@ -5641,25 +5763,32 @@
           .once("value")
           .then((snapshot) => {
             const log = snapshot.val() || {};
-            let html = `<table class="activity-log-table">
+            // render via helper if available
+            if (typeof renderActivityLog === 'function') {
+              renderActivityLog(30, 'activityLogBox');
+            } else {
+              let html = `<table class="activity-log-table">
       <tr>
         <th>الوقت</th>
         <th>المستخدم</th>
         <th>النشاط</th>
         <th>الوصف</th>
       </tr>`;
-            Object.values(log)
-              .reverse()
-              .forEach((item) => {
-                html += `<tr>
+              Object.values(log)
+                .reverse()
+                .forEach((item) => {
+                  html += `<tr>
         <td>${toEnglishNumbers(item.time || "")}</td>
         <td>${item.user || ""}</td>
         <td>${item.action || ""}</td>
         <td>${item.details || ""}</td>
       </tr>`;
-              });
-            html += `</table>`;
-            document.getElementById("activityLogBox").innerHTML = html;
+                });
+              html += `</table>`;
+              document.getElementById("activityLogBox").innerHTML = html;
+            }
+            // ensure single button instance and attach handler
+            ensureFeaturesShowMoreButton('activityLogBox');
           });
         // زر إغلاق التبويبة
         const closeBtn = document.getElementById("closeFeaturesTab");
