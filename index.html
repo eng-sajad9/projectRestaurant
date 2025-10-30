@@ -381,6 +381,162 @@
           ></div>
           <div id="dayDetailsTable"></div>
           <div
+
+          <!-- App version (single-source) - inserts ribbon below the attendance table when present; falls back to fixed bottom ribbon -->
+          <style>
+            /* Inline ribbon style (default when injected below the table) */
+            .app-version-ribbon{
+              position:relative; /* becomes static/flow element when inserted after table */
+              display:inline-flex;
+              gap:10px;
+              align-items:center;
+              background:linear-gradient(90deg, rgba(11,102,195,0.08), rgba(3,169,244,0.03));
+              color:#07345a;
+              padding:8px 14px;
+              border-radius:18px;
+              font-size:13px;
+              box-shadow:0 8px 26px rgba(6,35,58,0.10);
+              border:1px solid rgba(11,102,195,0.08);
+              cursor:pointer;
+              min-width:220px;
+              justify-content:center;
+            }
+            /* Fixed variant used as fallback if table not found */
+            .app-version-ribbon.fixed{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:2147483000;backdrop-filter: blur(6px) saturate(120%)}
+            .app-version-ribbon strong{color:#0b66c3}
+            .app-version-ribbon .info-dot{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#fff;color:#0b66c3;font-weight:700;border:1px solid rgba(11,102,195,0.06);box-shadow:0 2px 8px rgba(6,35,58,0.06);display:none}
+            @media (max-width:640px){
+              .app-version-ribbon{font-size:12px;padding:7px 12px;min-width:160px}
+            }
+
+            /* Container to center under table */
+            .app-version-container{display:flex;justify-content:center;margin-top:12px;width:100%}
+
+            /* Modal/popover for details */
+            .app-version-modal-backdrop{position:fixed;inset:0;background:rgba(2,6,23,0.45);display:none;align-items:center;justify-content:center;z-index:2147483050}
+            .app-version-modal{background:#fff;max-width:560px;width:92%;padding:18px;border-radius:12px;box-shadow:0 18px 40px rgba(6,35,58,0.18);color:#123;}
+            .app-version-modal h3{margin:0 0 8px 0;font-size:16px;color:#0b66c3}
+            .app-version-modal p{margin:6px 0 0 0;font-size:14px;line-height:1.4}
+            .app-version-modal .close-btn{display:inline-block;margin-top:12px;padding:8px 12px;border-radius:8px;background:#0b66c3;color:#fff;cursor:pointer}
+          </style>
+
+          <!-- ribbon element; will be moved under the table when present -->
+          <div id="appVersionRibbon" class="app-version-ribbon fixed" role="button" aria-label="عرض رقم الإصدار" tabindex="0">
+            <div class="version-info" id="appVersionLabel">الإصدار: <strong>v2.7</strong> — آخر تحديث: 30/10/2025</div>
+            <div class="info-dot" aria-hidden="true">i</div>
+          </div>
+
+          <!-- modal removed per user request: ribbon will be plain display only -->
+
+          <script>
+            /* Single source of truth for the app version. Edit here to change everywhere. */
+            window.APP_VERSION = window.APP_VERSION || {
+              version: 'v2.7',
+              updated: '30/10/2025',
+              notes: 'Initial release'
+            };
+
+            function renderAppVersion(){
+              try{
+                var label = document.getElementById('appVersionLabel');
+                if(label){
+                  label.innerHTML = 'الإصدار: <strong>'+window.APP_VERSION.version+'</strong>' + ' — آخر تحديث: '+window.APP_VERSION.updated;
+                }
+                // modal fields
+                var mv = document.getElementById('modalVersion'); if(mv) mv.textContent = window.APP_VERSION.version;
+                var mu = document.getElementById('modalUpdated'); if(mu) mu.textContent = window.APP_VERSION.updated;
+                var mn = document.getElementById('modalNotes'); if(mn) mn.textContent = window.APP_VERSION.notes || '';
+              }catch(e){ console && console.warn && console.warn('renderAppVersion error', e); }
+            }
+
+            // Public helpers to update/read the version at runtime.
+            window.setAppVersion = function(version, updated, notes){
+              if(typeof version === 'object'){
+                window.APP_VERSION = Object.assign({}, window.APP_VERSION, version);
+              } else {
+                if(version) window.APP_VERSION.version = version;
+                if(updated) window.APP_VERSION.updated = updated;
+                if(notes) window.APP_VERSION.notes = notes;
+              }
+              renderAppVersion();
+            };
+            window.getAppVersion = function(){ return Object.assign({}, window.APP_VERSION); };
+
+            // modal removed: provide a no-op placeholder so other scripts calling it won't crash
+            function showAppVersionModal(show){
+              // no-op: modal intentionally removed to keep ribbon minimal
+              console && console.debug && console.debug('showAppVersionModal called but modal removed');
+            }
+
+            function insertAfter(refNode, newNode){
+              if(refNode && refNode.parentNode){
+                if(refNode.nextSibling) refNode.parentNode.insertBefore(newNode, refNode.nextSibling);
+                else refNode.parentNode.appendChild(newNode);
+              }
+            }
+
+            // Initialize interactivity and move ribbon under the attendance table if present
+            function initVersionUI(){
+              var ribbon = document.getElementById('appVersionRibbon');
+              var backdrop = null;
+              var close = null;
+
+              // Prefer to place the ribbon under the employee-stats table if it exists
+              try{
+                var placed = false;
+                // 1) If there's a specific stats container rendered by the page, insert after it
+                var statsContainer = document.getElementById('empStatsBelowTable');
+                if(statsContainer && ribbon){
+                  var container = document.createElement('div');
+                  container.className = 'app-version-container';
+                  ribbon.classList.remove('fixed');
+                  container.appendChild(ribbon);
+                  insertAfter(statsContainer, container);
+                  placed = true;
+                }
+
+                // 2) If the page builds a table with class 'emp-stats-table-official', insert after that table
+                if(!placed){
+                  var tbl = document.querySelector('table.emp-stats-table-official');
+                  if(tbl && ribbon){
+                    var container2 = document.createElement('div');
+                    container2.className = 'app-version-container';
+                    ribbon.classList.remove('fixed');
+                    container2.appendChild(ribbon);
+                    insertAfter(tbl, container2);
+                    placed = true;
+                  }
+                }
+
+                // 3) fallback to attendanceTable (previous behavior)
+                if(!placed){
+                  var table = document.getElementById('attendanceTable');
+                  if(table && ribbon){
+                    var container3 = document.createElement('div');
+                    container3.className = 'app-version-container';
+                    ribbon.classList.remove('fixed');
+                    container3.appendChild(ribbon);
+                    insertAfter(table, container3);
+                    placed = true;
+                  }
+                }
+
+                // if nothing matched, leave ribbon fixed (fallback)
+              }catch(e){ /* ignore placement errors and keep ribbon fixed */ }
+
+              // Keep ribbon non-interactive (plain display). Still allow keyboard focus if needed.
+              if(ribbon){
+                ribbon.setAttribute('role','status');
+                ribbon.setAttribute('tabindex','0');
+                ribbon.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); /* no modal */ } });
+              }
+              // modal removed; nothing to bind
+              renderAppVersion();
+            }
+
+            if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initVersionUI);
+            else initVersionUI();
+          </script>
             id="dayDetailsStatus"
             style="margin-top: 10px; font-size: 14px; text-align: center"
           ></div>
