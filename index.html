@@ -5907,5 +5907,146 @@
           });
       };
     </script>
+    <!-- Fixed top sticky header: clones #attendanceTable thead and fixes it to top with smooth animation -->
+    <style>
+      /* Match screenshot: compact pill-like blue header cells with clear separators */
+      .sticky-clone-wrap{ position:fixed; top:6px; z-index:11000; transform:translateY(-120%); opacity:0; transition:transform 260ms cubic-bezier(.22,.9,.28,1), opacity 200ms; pointer-events:auto; left:0 }
+      .sticky-clone-wrap.visible{ transform:translateY(0); opacity:1 }
+      .sticky-clone-table{ border-collapse:collapse; background:transparent; width:100% }
+      /* container is transparent — each cell is a small rounded pill */
+      .sticky-clone-table-container{ border-radius:6px; overflow:visible; background:transparent; padding:0 6px }
+      .sticky-clone-row{ position:relative; }
+      .sticky-clone-cell{ position:absolute; top:0; box-sizing:border-box; display:flex; align-items:center; justify-content:center; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:6px 10px; font-size:14px; color:#0d47a1; font-weight:700; background:linear-gradient(180deg,#eaf4ff,#e3f0ff); border:1px solid rgba(13,71,161,0.08); }
+      /* vertical separator: slim gap between pills achieved with left border on subsequent cells */
+      .sticky-clone-cell + .sticky-clone-cell{ border-left:1px solid rgba(13,71,161,0.06) }
+      /* rounded corners for first and last visible pill */
+      .sticky-clone-row .sticky-clone-cell:first-child{ border-top-right-radius:8px; border-bottom-right-radius:8px }
+      .sticky-clone-row .sticky-clone-cell:last-child{ border-top-left-radius:8px; border-bottom-left-radius:8px }
+      /* compact mode: reduce padding and font-size for minimal footprint */
+      .sticky-clone-wrap.compact .sticky-clone-cell{ padding:4px 8px; font-size:13px }
+      /* subtle hover highlight without shifting layout */
+      .sticky-clone-cell:hover{ background:linear-gradient(180deg,#fff,#eef6ff); box-shadow:0 6px 12px rgba(13,71,161,0.06) }
+      /* column highlight in main table when hovering header */
+      #attendanceTable td.col-highlight, #attendanceTable th.col-highlight{ background: rgba(13,71,161,0.05) !important; transition: background 160ms }
+      @media (max-width:600px){ .sticky-clone-cell{ font-size:12px; padding:5px 8px } }
+    </style>
+
+    <script>
+      (function(){
+        const table = document.getElementById('attendanceTable');
+        if(!table) return;
+
+        const thead = table.querySelector('thead');
+        if(!thead) return;
+
+        // Create wrapper and container
+        let wrap = document.createElement('div');
+        wrap.className = 'sticky-clone-wrap';
+        let container = document.createElement('div');
+        container.className = 'sticky-clone-table-container';
+        let cloneTable = document.createElement('table');
+        cloneTable.className = 'sticky-clone-table';
+        container.appendChild(cloneTable);
+        wrap.appendChild(container);
+        document.body.appendChild(wrap);
+
+        let isVisible = false;
+
+        function buildClone(){
+          // We'll build an absolutely-positioned header row that mirrors the visible header cells
+          container.innerHTML = '';
+          const row = document.createElement('div');
+          row.className = 'sticky-clone-row';
+          container.appendChild(row);
+          // create placeholder cells; skip the date column (id='dateHeaderTh') so it won't appear in the fixed header
+          const origAllThs = Array.from(thead.querySelectorAll('th'));
+          const origThs = origAllThs.filter(th => th.id !== 'dateHeaderTh');
+          origThs.forEach((th)=>{
+            const cell = document.createElement('div');
+            cell.className = 'sticky-clone-cell';
+            // copy the inner HTML so any icons or multi-line content is preserved
+            cell.innerHTML = th.innerHTML;
+            if(th.getAttribute('dir')) cell.setAttribute('dir', th.getAttribute('dir'));
+            row.appendChild(cell);
+          });
+          syncSizes();
+        }
+
+        function syncSizes(){
+          const rect = table.getBoundingClientRect();
+          // position wrap and set width to match table
+          wrap.style.left = rect.left + 'px';
+          wrap.style.width = rect.width + 'px';
+          container.style.width = '100%';
+
+          const row = container.querySelector('.sticky-clone-row');
+          if(!row) return;
+          // set row height same as original thead
+          const theadRect = thead.getBoundingClientRect();
+          row.style.height = theadRect.height + 'px';
+
+          const origAllThs = Array.from(thead.querySelectorAll('th'));
+          const origThs = origAllThs.filter(th => th.id !== 'dateHeaderTh');
+          const cloneCells = row.querySelectorAll('.sticky-clone-cell');
+          origThs.forEach((th, i) => {
+            const thRect = th.getBoundingClientRect();
+            const left = thRect.left - rect.left;
+            const w = thRect.width;
+            if(cloneCells[i]){
+              const cs = cloneCells[i];
+              cs.style.left = left + 'px';
+              cs.style.width = w + 'px';
+              // make header slightly smaller than original for compact look
+              const isCompact = wrap.classList.contains('compact');
+              const headerH = isCompact ? Math.max(30, theadRect.height - 12) : Math.max(36, theadRect.height - 6);
+              cs.style.height = headerH + 'px';
+              // copy computed styles for visual parity
+              const s = window.getComputedStyle(th);
+              cs.style.background = s.backgroundColor || th.style.background || '';
+              cs.style.color = s.color || th.style.color || '';
+              cs.style.fontWeight = s.fontWeight || th.style.fontWeight || '';
+              cs.style.fontSize = s.fontSize || th.style.fontSize || '';
+              cs.style.paddingLeft = s.paddingLeft;
+              cs.style.paddingRight = s.paddingRight;
+            }
+          });
+        }
+
+        function updateVisibility(){
+          const rect = table.getBoundingClientRect();
+          const show = rect.top < 0 && rect.bottom > 40; // show when table scrolled past top
+          if(show && !isVisible){ wrap.classList.add('visible'); isVisible = true; }
+          else if(!show && isVisible){ wrap.classList.remove('visible'); wrap.classList.remove('compact'); isVisible = false; }
+          // compact mode when scrolled further down for less visual footprint
+          const compactThreshold = 260; // px scrolled past table top
+          if(rect.top < -compactThreshold){ wrap.classList.add('compact'); } else { wrap.classList.remove('compact'); }
+        }
+
+        // Build initially in case header already present
+        buildClone(); updateVisibility();
+
+        // Observe changes to thead (employees list may be added dynamically)
+        const mo = new MutationObserver(()=>{ buildClone(); updateVisibility(); });
+        mo.observe(thead, { childList:true, subtree:true, characterData:true });
+
+        // Keep in sync on resize / scroll / table changes
+        let rt;
+        window.addEventListener('resize', ()=>{ clearTimeout(rt); rt = setTimeout(()=>{ syncSizes(); updateVisibility(); }, 120); });
+        window.addEventListener('scroll', ()=>{ syncSizes(); updateVisibility(); }, { passive:true });
+
+        if(window.ResizeObserver){
+          const ro = new ResizeObserver(()=>{ syncSizes(); updateVisibility(); });
+          ro.observe(table);
+        }
+
+        // close on print
+        if(window.matchMedia){
+          try{ window.matchMedia('print').addListener(()=> wrap.classList.remove('visible')); }catch(e){}
+        }
+
+        // expose for debugging if needed
+        window._stickyHeaderClone = { rebuild: buildClone, sync: syncSizes };
+      })();
+    </script>
   </body>
 </html>
