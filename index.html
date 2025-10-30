@@ -6072,7 +6072,7 @@
       /* container is transparent — each cell is a small rounded pill */
       .sticky-clone-table-container{ border-radius:6px; overflow:visible; background:transparent; padding:0 6px }
       .sticky-clone-row{ position:relative; }
-      .sticky-clone-cell{ position:absolute; top:0; box-sizing:border-box; display:flex; align-items:center; justify-content:center; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:6px 10px; font-size:14px; color:#0d47a1; font-weight:700; background:linear-gradient(180deg,#eaf4ff,#e3f0ff); border:1px solid rgba(13,71,161,0.08); }
+  .sticky-clone-cell{ position:absolute; top:0; box-sizing:border-box; display:flex; align-items:center; justify-content:center; text-align:center; white-space:normal; /* allow wrapping onto multiple lines */ word-break:break-word; padding:6px 10px; font-size:14px; color:#0d47a1; font-weight:700; background:linear-gradient(180deg,#eaf4ff,#e3f0ff); border:1px solid rgba(13,71,161,0.08); }
       /* vertical separator: slim gap between pills achieved with left border on subsequent cells */
       .sticky-clone-cell + .sticky-clone-cell{ border-left:1px solid rgba(13,71,161,0.06) }
       /* rounded corners for first and last visible pill */
@@ -6122,6 +6122,20 @@
             cell.className = 'sticky-clone-cell';
             // copy the inner HTML so any icons or multi-line content is preserved
             cell.innerHTML = th.innerHTML;
+            // If header is plain text (no child elements), insert a line break after the first word
+            // so names like "محمد علاء" render as two lines on small screens.
+            try{
+              if(th.children.length === 0){
+                const txt = th.textContent.trim();
+                if(txt.indexOf(' ') !== -1){
+                  const parts = txt.split(/\s+/);
+                  // keep first word on first line, the rest on second line
+                  const first = parts.shift();
+                  const rest = parts.join(' ');
+                  cell.innerHTML = first + '<br>' + rest;
+                }
+              }
+            }catch(e){ /* fail silently if any node is unexpected */ }
             if(th.getAttribute('dir')) cell.setAttribute('dir', th.getAttribute('dir'));
             row.appendChild(cell);
           });
