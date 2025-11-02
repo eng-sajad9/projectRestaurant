@@ -272,7 +272,7 @@
         border-radius: 50%;
         font-size: 20px;
         cursor: pointer;
-        z-index: 5100;
+  z-index: 12001;
         box-shadow: 0 2px 8px #0002;
         display: flex;
         align-items: center;
@@ -380,7 +380,7 @@
             "
           ></div>
           <div id="dayDetailsTable"></div>
-          <div
+          <div id="dayDetailsStatus" style="margin-top: 10px; font-size: 14px; text-align: center"></div>
 
           <!-- App version (single-source) - inserts ribbon below the attendance table when present; falls back to fixed bottom ribbon -->
           <style>
@@ -420,21 +420,7 @@
             .app-version-modal .close-btn{display:inline-block;margin-top:12px;padding:8px 12px;border-radius:8px;background:#0b66c3;color:#fff;cursor:pointer}
           </style>
 
-          <!-- ribbon element; will be moved under the table when present -->
-          <div id="appVersionRibbon" class="app-version-ribbon fixed" role="button" aria-label="عرض رقم الإصدار" tabindex="0">
-            <div class="version-info" id="appVersionLabel">الإصدار: <strong>v2.7</strong> — آخر تحديث: 30/10/2025</div>
-            <div class="info-dot" aria-hidden="true">i</div>
-          </div>
-
-          <!-- modal removed per user request: ribbon will be plain display only -->
-
           <script>
-            /* Single source of truth for the app version. Edit here to change everywhere. */
-            window.APP_VERSION = window.APP_VERSION || {
-              version: 'v2.7',
-              updated: '30/10/2025',
-              notes: 'Initial release'
-            };
 
             function renderAppVersion(){
               try{
@@ -537,9 +523,6 @@
             if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initVersionUI);
             else initVersionUI();
           </script>
-            id="dayDetailsStatus"
-            style="margin-top: 10px; font-size: 14px; text-align: center"
-          ></div>
         </div>
       </div>
       <!-- عنصر التحميل الاحترافي -->
@@ -697,16 +680,33 @@
         </div>
       </div>
 
+      <script>
+        // Ensure login box is visible immediately if there's no saved session.
+        (function(){
+          try{
+            var saved = localStorage.getItem('loggedUser');
+            var lb = document.getElementById('loginBox');
+            var main = document.getElementById('mainContent');
+            var admin = document.getElementById('adminPanel');
+            var loader = document.getElementById('loaderSpinner');
+            if (!saved) {
+              if (lb) lb.style.display = 'block';
+              if (main) main.style.display = 'none';
+              if (admin) admin.style.display = 'none';
+              if (loader) loader.style.display = 'none';
+            } else {
+              // if session exists, keep loader visible until main UI initializes
+              if (loader) loader.style.display = 'flex';
+              if (lb) lb.style.display = 'none';
+            }
+          }catch(e){console && console.warn && console.warn('init loginBox script error', e)}
+        })();
+      </script>
+
       <!-- المحتوى الرئيسي وجدول الحضور -->
       <div id="mainContent">
         <h2>📋 جدول الحضور</h2>
-        <button
-          id="btnDownloadPDF"
-          style="margin-bottom: 10px"
-          onclick="downloadPDF()"
-        >
-          ⬇️ تحميل PDF
-        </button>
+        <!-- PDF download removed as requested -->
         <table id="attendanceTable">
           <thead>
             <tr>
@@ -980,8 +980,22 @@
       <!-- مكان ظهور إحصائيات الموظفين أسفل جدول الحضور -->
       <div id="empStatsBelowTable" style="margin: 30px 0 0 0"></div>
       <!-- لوحة تحكم الـ Admin -->
-      <div id="adminPanel" style="display: none">
-        <h3>لوحة تحكم المدير</h3>
+      <div id="adminPanel" style="display: none; position:relative;">
+        <!-- small inline edit button (top-left) to match requested placement; icon-only circular control -->
+        <button id="aboutPanelEditInline" title="تعديل من نحن" aria-label="تعديل من نحن" style="position:absolute;left:10px;top:10px;width:36px;height:36px;background:#ffc107;border:none;border-radius:50%;display:none;cursor:pointer;padding:0;align-items:center;justify-content:center;display:flex;box-shadow:0 6px 14px rgba(0,0,0,0.12);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="#082233"/>
+            <path d="M20.71 7.04a1.003 1.003 0 000-1.42l-2.34-2.34a1.003 1.003 0 00-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z" fill="#082233"/>
+          </svg>
+        </button>
+        <h3 style="text-align:center;margin:8px 0">لوحة تحكم المدير</h3>
+        <!-- زر سريع لتحرير فقرة من نحن داخل لوحة التحكم (يظهر فقط للمدير) - compact icon button so it won't be wide -->
+        <button id="aboutPanelEditBtn" title="تعديل من نحن" style="display:none;width:36px;height:36px;background:#ffc107;border:none;border-radius:50%;padding:0;cursor:pointer;align-items:center;justify-content:center;display:flex;box-shadow:0 6px 14px rgba(0,0,0,0.08);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="#082233"/>
+            <path d="M20.71 7.04a1.003 1.003 0 000-1.42l-2.34-2.34a1.003 1.003 0 00-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z" fill="#082233"/>
+          </svg>
+        </button>
         <h4>إدارة الموظفين</h4>
         <input
           type="text"
@@ -1206,8 +1220,8 @@
     </div>
 
     <!-- تم حذف الأنماط المكررة للـ sidebarMenu لتقليل التكرار -->
-  <button id="sidebarToggleBtn" style="display: none; z-index:5101; position:fixed; top:14px; right:14px">☰</button>
-  <button id="sidebarCloseBtn" style="display: none; z-index:5101; position:fixed; top:14px; right:14px">✖</button>
+  <button id="sidebarToggleBtn" style="display: none; z-index:12001; position:fixed; top:14px; right:14px">☰</button>
+  <button id="sidebarCloseBtn" style="display: none; z-index:12001; position:fixed; top:14px; right:14px">✖</button>
     <div id="sidebarMenu">
       <div class="sidebar-header" id="sidebarUserName"></div>
       <button onclick="saveData()" style="background: #0dc149; color: white">
@@ -1338,12 +1352,43 @@
             employees.forEach((emp) => {
               stats[emp] = { "600": 0, "22": 0, "مشتركة": 0 };
             });
+
+            function countValueInStats(val, empStats) {
+              // val can be string, array, or object. Each non-empty field counts as 0.5
+              if (Array.isArray(val)) {
+                val.forEach((v) => {
+                  if (!v) return;
+                  if (v === "600") empStats["600"] += 0.5;
+                  if (v === "22") empStats["22"] += 0.5;
+                  if (v === "مشتركة") empStats["مشتركة"] += 0.5;
+                });
+              } else if (typeof val === 'object' && val !== null) {
+                // support { value: [..] } or { value1:.., value2:.. }
+                if (Array.isArray(val.value)) {
+                  countValueInStats(val.value, empStats);
+                } else {
+                  const v1 = val.value1 || val.v1 || "";
+                  const v2 = val.value2 || val.v2 || "";
+                  [v1, v2].forEach((v) => {
+                    if (!v) return;
+                    if (v === "600") empStats["600"] += 0.5;
+                    if (v === "22") empStats["22"] += 0.5;
+                    if (v === "مشتركة") empStats["مشتركة"] += 0.5;
+                  });
+                }
+              } else if (typeof val === 'string' && val) {
+                // single string — count as 0.5 (one field)
+                if (val === "600") empStats["600"] += 0.5;
+                if (val === "22") empStats["22"] += 0.5;
+                if (val === "مشتركة") empStats["مشتركة"] += 0.5;
+              }
+            }
+
             Object.values(days).forEach((day) => {
               employees.forEach((emp) => {
-                const val = day[emp]?.value || "";
-                if (val === "600") stats[emp]["600"]++;
-                if (val === "22") stats[emp]["22"]++;
-                if (val === "مشتركة") stats[emp]["مشتركة"]++;
+                const stored = day[emp];
+                const val = stored ? stored.value : undefined;
+                countValueInStats(val, stats[emp]);
               });
             });
             // بناء صفوف الجدول
@@ -1385,7 +1430,21 @@
             table.appendChild(thead);
             const tbody = document.createElement("tbody");
             employees.forEach((emp) => {
-              const val = data[emp]?.value || "";
+              const stored = data[emp] || {};
+              const rawVal = stored.value;
+              // normalize to two fields: val1, val2
+              let val1 = "", val2 = "";
+              if (Array.isArray(rawVal)) {
+                val1 = rawVal[0] || "";
+                val2 = rawVal[1] || "";
+              } else if (typeof rawVal === 'object' && rawVal !== null) {
+                val1 = rawVal.value1 || rawVal.v1 || "";
+                val2 = rawVal.value2 || rawVal.v2 || "";
+              } else if (typeof rawVal === 'string') {
+                // legacy single value goes to first field
+                val1 = rawVal;
+                val2 = "";
+              }
               const user = data[emp]?.user || "—";
               const time = data[emp]?.time || "—";
               const tr = document.createElement("tr");
@@ -1393,19 +1452,30 @@
               const tdEmp = document.createElement("td");
               tdEmp.textContent = emp;
               tr.appendChild(tdEmp);
-              // قائمة الاختيار
+              // قائمة الاختيار - الآن حقلان لكل موظف
               const tdSelect = document.createElement("td");
-              const select = document.createElement("select");
-              select.className = "day-details-select";
-              select.setAttribute("data-emp", emp);
-              ["—", "600", "22", "مشتركة", "❌"].forEach((optionVal) => {
-                const option = document.createElement("option");
-                option.value = optionVal === "—" ? "" : optionVal;
-                option.textContent = optionVal;
-                if (val === option.value) option.selected = true;
-                select.appendChild(option);
-              });
-              tdSelect.appendChild(select);
+              const wrapper = document.createElement('div');
+              wrapper.style.display = 'flex';
+              wrapper.style.gap = '8px';
+              wrapper.style.justifyContent = 'center';
+              // create two selects
+              for (let idx = 0; idx < 2; idx++) {
+                const select = document.createElement("select");
+                select.className = "day-details-select";
+                select.setAttribute("data-emp", emp);
+                select.setAttribute("data-index", String(idx));
+                ["—", "600", "22", "مشتركة", "❌"].forEach((optionVal) => {
+                  const option = document.createElement("option");
+                  option.value = optionVal === "—" ? "" : optionVal;
+                  option.textContent = optionVal;
+                  select.appendChild(option);
+                });
+                // set selected based on val1/val2
+                if (idx === 0 && val1) select.value = val1;
+                if (idx === 1 && val2) select.value = val2;
+                wrapper.appendChild(select);
+              }
+              tdSelect.appendChild(wrapper);
               tr.appendChild(tdSelect);
               // آخر تعديل
               const tdEdit = document.createElement("td");
@@ -1448,14 +1518,20 @@
               const updates = {};
               let changed = false;
               employees.forEach((emp) => {
-                const sel = Array.from(selects).find(
-                  (s) => s.getAttribute("data-emp") === emp
-                );
-                const newValue = sel ? sel.value : "";
-                const oldValue = data[emp]?.value || "";
-                if (newValue !== oldValue) {
+                const empSelects = Array.from(selects).filter((s) => s.getAttribute("data-emp") === emp).sort((a,b)=> a.getAttribute('data-index') - b.getAttribute('data-index'));
+                const newV1 = empSelects[0] ? empSelects[0].value : "";
+                const newV2 = empSelects[1] ? empSelects[1].value : "";
+                const newVal = [newV1, newV2];
+                const oldRaw = data[emp]?.value;
+                let oldValArr = [];
+                if (Array.isArray(oldRaw)) oldValArr = [oldRaw[0] || "", oldRaw[1] || ""];
+                else if (typeof oldRaw === 'object' && oldRaw !== null) oldValArr = [oldRaw.value1 || oldRaw.v1 || "", oldRaw.value2 || oldRaw.v2 || ""];
+                else if (typeof oldRaw === 'string') oldValArr = [oldRaw, ""];
+                else oldValArr = ["",""];
+                const changedForEmp = !(oldValArr[0] === newVal[0] && oldValArr[1] === newVal[1]);
+                if (changedForEmp) {
                   updates[emp] = {
-                    value: newValue,
+                    value: newVal,
                     user: currentUser,
                     time: formatDateTimeNoSeconds(new Date()),
                   };
@@ -1475,6 +1551,10 @@
                   setTimeout(() => {
                     modal.style.display = "none";
                   }, 900);
+                })
+                .catch((err) => {
+                  console && console.error && console.error('save dayDetails error', err);
+                  if (statusDiv) statusDiv.textContent = 'فشل حفظ البيانات: ' + (err && err.message ? err.message : err);
                 });
             };
           });
@@ -2591,7 +2671,6 @@
       // إخفاء جميع الأزرار الخارجية
       document.addEventListener("DOMContentLoaded", () => {
         [
-          "btnDownloadPDF",
           "toggleAdminBtn",
           "toggleEmpStatsBtn",
           "btnDeleteData",
@@ -3106,19 +3185,19 @@
           .once("value")
           .then(async (snap) => {
             if (!snap.exists()) {
-              let hashObj = null;
-              if (typeof hashPassword === "function") {
-                hashObj = await hashPassword("admin");
-              } else {
-                hashObj = "admin";
+                let hashObj = null;
+                if (typeof hashPassword === "function") {
+                  hashObj = await hashPassword("admin");
+                } else {
+                  hashObj = "admin";
+                }
+                await db.ref("users/admin").set({
+                  password: hashObj,
+                  role: "admin",
+                  canEdit: true,
+                });
+                // Debug message removed: account auto-creation is silent in production
               }
-              await db.ref("users/admin").set({
-                password: hashObj,
-                role: "admin",
-                canEdit: true,
-              });
-              console.log("تم إنشاء حساب المدير تلقائياً: admin/admin");
-            }
           });
 
         // إظهار علامة التحميل فقط إذا كان المستخدم مسجل دخول
@@ -3237,20 +3316,9 @@
       let currentUserCanEdit = false;
 
       // ========== سجل النشاطات ==========
-      function logActivity(action, details, extra = {}) {
-        const now = new Date();
-        const time =
-          toEnglishNumbers(now.toLocaleDateString("ar-EG")) +
-          " " +
-          toEnglishNumbers(now.toLocaleTimeString("ar-EG"));
-        db.ref("activityLog").push({
-          time,
-          action,
-          details,
-          user: currentUser,
-          ...extra,
-        });
-      }
+      /* duplicate logActivity removed here — using the single shared
+         implementation defined earlier which preserves formatting and
+         optional styling for note-type entries. */
 
       // ========== جلسة المستخدم ==========
       function setSession(userObj) {
@@ -3351,9 +3419,8 @@
             if (!snapshot.exists()) throw new Error("User not found");
             const userData = snapshot.val();
             const storedPass = userData.password;
-            console.log("[LOGIN DEBUG] username:", username);
+            // debug logs removed
             const ok = await verifyPassword(storedPass, password);
-            console.log("[LOGIN DEBUG] verifyPassword result:", ok);
             if (!ok) throw new Error("Wrong password");
             // إذا legacy، حدث كلمة المرور فوراً إلى صيغة hash
             if (typeof storedPass === "string") {
@@ -3466,7 +3533,7 @@
                 employeeIds = Object.keys(empObj);
                 // attempt to copy to new structured path in background (non-destructive)
                 migrateEmployeesForMonthIfNeeded(year, month, empKey, newPath).then((ok) => {
-                  if (ok) console.log(`Migrated employees for ${year}-${mm} to ${newPath}`);
+                  // migration performed silently; no debug logging
                 });
                 return { migrated: true };
               });
@@ -3566,7 +3633,18 @@
         </div>`;
               }
               // عند الضغط على اليوم، افتح نافذة التفاصيل
-              dateCell.innerHTML = `<span style='cursor:pointer;' onclick='showDayDetailsModal("${day.key}", "${day.label}")'>${dateContent}</span>`;
+              // للحفاظ على المظهر القديم تماماً نعيد innerHTML كما كان، ثم نربط الحدث بشكل آمن
+              dateCell.innerHTML = `<span style='cursor:pointer;'>${dateContent}</span>`;
+              const spanEl = dateCell.querySelector('span');
+              if (spanEl) {
+                spanEl.addEventListener('click', function () {
+                  try {
+                    showDayDetailsModal(day.key, day.label);
+                  } catch (e) {
+                    console && console.error && console.error('showDayDetailsModal error', e);
+                  }
+                });
+              }
               row.appendChild(dateCell);
               monthEmployees.forEach((employee, empIndex) => {
                 const cell = document.createElement("td");
@@ -4589,6 +4667,16 @@
         if (adminPanel.style.maxHeight === "0px") {
           adminPanel.style.maxHeight = adminPanel.scrollHeight + "px";
           toggleAdminBtn.style.backgroundColor = "green";
+          // Show/hide the About Us edit controls when panel opens (evaluate currentUserRole at click time)
+          try{
+            const inlineBtn = document.getElementById('aboutPanelEditInline');
+            const panelBtn = document.getElementById('aboutPanelEditBtn');
+            const isAdmin = (typeof currentUserRole !== 'undefined' && currentUserRole === 'admin');
+            // show only the compact inline button; keep the panelBtn hidden (we still use its handler)
+            if(inlineBtn) inlineBtn.style.display = isAdmin ? 'flex' : 'none';
+            if(panelBtn) panelBtn.style.display = 'none';
+            if(inlineBtn){ inlineBtn.onclick = function(){ const pb = document.getElementById('aboutPanelEditBtn'); if(pb) pb.click(); }; }
+          }catch(e){}
           setTimeout(() => {
             adminPanel.scrollIntoView({ behavior: "smooth", block: "start" });
           }, 200);
@@ -4761,24 +4849,33 @@
 
       // ========== طرد المستخدم ==========
       function checkForcedLogoutOnLogin(userKey) {
+        // Modified: automatically clear a forcedLogout flag instead of
+        // immediately removing the session and reloading the page.
+        // This preserves the logged-in session while removing the server-side
+        // forced-logout marker (matches the manual console action you tested).
         return db
           .ref("forcedLogout/" + userKey)
           .once("value")
           .then((snapshot) => {
             if (snapshot.exists()) {
-              localStorage.removeItem("loggedUser");
-              db.ref("users/" + userKey)
-                .once("value")
-                .then((userSnap) => {
-                  if (!userSnap.exists()) {
-                    showAccountDeletedModal();
-                  } else {
-                    showForcedLogoutModal();
+              // Remove the flag so the user isn't forcibly logged out on refresh
+              return db
+                .ref("forcedLogout/" + userKey)
+                .remove()
+                .then(() => {
+                  try {
+                    alert("تم إزالة أمر تسجيل الخروج المؤقت تلقائيًا. يمكنك المتابعة في النظام.");
+                  } catch (e) {
+                // forcedLogout flag removed silently (no console output)
                   }
+                  // Log the automatic clearance for auditing
+                  try { logActivity("إلغاء أمر تسجيل الخروج آليًا", "تمت إزالة forcedLogout/" + userKey); } catch (e) {}
+                  return false;
+                })
+                .catch((err) => {
+                  console.error("Failed to remove forcedLogout:", err);
+                  return false;
                 });
-              db.ref("forcedLogout/" + userKey).remove();
-              setTimeout(() => location.reload(), 2500);
-              return true;
             }
             return false;
           });
@@ -4834,15 +4931,23 @@
         checkForcedLogoutOnLogin(savedUser.user);
       }
       setInterval(() => {
+        // Periodic check: if there's a forcedLogout marker, clear it
+        // automatically (do not log the user out) — this replicates the
+        // console fix the user ran and prevents unexpected redirects.
         if (currentUser) {
           db.ref("forcedLogout/" + currentUser)
             .once("value")
             .then((snapshot) => {
               if (snapshot.exists()) {
-                localStorage.removeItem("loggedUser");
-                showForcedLogoutModal();
-                db.ref("forcedLogout/" + currentUser).remove();
-                setTimeout(() => location.reload(), 2500);
+                db.ref("forcedLogout/" + currentUser)
+                  .remove()
+                  .then(() => {
+                    try {
+                      alert("تم إزالة أمر تسجيل الخروج المؤقت تلقائيًا.");
+                    } catch (e) { /* forcedLogout auto-clear: suppressed debug log */ }
+                    try { logActivity("إلغاء أمر تسجيل الخروج مؤقتًا", currentUser); } catch (e) {}
+                  })
+                  .catch((err) => console.error("Failed to remove forcedLogout:", err));
               }
             });
         }
@@ -5267,64 +5372,7 @@
         );
       }
 
-      // ========== نسخ احتياطي للبيانات ==========
-      // تعديل: التعامل مع الأخطاء بشكل أفضل
-      function backupData() {
-        document.getElementById("backupStatus").textContent =
-          "جاري تجهيز النسخة...";
-          Promise.all([
-          db.ref("employees").once("value"),
-          db.ref("months").once("value"),
-          db.ref("attendance").once("value"),
-          db.ref("users").once("value"),
-        ])
-          .then(([empSnap, monthsSnap, attSnap, usersSnap]) => {
-            const legacyEmployees = empSnap.val() || {};
-            const monthsTree = monthsSnap.val() || {};
-            const mergedEmployees = Object.assign({}, legacyEmployees);
-            Object.entries(monthsTree).forEach(([y, monthsObj]) => {
-              Object.entries(monthsObj || {}).forEach(([mm, monthObj]) => {
-                if (monthObj && monthObj.employees) {
-                  Object.entries(monthObj.employees).forEach(([id, val]) => {
-                    const name = typeof val === "string" ? val : val.name || "";
-                    if (name) mergedEmployees[id] = name;
-                  });
-                }
-              });
-            });
-            const data = {
-              employees: mergedEmployees,
-              months: monthsTree,
-              attendance: attSnap.val() || {},
-              users: usersSnap.val() || {},
-            };
-            const blob = new Blob([JSON.stringify(data, null, 2)], {
-              type: "application/json",
-            });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download =
-              "backup-" + new Date().toISOString().slice(0, 10) + ".json";
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => {
-              document.body.removeChild(a);
-              URL.revokeObjectURL(url);
-            }, 500);
-            document.getElementById("backupStatus").textContent =
-              "✅ تم تحميل النسخة الاحتياطية.";
-            logActivity(
-              "تحميل نسخة احتياطية",
-              "تم تحميل نسخة احتياطية من البيانات"
-            );
-          })
-          .catch((err) => {
-            document.getElementById("backupStatus").textContent =
-              "❌ حدث خطأ أثناء النسخ الاحتياطي.";
-            console.error("Backup error:", err);
-          });
-      }
+      
     </script>
 
     <!-- إضافة: نافذة تغيير كلمة المرور -->
@@ -5689,11 +5737,17 @@
 
     // Non-invasive debug helper: shows current session info in console when
     // developer toggles `window.showSessionDebug()` in the console.
+    // Non-logging helper that returns session info (call .getAnnouncement() to fetch persisted announcement)
     window.showSessionDebug = function () {
-      console.log('[SESSION DEBUG] currentUser:', currentUser);
-      console.log('[SESSION DEBUG] role:', currentUserRole);
-      console.log('[SESSION DEBUG] canEdit:', currentUserCanEdit);
-      db.ref('announcements/current').once('value').then(snap => console.log('[SESSION DEBUG] announcement:', snap.val()));
+      return {
+        currentUser: currentUser,
+        currentUserRole: currentUserRole,
+        currentUserCanEdit: currentUserCanEdit,
+        getAnnouncement: function(){
+          if (typeof db === 'undefined' || !db) return Promise.resolve(null);
+          return db.ref('announcements/current').once('value').then(snap => snap.val()).catch(() => null);
+        }
+      };
     };
 
     document.getElementById("sidebarAnnouncementsBtn").onclick = function () {
@@ -6218,5 +6272,681 @@
         window._stickyHeaderClone = { rebuild: buildClone, sync: syncSizes };
       })();
     </script>
+
+    <!-- من نحن - تصميم احترافي ومُميز (مُحدَّث بالألوان) -->
+    <style>
+      /* About Us - richer color palette for better contrast and visual appeal */
+      #aboutUs.pro{
+        max-width:1100px;
+        margin:36px auto 80px auto;
+        background:linear-gradient(180deg,#052233 0%, #083a52 55%, #0b6b8f 100%);
+        padding:28px;
+        border-radius:14px;
+        box-shadow:0 18px 60px rgba(4,30,55,0.45);
+        color:#e9f7ff;
+        direction:rtl;
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      }
+
+      #aboutUs.pro .inner{ display:grid; grid-template-columns: 320px 1fr; gap:24px; align-items:start; }
+
+      /* Founder card becomes a semi-transparent panel to stand out on the darker background */
+      #aboutUs.pro .founder-card{
+        background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+        border-radius:12px;
+        padding:18px;
+        box-shadow:0 10px 30px rgba(3,34,63,0.12);
+        text-align:right;
+        border:1px solid rgba(255,255,255,0.04);
+        color: #e6f7ff;
+      }
+
+      /* Vibrant avatar for a stronger brand mark.
+         Size controlled via CSS variable --founder-avatar-size (px). */
+      #aboutUs.pro { --founder-avatar-size:88px; }
+      #aboutUs.pro .avatar{
+        width:var(--founder-avatar-size); height:var(--founder-avatar-size); border-radius:50%;
+        background:linear-gradient(135deg,#ff7a59 0%, #ffca58 100%);
+        color:#082233; display:inline-flex; align-items:center; justify-content:center;
+        font-weight:800; font-size: calc(var(--founder-avatar-size) / 3.2); margin-left:12px;
+        box-shadow:0 10px 30px rgba(255,122,89,0.12) inset, 0 8px 20px rgba(11,102,195,0.08);
+      }
+
+      #aboutUs.pro .founder-meta{ display:flex; align-items:center; justify-content:flex-end; gap:12px }
+
+      #aboutUs.pro h3{ margin:0 0 6px 0; color:#ffdede; font-size:20px }
+      #aboutUs.pro p.lead{ margin:0 0 12px 0; color:#e6f7ff; line-height:1.7; font-size:15px }
+
+      /* Feature chips get subtle translucent backgrounds that pop on the dark panel */
+      #aboutUs.pro .features{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px }
+      #aboutUs.pro .feature{ background:rgba(255,255,255,0.04); padding:8px 12px; border-radius:8px; color:#bfeeff; font-weight:700; font-size:13px }
+
+      #aboutUs.pro .meta{ margin-top:12px; color:#cfeeff; font-size:14px }
+
+      #aboutUs.pro .contact { margin-top:14px; display:flex; gap:10px; align-items:center; justify-content:flex-end }
+
+      /* Instagram CTA: keep brand gradient but slightly larger and with shadow */
+      #aboutUs.pro .ig-btn{ display:inline-flex; gap:8px; align-items:center; padding:12px 16px; background:linear-gradient(90deg,#e1306c,#c72d7b); color:#fff; border-radius:12px; text-decoration:none; font-weight:800; box-shadow:0 8px 30px rgba(199,45,123,0.18); }
+
+      /* Social icons container on dark background */
+      #aboutUs.pro .socials{ display:flex; gap:8px; margin-top:12px; justify-content:flex-end }
+      #aboutUs.pro .socials a{ width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center; border-radius:8px; background:rgba(255,255,255,0.03); color:#ffdede; text-decoration:none }
+
+      #aboutUs.pro .right-col{ padding-left:8px }
+      /* Make version more prominent: badge-style for quick attention */
+  #aboutUs.pro .version{ margin-top:18px; color:#bfeeff; font-size:14px; display:flex; gap:12px; align-items:center; }
+  #aboutUs.pro .version .ver-label{ color:#e9fbff; font-weight:700; font-size:14px }
+  /* larger, more prominent version badge */
+  /* Softer version badge: smaller, subtler shadow and gentler animation */
+  #footerVersion{
+    display:inline-block;
+    background:linear-gradient(90deg,#ffd54a,#ffb74d); /* softer orange */
+    color:#082233; font-weight:800; padding:6px 12px; border-radius:999px;
+    box-shadow:0 6px 18px rgba(255,167,79,0.08); font-size:14px; letter-spacing:0.4px;
+  }
+  #footerUpdated{ color:rgba(255,255,255,0.85); font-size:13px }
+  /* subtle attention animation (stop on reduced-motion) */
+  @media (prefers-reduced-motion: no-preference){
+    @keyframes pulseBadge{ 0%{ transform:translateY(0) scale(1); }50%{ transform:translateY(-0.5px) scale(1.01); }100%{ transform:translateY(0) scale(1); } }
+    #footerVersion{ animation: pulseBadge 4.2s ease-in-out infinite; }
+  }
+
+      /* Responsive adjustments */
+      @media (max-width:880px){
+        /* Stack content but show right-col (من نحن) first on small screens */
+        #aboutUs.pro .inner{ grid-template-columns:1fr; display:flex; flex-direction:column-reverse; gap:14px }
+        /* Stack founder card vertically and center on small screens */
+        #aboutUs.pro .founder-card{ display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:10px }
+        /* Make founder meta stack avatar above name for clearer layout */
+        #aboutUs.pro .founder-meta{ flex-direction:column-reverse; align-items:center; justify-content:center }
+        #aboutUs.pro .avatar{ margin-left:0; margin-bottom:6px }
+        /* Full-width CTA on mobile for easier tapping */
+        #aboutUs.pro .contact .ig-btn{ width:100%; justify-content:center }
+        /* Hide secondary social icons to reduce clutter */
+        #aboutUs.pro .socials{ display:none }
+        /* Center the right column content */
+        #aboutUs.pro .right-col{ padding-left:0; text-align:center }
+        #aboutUs.pro .features{ justify-content:center }
+        #aboutUs.pro .version{ text-align:center }
+        /* Slightly reduce padding on small screens */
+        #aboutUs.pro { padding:16px }
+        /* Make small footer meta readable */
+        #aboutUs.pro small, #aboutUs.pro > div[style] { color: rgba(223,239,251,0.75) }
+        /* Adjust font sizes for tight screens */
+        #aboutUs.pro .avatar{ width:72px; height:72px; font-size:24px }
+        #aboutUs.pro .feature{ font-size:12px; padding:7px 10px }
+      }
+    </style>
+
+  <footer id="aboutUs" class="pro" aria-labelledby="aboutTitle" style="display:none;">
+      <div class="inner">
+        <div class="founder-card" role="region" aria-label="معلومات المؤسس">
+          <div class="founder-meta">
+            <div style="text-align:right;">
+              <div style="font-weight:800;font-size:16px;color:#ffdede;" id="founderName">سجاد رشيد</div>
+              <div style="font-size:13px;color:#dfeffb;">مؤسس ومطور النظام</div>
+            </div>
+            <div class="avatar" id="founderAvatar">سج</div>
+          </div>
+          <div class="meta" id="founderBio">مطور ومصمم نظم عربية مبسطة لإدارة الحضور، يركز على حلول خفيفة وسهلة الصيانة للمؤسسات الصغيرة والمتوسطة.</div>
+          <div class="contact" aria-label="وسائل تواصل">
+            <!-- Instagram only per request -->
+            <a class="ig-btn" id="founderInstagram" href="https://instagram.com/example" target="_blank" rel="noopener noreferrer">📸 تابع على إنستغرام</a>
+          </div>
+          <div class="socials" aria-hidden="false">
+          </div>
+        </div>
+
+        <div class="right-col">
+          <h3 id="aboutTitle">من نحن</h3>
+          <p class="lead">نقدم نظام حضور وانصراف خفيف وسريع النشر للمؤسسات الصغيرة والمتوسطة. يوفّر واجهة عربية كاملة، إمكانيات إدارة الموظفين، تقارير الحضور، وتصدير نسخ احتياطية بسهولة.</p>
+          <div class="features" aria-hidden="false">
+            <div class="feature">واجهة عربية كاملة</div>
+            <div class="feature">أداء سريع وخفيف</div>
+            <div class="feature">تحكم بالصلاحيات</div>
+            <div class="feature">تصدير واستعادة البيانات</div>
+            <div class="feature">تقارير حضور مفصّلة</div>
+            <div class="feature">نسخ احتياطية آمنة</div>
+            <div class="feature">تخصيص سريع للواجهات</div>
+          </div>
+
+          <div class="version" aria-live="polite"><span class="ver-label">الإصدار</span>: <span id="footerVersion">v?</span> <span style="opacity:0.9;margin-left:8px;color:#dff8ff;">آخر تحديث:</span> <span id="footerUpdated">—</span></div>
+          <div style="margin-top:12px;color:#dfeffb;font-size:13px;">للدعم الفني والملاحظات استخدم صفحة الإنستغرام الخاصة بالمؤسس.</div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:18px;gap:12px;flex-wrap:wrap;">
+        <small style="color:rgba(223,239,251,0.7);">© جميع الحقوق محفوظة</small>
+        <div id="footerCredit" style="color:rgba(223,239,251,0.7);font-size:13px;">تصميم وتطوير: سجاد رشيد</div>
+      </div>
+
+      <script>
+        // Fill footer version info from global APP_VERSION and wire Instagram handle
+        try{
+          const app = (window.getAppVersion && window.getAppVersion()) || window.APP_VERSION || {};
+          const v = app.version || '—';
+          const u = app.updated || '—';
+          const fv = document.getElementById('footerVersion'); if(fv) fv.textContent = v;
+          const fu = document.getElementById('footerUpdated'); if(fu) fu.textContent = u;
+          // set avatar initials from founder name
+          const fnEl = document.getElementById('founderName');
+          const fn = fnEl ? fnEl.textContent.trim() : 'سجاد رشيد';
+          const initials = fn.split(/\s+/).map(s=>s[0]||'').slice(0,2).join('');
+          const avatar = document.getElementById('founderAvatar'); if(avatar) avatar.textContent = initials;
+          // Instagram: read handle from a data attribute if present, fallback to example
+          const igBtn = document.getElementById('founderInstagram');
+          const igHandle = (document.getElementById('founderContact') && document.getElementById('founderContact').textContent.trim()) || 'e._mg';
+          if(igBtn){
+            igBtn.href = 'https://instagram.com/' + igHandle.replace(/^@/, '');
+            igBtn.setAttribute('aria-label', 'تابع ' + fn + ' على إنستغرام');
+          }
+        }catch(e){ console && console.warn && console.warn('footer init error', e); }
+
+        // Load persisted founder/app/footer info from DB or localStorage so edits survive page reload
+        try{
+          const applyFounder = (v) => {
+            try{
+              const fnEl = document.getElementById('founderName'); if(fnEl && v.name) fnEl.textContent = v.name;
+              const bioEl = document.getElementById('founderBio'); if(bioEl && v.bio) bioEl.textContent = v.bio;
+              let contactEl = document.getElementById('founderContact');
+              if(!contactEl){ contactEl = document.createElement('div'); contactEl.id = 'founderContact'; contactEl.style.display='none'; document.body.appendChild(contactEl); }
+              contactEl.textContent = v.instagram || '';
+              const igBtn = document.getElementById('founderInstagram'); if(igBtn && v.instagram) igBtn.href = 'https://instagram.com/' + (v.instagram||'').replace(/^@/,'');
+              const avatarEl = document.getElementById('founderAvatar');
+              if(avatarEl){
+                // prefer storing avatar as background so we can control positioning
+                if(v.avatar){
+                  avatarEl.innerHTML = '';
+                  avatarEl.style.backgroundImage = 'url("' + v.avatar + '")';
+                  avatarEl.style.backgroundSize = 'cover';
+                  const ox = v.avatarOffset && typeof v.avatarOffset.x !== 'undefined' ? v.avatarOffset.x : 50;
+                  const oy = v.avatarOffset && typeof v.avatarOffset.y !== 'undefined' ? v.avatarOffset.y : 50;
+                  avatarEl.style.backgroundPosition = ox + '% ' + oy + '%';
+                } else if(v.name){
+                  avatarEl.style.backgroundImage = '';
+                  avatarEl.textContent = v.name.split(/\s+/).map(s=>s[0]||'').slice(0,2).join('');
+                }
+              }
+            }catch(e){}
+          };
+
+          const applyApp = (a) => {
+            try{
+              const fv = document.getElementById('footerVersion');
+              const fu = document.getElementById('footerUpdated');
+              // if a provides values, apply them; otherwise set sensible defaults (requested)
+              if(fv){
+                if(a && a.version) fv.textContent = ('v' + String(a.version).replace(/^v/i, ''));
+                else if(!fv.textContent || fv.textContent === 'v?') fv.textContent = 'v2.8';
+              }
+              if(fu){
+                if(a && a.updated) fu.textContent = a.updated;
+                else if(!fu.textContent || fu.textContent === '—') fu.textContent = '2025-10-31';
+              }
+              // apply avatar size if provided
+              try{
+                if(a && a.avatarSize){
+                  const aboutEl = document.querySelector('#aboutUs.pro');
+                  if(aboutEl && aboutEl.style) aboutEl.style.setProperty('--founder-avatar-size', String(a.avatarSize) + 'px');
+                  const av = document.getElementById('founderAvatar');
+                  if(av){ av.style.width = String(a.avatarSize) + 'px'; av.style.height = String(a.avatarSize) + 'px'; av.style.fontSize = (a.avatarSize/3.2) + 'px'; }
+                }
+              }catch(e){}
+              // render features if provided
+              if(a && Array.isArray(a.features)){
+                const featuresContainer = document.querySelector('#aboutUs .features');
+                if(featuresContainer){
+                  featuresContainer.innerHTML = '';
+                  a.features.forEach(f => { const d = document.createElement('div'); d.className = 'feature'; d.textContent = f; featuresContainer.appendChild(d); });
+                }
+              }
+            }catch(e){}
+          };
+
+          const applyFooter = (f) => { try{ const fc = document.getElementById('footerCredit'); if(fc && f.credit) fc.textContent = f.credit; }catch(e){} };
+
+          if(typeof db !== 'undefined' && db && typeof db.ref === 'function'){
+            db.ref('settings/founder').once('value').then(snap=>{ const v = snap.val(); if(v) applyFounder(v); }).catch(()=>{});
+            db.ref('settings/app').once('value').then(snap=>{ const a = snap.val(); if(a) applyApp(a); }).catch(()=>{});
+            db.ref('settings/footer').once('value').then(snap=>{ const f = snap.val(); if(f) applyFooter(f); }).catch(()=>{});
+          }
+
+          // fallback to localStorage if present
+          try{
+            const lf = localStorage.getItem('settings_founder'); if(lf){ const v = JSON.parse(lf); applyFounder(v); }
+            const la = localStorage.getItem('settings_app'); if(la){ const a = JSON.parse(la); applyApp(a); }
+            const lfc = localStorage.getItem('settings_footer'); if(lfc){ const f = JSON.parse(lfc); applyFooter(f); }
+          }catch(e){}
+        }catch(e){}
+      </script>
+    </footer>
+
+    <!-- Modal: تحرير محتوى من نحن (مستدعى من لوحة التحكم) -->
+    <style>
+      /* Responsive tweaks for About edit modal to keep layout tidy */
+      .about-edit-inner { display:grid; grid-template-columns:1fr 260px; gap:12px; align-items:start; }
+      .about-edit-inner .avatar-column{ text-align:center; }
+      .about-edit-inner .left-column{ min-width:0; }
+      #aboutPanelEditModal .modal-box{ background:#fff; max-width:760px; width:96vw; border-radius:12px; padding:18px; box-shadow:0 14px 40px rgba(0,0,0,0.25); max-height:calc(100vh - 80px); overflow:auto; }
+      @media (max-width:720px){
+        .about-edit-inner{ grid-template-columns:1fr; display:flex; flex-direction:column-reverse; gap:12px; }
+        .about-edit-inner .avatar-column{ order:0; }
+        .about-edit-inner .left-column{ order:1; }
+        #aboutPanelEditModal .modal-box{ padding:14px; }
+        #aboutPanelEditModal .modal-box input[type=text], #aboutPanelEditModal .modal-box textarea{ font-size:14px; }
+      }
+    </style>
+  <div id="aboutPanelEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:15000;align-items:center;justify-content:center;">
+      <div class="modal-box">
+        <h3 style="margin:0 0 8px 0;">تعديل محتوى "من نحن"</h3>
+        <div class="about-edit-inner">
+          <div class="left-column">
+            <label style="display:block;font-size:13px;margin-top:8px;">اسم المؤسس</label>
+            <input id="aboutEditName" type="text" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;" />
+            <label style="display:block;font-size:13px;margin-top:8px;">الوصف / السيرة</label>
+            <textarea id="aboutEditBio" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;min-height:90px;"></textarea>
+            <label style="display:block;font-size:13px;margin-top:8px;">حساب الإنستغرام (مع أو بدون @)</label>
+            <input id="aboutEditIg" type="text" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;" />
+
+            <div style="display:flex;gap:8px;margin-top:12px;align-items:center;">
+              <label style="font-size:13px;">الإصدار</label>
+              <!-- make version input larger for more typing room -->
+              <input id="aboutEditVersion" type="text" placeholder="مثال: 2.8" style="width:180px;padding:8px;border-radius:8px;border:1px solid #ddd;font-weight:800;font-size:15px;" />
+              <label style="font-size:13px;margin-left:8px;">آخر تحديث</label>
+              <input id="aboutEditUpdated" type="date" style="padding:6px;border-radius:6px;border:1px solid #ddd;" />
+            </div>
+
+            <label style="display:block;font-size:13px;margin-top:8px;">نص التذييل (يمين)</label>
+            <input id="aboutEditFooterCredit" type="text" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;" />
+
+            <label style="display:block;font-size:13px;margin-top:10px;">شرائح الميزات (سطر لكل ميزة)</label>
+            <textarea id="aboutEditFeatures" placeholder="اكتب كل ميزة في سطر جديد، مثال:\nواجهة عربية كاملة\nأداء سريع وخفيف" style="width:100%;min-height:90px;padding:8px;border-radius:8px;border:1px solid #ddd;font-size:13px;"></textarea>
+          </div>
+
+          <div class="avatar-column" style="text-align:center;">
+            <div style="font-size:13px;margin-bottom:6px;color:#333;font-weight:700;">صورة المؤسس</div>
+              <div id="avatarPreview" style="width:120px;height:120px;border-radius:50%;background:#f0f0f0;display:inline-flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:8px;border:1px solid #ddd;">
+              <!-- will be filled with <img> or initials -->
+            </div>
+            <input id="aboutEditAvatarFile" type="file" accept="image/*" style="display:block;margin:6px auto 8px auto;" />
+            <input id="aboutEditAvatarUrl" type="text" placeholder="أو ضع رابط الصورة" style="width:100%;padding:6px;border-radius:6px;border:1px solid #ddd;" />
+            <div style="font-size:12px;color:#666;margin-top:8px;">يمكنك رفع صورة أو لصق رابط مباشر. تحفظ الصورة كـ data URL إذا لم تتوفر قاعدة بيانات.</div>
+
+            <!-- Avatar size control -->
+            <label style="display:block;font-size:13px;margin-top:10px;text-align:center;">حجم الصورة: <span id="aboutEditAvatarSizeVal" style="font-weight:800;margin-left:8px;">88px</span></label>
+            <div style="display:flex;align-items:center;gap:10px;justify-content:center;margin-top:6px;">
+              <input id="aboutEditAvatarSize" type="range" min="60" max="160" value="88" style="width:160px;" />
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+          <button id="aboutEditCancel" style="background:#eee;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;">إلغاء</button>
+          <button id="aboutEditSave" style="background:#1976d2;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;">حفظ التغييرات</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Wire the admin-panel About Us editor
+      (function(){
+        const panelBtn = document.getElementById('aboutPanelEditBtn');
+        const modal = document.getElementById('aboutPanelEditModal');
+        const nameIn = document.getElementById('aboutEditName');
+        const bioIn = document.getElementById('aboutEditBio');
+        const igIn = document.getElementById('aboutEditIg');
+  const saveBtn = document.getElementById('aboutEditSave');
+  const cancelBtn = document.getElementById('aboutEditCancel');
+  const versionIn = document.getElementById('aboutEditVersion');
+  const updatedIn = document.getElementById('aboutEditUpdated');
+  const footerCreditIn = document.getElementById('aboutEditFooterCredit');
+  const avatarUrlIn = document.getElementById('aboutEditAvatarUrl');
+  const avatarFileIn = document.getElementById('aboutEditAvatarFile');
+  const avatarPreview = document.getElementById('avatarPreview');
+  const avatarSizeIn = document.getElementById('aboutEditAvatarSize');
+  const avatarSizeVal = document.getElementById('aboutEditAvatarSizeVal');
+  // hold a selected avatar dataURL (from file) so saveChanges can persist it
+  let _avatarDataURL = null;
+  // avatar offset in percent (0..100) for background-position
+  let _avatarOffset = { x: 50, y: 50 };
+
+        function openEditor(){
+          // populate from current DOM
+          const fn = document.getElementById('founderName');
+          const fb = document.getElementById('founderBio');
+          const igBtn = document.getElementById('founderInstagram');
+          nameIn.value = fn ? fn.textContent.trim() : '';
+          bioIn.value = fb ? fb.textContent.trim() : '';
+          let handle = '';
+          const contactEl = document.getElementById('founderContact');
+          if(contactEl) handle = contactEl.textContent.trim();
+          else if(igBtn && igBtn.href) try{ handle = igBtn.href.split('instagram.com/')[1].replace(/\/+$/,'') }catch(e){}
+          igIn.value = handle || '';
+          // app version / updated
+          try{
+            const fv = document.getElementById('footerVersion');
+            const fu = document.getElementById('footerUpdated');
+            versionIn.value = (fv && fv.textContent && fv.textContent !== 'v?') ? fv.textContent.replace(/^v/i,'') : ((window.APP_VERSION && window.APP_VERSION.version) || '');
+            // try to interpret footerUpdated if present
+            if(fu && fu.textContent && fu.textContent !== '—'){
+              // if it's in YYYY-MM-DD (from input) keep it; otherwise leave blank
+              const d = fu.textContent.trim();
+              // naive check for ISO-like
+              if(/\d{4}-\d{2}-\d{2}/.test(d)) updatedIn.value = d;
+              else updatedIn.value = '';
+            } else {
+              updatedIn.value = (window.APP_VERSION && window.APP_VERSION.updated) ? window.APP_VERSION.updated.split('T')[0] : '';
+            }
+          }catch(e){}
+          // footer credit
+          try{ const fc = document.getElementById('footerCredit'); footerCreditIn.value = fc ? fc.textContent.trim() : ''; }catch(e){}
+          // avatar: show existing image if any
+          try{
+            _avatarDataURL = null;
+            const avatarEl = document.getElementById('founderAvatar');
+            // if avatar contains an <img>, use its src
+            const img = avatarEl && avatarEl.querySelector && avatarEl.querySelector('img');
+            if(img && img.src){ renderAvatarPreview(img.src); }
+            else {
+              // else show initials
+              const initials = avatarEl ? avatarEl.textContent.trim() : '';
+              renderAvatarPreview(null, initials);
+            }
+            avatarUrlIn.value = '';
+            avatarFileIn.value = null;
+            // populate avatar size input and preview
+            try{
+              let size = 88;
+              if(window.APP_VERSION && window.APP_VERSION.avatarSize) size = parseInt(window.APP_VERSION.avatarSize,10) || size;
+              // fallback to existing avatar element size
+              const avEl = document.getElementById('founderAvatar');
+              if(avEl && avEl.getBoundingClientRect){ size = Math.round(avEl.getBoundingClientRect().width) || size; }
+              if(avatarSizeIn) avatarSizeIn.value = size;
+              if(avatarSizeVal) avatarSizeVal.textContent = size + 'px';
+              if(avatarPreview){ avatarPreview.style.width = size + 'px'; avatarPreview.style.height = size + 'px'; }
+            }catch(e){}
+            // populate features textarea from existing chips
+            try{
+              const featuresContainer = document.querySelector('#aboutUs .features');
+              const featTa = document.getElementById('aboutEditFeatures');
+              if(featuresContainer && featTa){
+                const items = Array.from(featuresContainer.querySelectorAll('.feature')).map(el=>el.textContent.trim()).filter(Boolean);
+                featTa.value = items.join('\n');
+              }
+            }catch(e){}
+          }catch(e){}
+          modal.style.display = 'flex';
+        }
+
+        function _applyBackgroundToElement(el, src, offset){
+          if(!el) return;
+          if(src){
+            el.innerHTML = '';
+            el.style.backgroundImage = 'url("' + src + '")';
+            el.style.backgroundSize = 'cover';
+            const ox = offset && typeof offset.x !== 'undefined' ? offset.x : 50;
+            const oy = offset && typeof offset.y !== 'undefined' ? offset.y : 50;
+            el.style.backgroundPosition = ox + '% ' + oy + '%';
+          } else {
+            // remove background and show initials
+            el.style.backgroundImage = '';
+            el.innerHTML = '';
+          }
+        }
+
+        function renderAvatarPreview(src, initials){
+          // Render using background-image so we can control background-position (drag)
+          if(src){
+            _applyBackgroundToElement(avatarPreview, src, _avatarOffset);
+            avatarPreview.style.cursor = 'grab';
+          } else {
+            avatarPreview.style.backgroundImage = '';
+            avatarPreview.innerHTML = '';
+            const span = document.createElement('div');
+            span.style.fontWeight = '800';
+            // make initials font-size proportional to avatar size if available
+            try{
+              const sz = (avatarSizeIn && avatarSizeIn.value) ? parseInt(avatarSizeIn.value,10) : 88;
+              span.style.fontSize = (sz/3.2) + 'px';
+            }catch(e){ span.style.fontSize = '28px'; }
+            span.style.color = '#082233';
+            span.textContent = initials || '';
+            avatarPreview.appendChild(span);
+            avatarPreview.style.cursor = 'default';
+          }
+          // Also update the real footer avatar preview if present
+          try{ const fv = document.getElementById('founderAvatar'); if(fv){ if(src) _applyBackgroundToElement(fv, src, _avatarOffset); else fv.textContent = initials || ''; } }catch(e){}
+        }
+
+        // file input preview handling
+        if(avatarFileIn){
+          avatarFileIn.addEventListener('change', function(){
+            const f = this.files && this.files[0];
+            if(!f) return;
+            const fr = new FileReader();
+            fr.onload = function(ev){ _avatarDataURL = ev.target.result; renderAvatarPreview(_avatarDataURL); };
+            fr.readAsDataURL(f);
+          });
+        }
+        // allow pasting a URL and preview
+        if(avatarUrlIn){
+          avatarUrlIn.addEventListener('change', function(){ _avatarDataURL = null; renderAvatarPreview(this.value || null); });
+        }
+
+        // avatar size slider handling
+        if(avatarSizeIn){
+          avatarSizeIn.addEventListener('input', function(){
+            const v = parseInt(this.value,10) || 88;
+            if(avatarSizeVal) avatarSizeVal.textContent = v + 'px';
+            if(avatarPreview){ avatarPreview.style.width = v + 'px'; avatarPreview.style.height = v + 'px'; }
+            const av = document.getElementById('founderAvatar'); if(av){ av.style.width = v + 'px'; av.style.height = v + 'px'; av.style.fontSize = (v/3.2) + 'px'; }
+          });
+        }
+
+        // Drag-to-position for avatarPreview (mouse + touch)
+        (function(){
+          let dragging = false, startX=0, startY=0, startOffset = {x:50,y:50};
+          function toPercentDelta(dx, dy, el){
+            const w = el.clientWidth || 1; const h = el.clientHeight || 1;
+            return { dx: (dx / w) * 100, dy: (dy / h) * 100 };
+          }
+          function clamp(v){ return Math.max(0, Math.min(100, v)); }
+
+          avatarPreview.addEventListener('mousedown', function(e){
+            if(!avatarPreview.style.backgroundImage) return;
+            dragging = true; avatarPreview.style.cursor='grabbing';
+            startX = e.clientX; startY = e.clientY; startOffset = { x: _avatarOffset.x, y: _avatarOffset.y };
+            e.preventDefault();
+          });
+          document.addEventListener('mousemove', function(e){
+            if(!dragging) return;
+            const delta = toPercentDelta(e.clientX - startX, e.clientY - startY, avatarPreview);
+            _avatarOffset.x = clamp(startOffset.x + delta.dx);
+            _avatarOffset.y = clamp(startOffset.y + delta.dy);
+            // apply to preview and footer
+            try{ _applyBackgroundToElement(avatarPreview, (_avatarDataURL || (avatarUrlIn && avatarUrlIn.value)) || (document.getElementById('founderAvatar') && (document.getElementById('founderAvatar').style.backgroundImage ? document.getElementById('founderAvatar').style.backgroundImage.replace(/^url\(["']?|["']?\)$/g,'') : null)), _avatarOffset); }catch(e){}
+            try{ const fv = document.getElementById('founderAvatar'); if(fv) fv.style.backgroundPosition = _avatarOffset.x + '% ' + _avatarOffset.y + '%'; }catch(e){}
+          });
+          document.addEventListener('mouseup', function(){ if(dragging){ dragging=false; avatarPreview.style.cursor='grab'; } });
+
+          // touch support
+          avatarPreview.addEventListener('touchstart', function(e){
+            const t = e.touches && e.touches[0]; if(!t) return;
+            if(!avatarPreview.style.backgroundImage) return;
+            dragging = true; startX = t.clientX; startY = t.clientY; startOffset = { x: _avatarOffset.x, y: _avatarOffset.y };
+          });
+          avatarPreview.addEventListener('touchmove', function(e){ if(!dragging) return; const t = e.touches && e.touches[0]; if(!t) return; const delta = toPercentDelta(t.clientX - startX, t.clientY - startY, avatarPreview); _avatarOffset.x = clamp(startOffset.x + delta.dx); _avatarOffset.y = clamp(startOffset.y + delta.dy); try{ _applyBackgroundToElement(avatarPreview, (_avatarDataURL || (avatarUrlIn && avatarUrlIn.value)) || (document.getElementById('founderAvatar') && (document.getElementById('founderAvatar').style.backgroundImage ? document.getElementById('founderAvatar').style.backgroundImage.replace(/^url\(["']?|["']?\)$/g,'') : null)), _avatarOffset); }catch(e){}; try{ const fv = document.getElementById('founderAvatar'); if(fv) fv.style.backgroundPosition = _avatarOffset.x + '% ' + _avatarOffset.y + '%'; }catch(e){}; e.preventDefault(); });
+          avatarPreview.addEventListener('touchend', function(){ dragging=false; });
+        })();
+
+        function closeEditor(){ modal.style.display = 'none'; }
+
+        async function saveChanges(){
+          const newName = nameIn.value.trim();
+          const newBio = bioIn.value.trim();
+          const newIg = igIn.value.trim().replace(/^@/,'');
+          let _featuresLines = [];
+          if(!newName){ alert('الرجاء إدخال اسم المؤسس'); return; }
+          // update DOM
+          const fnEl = document.getElementById('founderName'); if(fnEl) fnEl.textContent = newName;
+          const bioEl = document.getElementById('founderBio'); if(bioEl) bioEl.textContent = newBio;
+          // avatar: prefer avatarDataURL, else provided URL, else initials
+          const avatarEl = document.getElementById('founderAvatar');
+          const useUrl = avatarUrlIn && avatarUrlIn.value && avatarUrlIn.value.trim();
+          const avatarToUse = _avatarDataURL || (useUrl ? avatarUrlIn.value.trim() : null);
+          if(avatarEl){
+            avatarEl.innerHTML = '';
+            if(avatarToUse){
+              const img = document.createElement('img'); img.src = avatarToUse; img.style.width='100%'; img.style.height='100%'; img.style.objectFit='cover'; avatarEl.appendChild(img);
+            } else {
+              const initials = newName.split(/\s+/).map(s=>s[0]||'').slice(0,2).join(''); avatarEl.textContent = initials;
+            }
+          }
+          // ensure hidden contact element exists
+          let contactEl = document.getElementById('founderContact');
+          if(!contactEl){ contactEl = document.createElement('div'); contactEl.id = 'founderContact'; contactEl.style.display='none'; document.body.appendChild(contactEl); }
+          contactEl.textContent = newIg || '';
+          const igBtn = document.getElementById('founderInstagram'); if(igBtn) igBtn.href = 'https://instagram.com/' + (newIg||'').replace(/^@/, '');
+
+          // version / updated / footer credit updates
+          try{
+            // normalize version (strip leading v) and update display with a single 'v' prefix
+            const rawVer = (versionIn && versionIn.value) ? versionIn.value.trim() : '';
+            const newVer = rawVer.replace(/^v/i,'');
+            const newUpd = (updatedIn && updatedIn.value) ? updatedIn.value : '';
+            const fv = document.getElementById('footerVersion'); if(fv) fv.textContent = newVer ? ('v' + newVer) : '—';
+            const fu = document.getElementById('footerUpdated'); if(fu) fu.textContent = newUpd || '—';
+            const fcEl = document.getElementById('footerCredit'); if(fcEl && footerCreditIn) fcEl.textContent = footerCreditIn.value || fcEl.textContent;
+            // ensure avatar element uses chosen size
+            try{
+              const avSize = (avatarSizeIn && avatarSizeIn.value) ? parseInt(avatarSizeIn.value,10) : null;
+              const avEl = document.getElementById('founderAvatar');
+              if(avEl && avSize){ avEl.style.width = avSize + 'px'; avEl.style.height = avSize + 'px'; avEl.style.fontSize = (avSize/3.2) + 'px'; }
+            }catch(e){}
+          }catch(e){}
+
+          // features: read textarea lines and update chips (store into _featuresLines to persist later)
+          try{
+            const featEl = document.getElementById('aboutEditFeatures');
+            if(featEl){
+              _featuresLines = featEl.value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+              const featuresContainer = document.querySelector('#aboutUs .features');
+              if(featuresContainer){
+                featuresContainer.innerHTML = '';
+                _featuresLines.forEach(f => { const d = document.createElement('div'); d.className = 'feature'; d.textContent = f; featuresContainer.appendChild(d); });
+              }
+            }
+          }catch(e){}
+
+          // persist if db available, otherwise fallback to localStorage
+          try{
+            const founderPayload = { name:newName, bio:newBio, instagram:newIg };
+            // determine avatar to persist: prefer newly uploaded dataURL, else provided URL,
+            // else preserve existing background-image src if any
+            let finalAvatarSrc = null;
+            if(_avatarDataURL) finalAvatarSrc = _avatarDataURL;
+            else if(avatarUrlIn && avatarUrlIn.value) finalAvatarSrc = avatarUrlIn.value.trim();
+            else {
+              // try to read existing founderAvatar background-image or img src
+              try{
+                const avEl = document.getElementById('founderAvatar');
+                if(avEl){
+                  const bg = avEl.style && avEl.style.backgroundImage;
+                  if(bg && bg.indexOf('url(') >= 0){ finalAvatarSrc = bg.replace(/^url\(["']?|["']?\)$/g,'').replace(/^url\(|\)$/g,'').replace(/^["']|["']$/g,''); }
+                  else {
+                    const im = avEl.querySelector && avEl.querySelector('img');
+                    if(im && im.src) finalAvatarSrc = im.src;
+                  }
+                }
+              }catch(e){}
+            }
+            if(finalAvatarSrc) founderPayload.avatar = finalAvatarSrc;
+            // persist avatar offset as percent if available
+            try{ if(_avatarOffset && typeof _avatarOffset.x !== 'undefined') founderPayload.avatarOffset = { x: Math.round(_avatarOffset.x), y: Math.round(_avatarOffset.y) }; }catch(e){}
+            // store normalized version (without 'v') and avatar size
+            const appPayload = { version: (versionIn && versionIn.value) ? versionIn.value.trim().replace(/^v/i,'') : '', updated: (updatedIn && updatedIn.value) ? updatedIn.value : '' };
+            try{ if(avatarSizeIn && avatarSizeIn.value) appPayload.avatarSize = parseInt(avatarSizeIn.value,10); }catch(e){}
+            // attach features collected earlier (if any)
+            try{ if(Array.isArray(_featuresLines) && _featuresLines.length > 0) appPayload.features = _featuresLines; }catch(e){}
+            const footerPayload = { credit: (footerCreditIn && footerCreditIn.value) ? footerCreditIn.value : '' };
+            if(typeof db !== 'undefined' && db && typeof db.ref === 'function'){
+              // write founder and app settings
+              await db.ref('settings/founder').set(founderPayload).catch(()=>{});
+              await db.ref('settings/app').set(appPayload).catch(()=>{});
+              await db.ref('settings/footer').set(footerPayload).catch(()=>{});
+            } else {
+              try{ localStorage.setItem('settings_founder', JSON.stringify(founderPayload)); }catch(e){}
+              try{ localStorage.setItem('settings_app', JSON.stringify(appPayload)); }catch(e){}
+              try{ localStorage.setItem('settings_footer', JSON.stringify(footerPayload)); }catch(e){}
+            }
+          }catch(e){ console && console.warn && console.warn('Persist founder failed', e); }
+
+          closeEditor();
+          // feedback
+          try{ const t = document.createElement('div'); t.textContent='✅ تم حفظ التغييرات'; t.style.position='fixed'; t.style.bottom='18px'; t.style.right='18px'; t.style.background='#2e7d32'; t.style.color='#fff'; t.style.padding='8px 12px'; t.style.borderRadius='8px'; t.style.zIndex='16000'; document.body.appendChild(t); setTimeout(()=>t.remove(),1600); }catch(e){}
+        }
+
+        // show inline button only for admin role; keep panelBtn hidden (it still has the click handler)
+        try{
+          const inlineBtn = document.getElementById('aboutPanelEditInline');
+          const isAdmin = (typeof currentUserRole !== 'undefined' && currentUserRole === 'admin');
+          if(inlineBtn) inlineBtn.style.display = isAdmin ? 'flex' : 'none';
+          if(panelBtn) panelBtn.style.display = 'none';
+          // wire inline button to open the editor directly
+          if(inlineBtn) inlineBtn.addEventListener('click', openEditor);
+        }catch(e){}
+
+        if(panelBtn) panelBtn.addEventListener('click', openEditor);
+        if(cancelBtn) cancelBtn.addEventListener('click', closeEditor);
+        if(saveBtn) saveBtn.addEventListener('click', saveChanges);
+        document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && modal && modal.style.display === 'flex') closeEditor(); });
+      })();
+    </script>
+
   </body>
 </html>
+
+<!-- Hide About Us for guests: show only when a user is logged in -->
+<script>
+  (function(){
+    const el = document.getElementById('aboutUs');
+    function isLoggedIn(){
+      try{ return !!(window.currentUser || localStorage.getItem('loggedUser')); }catch(e){ return false; }
+    }
+
+    // ensure hidden by default (inline style already set) and show only when confirmed
+    try{
+      if(!el) return;
+      el.style.display = isLoggedIn() ? '' : 'none';
+    }catch(e){}
+
+    // keep track of previous state and update only on change to avoid flicker
+    let last = isLoggedIn();
+    function update(){
+      try{
+        const cur = isLoggedIn();
+        if(cur !== last){
+          last = cur;
+          el.style.display = cur ? '' : 'none';
+        }
+      }catch(e){}
+    }
+
+    // Poll for changes (lightweight) so logout/login reflect immediately
+    setInterval(update, 400);
+
+    // Patch localStorage.setItem to react when loggedUser is changed programmatically
+    try{
+      const origSet = Storage.prototype.setItem;
+      Storage.prototype.setItem = function(k,v){
+        origSet.apply(this, arguments);
+        if(k === 'loggedUser') update();
+      };
+    }catch(e){}
+
+    // Expose manual toggler and listen for custom events
+    window.toggleAboutVisibility = function(){ try{ el.style.display = isLoggedIn() ? '' : 'none'; }catch(e){} };
+    window.addEventListener('user:login', update);
+    window.addEventListener('user:logout', update);
+  })();
+</script>
