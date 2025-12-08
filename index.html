@@ -316,6 +316,40 @@
           top: 8px;
         }
       }
+      /* ===== Advances (سلف) styles ===== */
+      .adv-card {
+        background: linear-gradient(180deg,#fff #fbfdff);
+        border: 1px solid #e6eefc;
+        padding: 12px;
+        border-radius: 12px;
+        box-shadow: 0 6px 18px rgba(3,169,244,0.06);
+      }
+      .adv-card-header { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+      .adv-title { margin:0; font-size:16px; color:#07345a; }
+      .adv-card-desc { font-size:13px; color:#6b7280; margin-top:8px; }
+      .adv-add { background:#0069d9; color:#fff; border:none; padding:8px 10px; border-radius:8px; }
+      .adv-add:hover { background:#005bb5; }
+      .adv-table-wrap { margin-top:10px; overflow-x:auto; }
+      .advances-table { width:100%; border-collapse:collapse; min-width:620px; }
+      .advances-table th, .advances-table td { padding:10px 8px; border-bottom:1px solid #eef2ff; text-align:center; font-size:14px; }
+      .advances-table thead th { background:#f1f5f9; color:#082233; font-weight:700; }
+      .advances-table tbody tr:hover { background: #fbfdff; }
+      .advances-table .btn-delete { background:#e63946; color:#fff; padding:6px 8px; border-radius:6px; border:none; }
+      /* Modal overrides for advance modal (id used in JS) */
+      #advanceModal { position:fixed; inset:0; background:rgba(2,6,23,0.45); z-index:12000; display:flex; align-items:center; justify-content:center; }
+      #advanceModal > div { background:#fff; border-radius:12px; padding:18px; max-width:420px; width:94vw; box-shadow:0 12px 36px rgba(2,6,23,0.18); direction:rtl; text-align:right; }
+      #advanceModal h3 { margin:0 0 8px 0; color:#0b3b66; }
+      #advanceModal label { display:block; font-size:13px; color:#374151; margin-top:8px; }
+      #advanceModal input[type="text"], #advanceModal input[type="number"], #advanceModal input[type="date"], #advanceModal select { width:100%; padding:10px; margin-top:6px; border-radius:8px; border:1px solid #e6eefc; box-sizing:border-box; }
+      #advanceModal .modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
+      #advanceModal .small-button { padding:8px 12px; border-radius:8px; }
+      @media (max-width: 520px) {
+        .advances-table { min-width:460px; }
+        .adv-card { padding:10px; }
+        .adv-title { font-size:15px; }
+        #advanceModal > div { padding:14px; }
+        .advances-table th, .advances-table td { padding:8px 6px; font-size:13px; }
+      }
     </style>
   </head>
   <body>
@@ -1012,6 +1046,29 @@
           </thead>
           <tbody id="employeesBody"></tbody>
         </table>
+        <!-- ====== قسم السلف (خاص بالمدير فقط) ====== -->
+        <div id="advancesAdminSection" class="adv-card" style="margin-top:18px;">
+          <div class="adv-card-header">
+            <h4 class="adv-title">سجل السلف</h4>
+            <button id="openAddAdvanceBtn" class="small-button adv-add">➕ إضافة سلفة</button>
+          </div>
+          <div class="adv-card-desc">يمكن للمدير تسجيل سلف للموظفين هنا وسيتم خصمها من الراتب الكلي تلقائياً.</div>
+          <div class="adv-table-wrap">
+            <table id="advancesTable" class="advances-table">
+              <thead>
+                <tr>
+                  <th>الموظف</th>
+                  <th>المبلغ</th>
+                  <th>التاريخ</th>
+                  <th>ملاحظة</th>
+                  <th>المسجل بواسطة</th>
+                  <th>حذف</th>
+                </tr>
+              </thead>
+              <tbody id="advancesBody"></tbody>
+            </table>
+          </div>
+        </div>
         <hr />
         <h4>إدارة المستخدمين</h4>
         <input type="text" id="newUserName" placeholder="اسم المستخدم الجديد" />
@@ -1828,6 +1885,22 @@
         const sidebarMenu = document.getElementById("sidebarMenu");
         const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
         const isAdmin = currentUserRole === "admin";
+        // Show/hide advances admin section and bind add-button safely
+        try {
+          const advancesSection = document.getElementById('advancesAdminSection');
+          const addBtn = document.getElementById('openAddAdvanceBtn');
+          if (advancesSection) advancesSection.style.display = isAdmin ? 'block' : 'none';
+          if (addBtn) {
+            addBtn.style.display = isAdmin ? 'inline-block' : 'none';
+            addBtn.onclick = function () {
+              if (typeof openAddAdvanceForm === 'function') return openAddAdvanceForm();
+              // if function not defined yet (load order), try shortly after
+              setTimeout(() => { if (typeof openAddAdvanceForm === 'function') openAddAdvanceForm(); }, 200);
+            };
+          }
+        } catch (e) {
+          console.warn('Advances visibility update failed', e);
+        }
         // أزرار المدير فقط
         [
           "sidebarAdminBtn",
@@ -3568,6 +3641,8 @@
               theadRow.appendChild(th);
             });
             loadEmployeesTable();
+            // expose employees globally for compatibility with admin UI
+            try { window.employees = employees; window.employeeIds = employeeIds; } catch (e) {}
             setTimeout(function () {
               document.getElementById("loaderSpinner").style.display = "none";
             }, 350);
@@ -4213,6 +4288,241 @@
           tbody.appendChild(tr);
         });
       }
+      // ========== إدارة السلف (قائمة السلف للمدير) ==========
+      function getAdvPath() {
+        const mm = (month + 1).toString().padStart(2, '0');
+        return `advances/${year}/${mm}`;
+      }
+
+      function loadAdvancesFromStorage() {
+        // Try Firebase first, fallback to localStorage
+        const path = getAdvPath();
+        if (typeof db !== 'undefined' && db && db.ref) {
+          return db.ref(path).once('value').then((snap) => {
+            const obj = snap.val() || {};
+            // Firebase may store as { id: {employee,amount,...}, ... }
+            const arr = Object.keys(obj).length ? Object.entries(obj).map(([id, v]) => ({ id, ...(v || {}) })) : [];
+            window._advancesRaw = arr;
+            const map = {};
+            arr.forEach((a) => { if (!map[a.employee]) map[a.employee] = []; map[a.employee].push(a); });
+            window._advancesMap = map;
+            // keep a local copy as fallback
+            try { localStorage.setItem('advances', JSON.stringify(arr)); } catch (e) {}
+            return arr;
+          }).catch((e) => {
+            console.warn('Firebase advances load failed, falling back to localStorage', e);
+            try {
+              const raw = localStorage.getItem('advances');
+              const arr = raw ? JSON.parse(raw) : [];
+              const map = {};
+              arr.forEach((a) => { if (!map[a.employee]) map[a.employee] = []; map[a.employee].push(a); });
+              window._advancesRaw = arr; window._advancesMap = map; return arr;
+            } catch (err) { window._advancesRaw = []; window._advancesMap = {}; return []; }
+          });
+        }
+        // no db available: localStorage only
+        try {
+          const raw = localStorage.getItem("advances");
+          const arr = raw ? JSON.parse(raw) : [];
+          const map = {};
+          arr.forEach((a) => { if (!map[a.employee]) map[a.employee] = []; map[a.employee].push(a); });
+          window._advancesRaw = arr; window._advancesMap = map; return Promise.resolve(arr);
+        } catch (e) {
+          console.error("Failed to load advances:", e);
+          window._advancesRaw = [];
+          window._advancesMap = {};
+          return Promise.resolve([]);
+        }
+      }
+
+      function saveAdvancesToStorage(arr) {
+        window._advancesRaw = arr;
+        const map = {};
+        arr.forEach((a) => { if (!map[a.employee]) map[a.employee] = []; map[a.employee].push(a); });
+        window._advancesMap = map;
+        try { localStorage.setItem('advances', JSON.stringify(arr)); } catch (e) {}
+        // also persist to Firebase if available
+        if (typeof db !== 'undefined' && db && db.ref) {
+          const path = getAdvPath();
+          // convert to object keyed by id
+          const obj = {};
+          arr.forEach((a) => { const copy = Object.assign({}, a); const id = copy.id || ('adv_' + Date.now()); copy.id = id; delete copy.id; obj[a.id || ('adv_' + Date.now())] = copy; });
+          // write full set (simpler sync)
+          try { db.ref(path).set(obj).catch(()=>{}); } catch(e) { console.warn('adv save to firebase failed', e); }
+        }
+      }
+
+      function renderAdvancesTable() {
+        const tbody = document.getElementById("advancesBody");
+        if (!tbody) return;
+        const arr = window._advancesRaw || [];
+        tbody.innerHTML = "";
+        if (arr.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" style="padding:12px;text-align:center;color:#666">لا توجد سلف مسجلة</td></tr>`;
+          return;
+        }
+        arr.slice().reverse().forEach((a) => {
+          const tr = document.createElement("tr");
+          const tdEmp = document.createElement('td'); tdEmp.textContent = a.employee;
+          const tdAmount = document.createElement('td'); tdAmount.textContent = (a.amount||0).toLocaleString() + ' د.ع';
+          const tdDate = document.createElement('td'); tdDate.textContent = a.date || '';
+          const tdNote = document.createElement('td'); tdNote.textContent = a.note || '';
+          const tdActions = document.createElement('td');
+          const wrap = document.createElement('div'); wrap.style.display = 'flex'; wrap.style.gap = '6px'; wrap.style.justifyContent = 'center';
+          const editBtn = document.createElement('button'); editBtn.className = 'small-button btn-edit'; editBtn.textContent = 'تعديل';
+          editBtn.onclick = () => { try { openAddAdvanceForm(encodeURIComponent(JSON.stringify(a))); } catch(e){ console.error(e); } };
+          const delBtn = document.createElement('button'); delBtn.className = 'small-button btn-delete'; delBtn.textContent = 'حذف';
+          delBtn.onclick = () => deleteAdvance(a.id);
+          wrap.appendChild(editBtn); wrap.appendChild(delBtn);
+          tdActions.appendChild(wrap);
+          tr.appendChild(tdEmp); tr.appendChild(tdAmount); tr.appendChild(tdDate); tr.appendChild(tdNote); tr.appendChild(tdActions);
+          tbody.appendChild(tr);
+        });
+      }
+
+      function openAddAdvanceForm(existingAdvEncoded) {
+        // Build modal
+        const modal = document.createElement('div');
+        modal.id = 'advanceModal';
+        modal.style = 'position:fixed;inset:0;background:rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;z-index:12000;';
+        const box = document.createElement('div');
+        box.style = 'background:#fff;border-radius:12px;padding:18px;max-width:420px;width:95vw;box-shadow:0 8px 32px rgba(0,0,0,0.12);direction:rtl;text-align:right;';
+        box.innerHTML = `
+          <h3>➕ تسجيل سلفة جديدة</h3>
+          <label for="advanceEmployee">الموظف</label>
+          <select id="advanceEmployee"></select>
+          <label for="advanceAmount">المبلغ (بدون فواصل)</label>
+          <input id="advanceAmount" type="number" min="0" step="1" />
+          <label for="advanceDate">التاريخ</label>
+          <input id="advanceDate" type="date" />
+          <label for="advanceNote">ملاحظة (اختياري)</label>
+          <input id="advanceNote" type="text" />
+          <div class="modal-actions">
+            <button id="cancelAdvance" class="small-button" style="background:#ddd;color:#111">إلغاء</button>
+            <button id="saveAdvanceBtn" class="small-button" style="background:#007bff;color:#fff">حفظ السلفة</button>
+          </div>
+        `;
+        modal.appendChild(box);
+        document.body.appendChild(modal);
+
+        // populate employees (use the local `employees` array; if empty, try to reload)
+        const sel = document.getElementById('advanceEmployee');
+        sel.innerHTML = '';
+        function fillEmployeesIntoSelect() {
+          const list = (typeof employees !== 'undefined' && Array.isArray(employees) && employees.length) ? employees : [];
+          if (list.length === 0) {
+            sel.innerHTML = `<option value="">-- لا توجد موظفين --</option>`;
+            document.getElementById('saveAdvanceBtn').disabled = true;
+            return;
+          }
+          sel.innerHTML = '';
+          list.forEach((e) => {
+            const opt = document.createElement('option');
+            opt.value = e;
+            opt.textContent = e;
+            sel.appendChild(opt);
+          });
+          document.getElementById('saveAdvanceBtn').disabled = false;
+        }
+        fillEmployeesIntoSelect();
+        // if empty, try to load from DB (in case loadEmployees hasn't finished yet)
+        if ((typeof employees === 'undefined' || employees.length === 0) && typeof loadEmployees === 'function') {
+          const mm = (month + 1).toString().padStart(2, '0');
+          const empKey = `employees_${year}_${mm}`;
+          loadEmployees(empKey).then(() => {
+            // expose for compatibility
+            try { window.employees = employees; window.employeeIds = employeeIds; } catch(e){}
+            fillEmployeesIntoSelect();
+          }).catch(()=>{});
+        }
+        // set default date to today
+        const dateInput = document.getElementById('advanceDate');
+        const today = new Date().toISOString().slice(0,10);
+        dateInput.value = today;
+
+        // if existingAdvEncoded provided, parse and prefill for edit
+        let editingId = null;
+        if (existingAdvEncoded) {
+          try {
+            const decoded = decodeURIComponent(existingAdvEncoded);
+            const advObj = JSON.parse(decoded);
+            editingId = advObj.id;
+            document.getElementById('advanceEmployee').value = advObj.employee || '';
+            document.getElementById('advanceAmount').value = advObj.amount || '';
+            document.getElementById('advanceDate').value = advObj.date || today;
+            document.getElementById('advanceNote').value = advObj.note || '';
+            document.getElementById('saveAdvanceBtn').textContent = 'حفظ التعديل';
+          } catch (e) { console.warn('Failed to parse existing adv', e); }
+        }
+
+        document.getElementById('cancelAdvance').onclick = () => { modal.remove(); };
+        document.getElementById('saveAdvanceBtn').onclick = () => {
+          const emp = document.getElementById('advanceEmployee').value;
+          const amount = Number(document.getElementById('advanceAmount').value || 0);
+          const date = document.getElementById('advanceDate').value;
+          const note = document.getElementById('advanceNote').value.trim();
+          if (!emp) { alert('❌ يرجى اختيار موظف'); return; }
+          if (!amount || amount <= 0) { alert('❌ يرجى إدخال مبلغ صالح'); return; }
+          const arr = window._advancesRaw ? window._advancesRaw.slice() : [];
+          if (editingId) {
+            const idx = arr.findIndex(a => a.id === editingId);
+            if (idx !== -1) {
+              arr[idx] = Object.assign({}, arr[idx], { employee: emp, amount: amount, date: date, note: note });
+            }
+          } else {
+            const id = 'adv_' + Date.now();
+            const newAdv = { id: id, employee: emp, amount: amount, date: date, note: note };
+            arr.push(newAdv);
+          }
+          saveAdvancesToStorage(arr);
+          renderAdvancesTable();
+          modal.remove();
+          // update employee stats live (no reload)
+          if (typeof db !== 'undefined' && db && db.ref) {
+            db.ref('attendance').once('value').then((snap) => calculateStats(snap.val() || {})).catch(()=>{});
+          } else {
+            // try calling calculateStats with last known attendance if available
+            if (window._lastAttendanceSnapshot) calculateStats(window._lastAttendanceSnapshot);
+          }
+        };
+      }
+
+      function deleteAdvance(id) {
+        if (!confirm('هل أنت متأكد من حذف هذه السلفة؟')) return;
+        const arr = (window._advancesRaw || []).filter(a => a.id !== id);
+        saveAdvancesToStorage(arr);
+        renderAdvancesTable();
+        // remove from firebase if available
+        try {
+          if (typeof db !== 'undefined' && db && db.ref) {
+            const path = getAdvPath();
+            db.ref(path + '/' + id).remove().catch(()=>{});
+          }
+        } catch(e){}
+        // update stats live
+        if (typeof db !== 'undefined' && db && db.ref) {
+          db.ref('attendance').once('value').then((snap) => calculateStats(snap.val() || {})).catch(()=>{});
+        } else if (window._lastAttendanceSnapshot) {
+          calculateStats(window._lastAttendanceSnapshot);
+        }
+      }
+
+      // initialize advances UI (only show to admin)
+      (function initAdvancesUI(){
+        const section = document.getElementById('advancesAdminSection');
+        const openBtn = document.getElementById('openAddAdvanceBtn');
+        const isAdmin = (typeof currentUserRole !== 'undefined' && currentUserRole === 'admin') || (typeof currentUser !== 'undefined' && currentUser === 'admin');
+        // load then render
+        Promise.resolve(loadAdvancesFromStorage()).then(() => {
+          renderAdvancesTable();
+          if (!isAdmin) {
+            if (section) section.style.display = 'none';
+          } else {
+            if (section) section.style.display = 'block';
+            if (openBtn) openBtn.onclick = () => openAddAdvanceForm();
+          }
+        }).catch((e) => { console.warn('initAdvancesUI load failed', e); renderAdvancesTable(); });
+      })();
       function enableEmployeeEdit(index) {
         if (!canEditCurrentMonth()) return;
         const nameTd = document.getElementById(`employeeName_${index}`);
@@ -4273,6 +4583,8 @@
 
       // ========== إحصائيات ==========
       function calculateStats(savedData) {
+        // cache last attendance snapshot so UI updates can reuse it without re-fetch
+        try { window._lastAttendanceSnapshot = savedData || {}; } catch(e){}
         // جلب صلاحيات المستخدم الحالي
         db.ref("users/" + currentUser)
           .once("value")
@@ -4324,7 +4636,7 @@
         mostX ? mostX[0] + ` (${mostX[1]["❌"]})` : "—"
       }</b></p>`;
 
-            // عرض إحصائيات كل موظف أسفل الجدول بتصميم حديث مع الراتب
+            // عرض إحصائيات كل موظف أسفل الجدول بتصميم حديث مع الراتب وخصم السلف
             const empStatsDiv = document.getElementById("empStatsBelowTable");
             if (empStatsDiv) {
               let html = `<div class="emp-stats-bar-official">
@@ -4335,7 +4647,7 @@
               <th>شفت</th>
               <th>نص</th>
               <th>إجازة</th>
-              ${canViewSalary ? "<th>الراتب الكلي</th>" : ""}
+              ${canViewSalary ? "<th>الراتب الكلي</th><th>السلف المسحوبة</th><th>صافي الراتب</th>" : ""}
             </tr>
           </thead>
           <tbody>`;
@@ -4344,6 +4656,10 @@
                 const half = counts[emp]["نص"] || 0;
                 const vac = counts[emp]["❌"] || 0;
                 const salary = shift * 22000 + half * 11000;
+                // حساب مجموع السلف المسحوبة لهذا الموظف (من التخزين المحلي)
+                const advs = (window._advancesMap && window._advancesMap[emp]) ? window._advancesMap[emp] : [];
+                const totalAdv = advs.reduce((s, a) => s + Number(a.amount || 0), 0);
+                const netSalary = Math.max(0, salary - totalAdv);
                 html += `<tr>
           <td class="emp-name-official">${emp}</td>
           <td class="emp-stat-official shift">${shift}</td>
@@ -4351,7 +4667,7 @@
           <td class="emp-stat-official vac">${vac}</td>
           ${
             canViewSalary
-              ? `<td class="emp-salary-official">${salary.toLocaleString()} د.ع</td>`
+              ? `<td class="emp-salary-official">${salary.toLocaleString()} د.ع</td><td class="emp-salary-official">${totalAdv.toLocaleString()} د.ع</td><td class="emp-salary-official" style="font-weight:700;color:#0b6">${netSalary.toLocaleString()} د.ع</td>`
               : ""
           }
         </tr>`;
