@@ -17,17 +17,26 @@
     <style>
        body {
   background: #000 !important;
-  width: 100% !important;
+  width: 100vw !important;
   height: 100vh !important;
   margin: 0 !important;
   padding: 0 !important;
   overflow: hidden !important;
-  pointer-events: none !important;
-        }
-        {
-  display: none !important;
-         }
-    
+     }
+    {
+  background: #000 !important;
+  color: #000 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 999999;
+}
+    \\منا وفوك امسح حتى يشتغل
       #adminPanel {
         box-shadow: 0 2px 12px rgba(151, 86, 86, 0.067);
       }
