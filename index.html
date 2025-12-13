@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>نظام حضور هي هي</title>
+    <title>نظام حضور المطعم </title>
     <meta
       name="description"
       content="نظام حضور وانصراف الموظفين - سجل حضور الموظفين وغيابهم بسهولة واحترافية. برنامج حضور وانصراف عربي مجاني وسهل الاستخدام."
@@ -15,30 +15,103 @@
     <meta name="robots" content="index, follow" />
     <script src="crypto-utils.js"></script>
     <style>
-       body {
-  background: #000 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-     }
-    {
-  background: #000 !important;
-  color: #000 !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background: #000;
-  z-index: 999999;
-    }
-      pointer-events: all; /* يمنع النقر من المرور */
-       }
-    \\منا وفوك امسح حتى يشتغل
+      /* Maintenance overlay */
+      #maintenanceOverlay {
+        display: none;
+        position: fixed;
+        inset: 0; /* top:0; right:0; bottom:0; left:0; */
+        background: rgba(0,0,0,0.98); /* darker to hide the system thoroughly */
+        z-index: 2147483646; /* very high, but below modals that use 2147483000+ optionally */
+        color: #fff;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 18px;
+        pointer-events: all; /* block interaction underlay */
+        transition: opacity 260ms cubic-bezier(0.2,0.9,0.1,1), backdrop-filter 260ms cubic-bezier(0.2,0.9,0.1,1);
+        opacity: 0;
+      }
+      /* floating, rotating background gradient */
+      #maintenanceOverlay .overlay-bg { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+      #maintenanceOverlay .overlay-bg:before{
+        content:''; position:absolute; inset:-30% -30% -30% -30%; background: radial-gradient(ellipse at 20% 30%, rgba(124,58,237,0.12) 0%, transparent 15%), radial-gradient(ellipse at 80% 70%, rgba(10, 132, 255, 0.08) 0%, transparent 18%); transform: rotate(8deg); animation: bgDrift 14s linear infinite; filter: blur(20px);
+      }
+      @keyframes bgDrift{ 0% { transform: rotate(0deg) translateY(0px) } 50% { transform: rotate(12deg) translateY(-8px)} 100% { transform: rotate(0deg) translateY(0px)} }
+
+      /* sparkles */
+      #maintenanceOverlay .sparkles{ position:absolute; inset:0; pointer-events:none; }
+      #maintenanceOverlay .sparkles span{ display:block; position:absolute; width:10px; height:10px; background: radial-gradient(circle at 30% 30%, #fff 0%, #ffd6ff 35%, rgba(255,255,255,0) 70%); border-radius:50%; opacity:0; transform: translateY(0) scale(0.6); box-shadow: 0 0 14px 6px rgba(255, 255, 255, 0.03); filter: blur(0.6px); }
+      #maintenanceOverlay .sparkles span:nth-child(1){ left: 8%; top: 38%; animation: sparkle 2200ms ease-in-out 200ms infinite; }
+      #maintenanceOverlay .sparkles span:nth-child(2){ left: 22%; top: 18%; animation: sparkle 2600ms ease-in-out 640ms infinite; animation-duration: 2600ms; }
+      #maintenanceOverlay .sparkles span:nth-child(3){ left: 45%; top: 62%; animation: sparkle 1980ms ease-in-out 1100ms infinite; }
+      #maintenanceOverlay .sparkles span:nth-child(4){ left: 68%; top: 26%; animation: sparkle 2400ms ease-in-out 430ms infinite; }
+      #maintenanceOverlay .sparkles span:nth-child(5){ left: 85%; top: 50%; animation: sparkle 2100ms ease-in-out 290ms infinite; }
+      #maintenanceOverlay .sparkles span:nth-child(6){ left: 50%; top: 12%; animation: sparkle 3000ms ease-in-out 970ms infinite; }
+      @keyframes sparkle { 0% { opacity: 0; transform: translateY(0) scale(0.6) rotate(0deg); } 30% { opacity: 1; transform: translateY(-8px) scale(1) rotate(8deg); } 70% { opacity: 0.6; transform: translateY(-2px) scale(0.9) rotate(-8deg); } 100% { opacity: 0; transform: translateY(0) scale(0.6) rotate(0deg); } }
+      #maintenanceOverlay .box { max-width: 640px; width: 96%; }
+      /* container box: slightly translucent to keep dark tone while making text readable */
+      #maintenanceOverlay .box {
+        background: rgba(6, 6, 6, 0.6);
+        padding: 18px 20px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.04);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+        backdrop-filter: blur(6px);
+        transform: translateY(16px) scale(0.98);
+        opacity: 0;
+        transition: transform 420ms cubic-bezier(0.2,0.9,0.1,1), opacity 420ms cubic-bezier(0.2,0.9,0.1,1), box-shadow 420ms cubic-bezier(0.2,0.9,0.1,1);
+      }
+      /* Outer glow */
+      #maintenanceOverlay .box::before{ content:''; position:absolute; inset:-18px; border-radius:14px; background: radial-gradient(circle at 20% 40%, rgba(124,58,237,0.08) 0%, rgba(10,132,255,0.06) 32%, rgba(255,255,255,0.00) 55%); filter: blur(24px); z-index:-2; opacity:0; transition: opacity 420ms ease; }
+      #maintenanceOverlay.show .box::before{ opacity:1; }
+      #maintenanceOverlay .box::after{ content:''; position:absolute; left:0; right:0; height:2px; bottom:-10px; background: linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)); border-radius:3px; z-index:-1; filter: blur(6px); }
+      #maintenanceOverlay:focus { outline: none; }
+      #maintenanceOverlay h2 { font-size: 28px; margin-bottom: 8px; color: #fff; font-weight:800; letter-spacing:0.6px; text-transform:none; text-shadow:0 6px 18px rgba(0,0,0,0.6); }
+      /* Magical shimmer effect */
+      #maintenanceOverlay h2.shimmer {
+        background: linear-gradient(90deg,#ffffff 0%, #ffd9ff 18%, #c2faff 40%, #ffffff 70%);
+        background-size: 200% 100%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: shimmer 2.8s linear infinite;
+      }
+      @keyframes shimmer { 0% { background-position: 0% 50% } 50% { background-position: 100% 50% } 100% { background-position: 0% 50% } }
+      #maintenanceOverlay p { font-size: 16px; color: #e2e2e2; margin-top: 8px; line-height:1.65; max-width:760px; margin-left:auto; margin-right:auto; letter-spacing:0.1px; }
+      #maintenanceOverlay .sub { margin-top: 12px; font-size:13px; color:#aeb3bd; letter-spacing:0.2px; }
+
+      /* Animations */
+      @keyframes overlayFadeIn { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes boxPopIn { from { opacity: 0; transform: translateY(28px) scale(0.96); filter: blur(4px); } to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+      @keyframes boxFadeOut { from { opacity: 1; transform: translateY(0) scale(1)} to { opacity: 0; transform: translateY(18px) scale(0.98);} }
+      @keyframes textRise { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: translateY(0);} }
+
+      #maintenanceOverlay.show {
+        display: flex;
+        opacity: 1;
+        pointer-events: all;
+      }
+      #maintenanceOverlay.hide { opacity: 0; pointer-events: none; }
+      #maintenanceOverlay.show .box {
+        animation: boxPopIn 420ms cubic-bezier(0.2, 0.9, 0.1, 1) both;
+      }
+      #maintenanceOverlay.hide .box {
+        animation: boxFadeOut 380ms cubic-bezier(0.2, 0.9, 0.1, 1) both;
+      }
+      #maintenanceOverlay.show h2 { animation: textRise 380ms cubic-bezier(0.2, 0.9, 0.1, 1) both; transform-origin:center; }
+      #maintenanceOverlay.show p { animation: textRise 420ms cubic-bezier(0.2, 0.9, 0.1, 1) 60ms both; }
+      #maintenanceOverlay.show .sub { animation: textRise 420ms cubic-bezier(0.2, 0.9, 0.1, 1) 120ms both; }
+
+      /* small pulsing dot next to status to feel 'alive' */
+      .maintenancePulse { display:inline-block; width:10px; height:10px; border-radius:50%; background:linear-gradient(90deg,#ff6b6b,#ff2d2d); box-shadow:0 2px 12px rgba(255,43,43,0.24); margin-left:10px; vertical-align:middle; transform-origin:center; animation: pulse 1.6s ease-in-out infinite; }
+      @keyframes pulse { 0% { transform:scale(1); opacity:1 } 50% { transform:scale(1.14); opacity:0.85 } 100% { transform:scale(1); opacity:1 } }
+
+      /* Accessibility: Respect prefers-reduced-motion */
+      @media (prefers-reduced-motion: reduce) {
+        #maintenanceOverlay .box, #maintenanceOverlay h2, #maintenanceOverlay p { animation: none !important; transition: none !important; }
+      }
+      #maintenanceOverlay .sub { margin-top: 8px; font-size:13px; color:#bbb }
+    </style>
+    <style>
       #adminPanel {
         box-shadow: 0 2px 12px rgba(151, 86, 86, 0.067);
       }
@@ -377,6 +450,19 @@ body::before {
     </style>
   </head>
   <body>
+    <!-- Maintenance overlay (global) -->
+    <div id="maintenanceOverlay" role="alert" aria-live="assertive" tabindex="0">
+      <div class="overlay-bg">
+        <div class="sparkles" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+      <div class="box">
+        <h2 class="shimmer">❗  System Error   <span class="maintenancePulse" aria-hidden="true"></span></h2>
+        <p id="maintenanceMessageText"> نعتذر، النظام يواجه مشكلة تقنية مفاجئة تمنع الوصول للبيانات حالياً. تجري محاولة المعالجة تلقائياً، يرجى الانتظار قليلاً ثم تحديث الصفحة.  </p> 
+        <div class="sub">Error Reference: #500-xc9 | Request ID: 1f4a-7b22</div>
+      </div>
+    </div>
     <div class="container">
       <!-- نافذة تفاصيل اليوم -->
       <div
@@ -739,6 +825,150 @@ body::before {
       </div>
 
       <script>
+        // ===== Maintenance mode feature =====
+        // Shows a full-screen black overlay for non-admin users when maintenance is enabled in DB.
+        (function(){
+          async function setMaintenanceState(enabled, reason, message){
+            if(typeof db === 'undefined' || !db || typeof db.ref !== 'function'){
+              alert('خطأ: قاعدة البيانات غير متاحة');
+              return;
+            }
+            try{
+              const payload = { enabled: !!enabled, setBy: currentUser || 'unknown', at: formatDateTimeNoSeconds(new Date()), reason: reason || '', message: message || null };
+              await db.ref('system/maintenance').set(payload);
+              // write a small signal to force immediate propagation and to support some listeners
+              try{ await db.ref('system/maintenance/signal').set(Date.now()); }catch(e){}
+              // Apply the state locally immediately (include message if provided)
+              try{ applyMaintenanceState(payload); }catch(e){}
+              // broadcast to other tabs in same browser for instant feedback
+              try{ localStorage.setItem('maintenanceSignal', JSON.stringify({ts:Date.now(), enabled: !!enabled})); }catch(e){}
+              logActivity(enabled ? 'تفعيل وضع الصيانة' : 'إيقاف وضع الصيانة', `وضع الصيانة ${enabled ? 'تفعيل' : 'إيقاف'} من قبل: ${currentUser || 'unknown'}`);
+              try{ applyMaintenanceState(payload); }catch(e){}
+            }catch(e){ console.error('setMaintenanceState error', e); alert('حدث خطأ أثناء ضبط وضع الصيانة'); }
+          }
+
+          function applyMaintenanceState(state){
+            try{
+              const overlay = document.getElementById('maintenanceOverlay');
+              const statusText = document.getElementById('maintenanceStatusText');
+              const infoEl = document.getElementById('maintenanceInfo');
+              const toggleBtn = document.getElementById('toggleMaintenanceBtn');
+              const isAdmin = (typeof currentUserRole !== 'undefined' && currentUserRole === 'admin');
+              const enabled = state && state.enabled;
+              if(statusText) statusText.textContent = enabled ? 'مفعل' : 'غير مفعل';
+              if(infoEl) infoEl.textContent = enabled ? `تم التفعيل بواسطة ${state.setBy || '—'} في ${state.at || '—'}${state.reason ? (' — ' + state.reason) : ''}` : 'لا توجد ملاحظات';
+              // set the message text in overlay and update textarea
+              try{
+                const overlayMsg = document.getElementById('maintenanceMessageText');
+                const txtArea = document.getElementById('maintenanceCustomMessage');
+                const message = (state && state.message) ? state.message : 'نعتذر، النظام يواجه مشكلة تقنية مفاجئة تمنع الوصول للبيانات حالياً. تجري محاولة المعالجة تلقائياً، يرجى الانتظار قليلاً ثم تحديث الصفحة.';
+                if(overlayMsg) overlayMsg.textContent = message;تح
+                if(txtArea && document.activeElement !== txtArea) txtArea.value = message;
+              }catch(e){}
+              if(toggleBtn) {
+                toggleBtn.textContent = enabled ? 'إيقاف وضع الصيانة' : 'تفعيل وضع الصيانة';
+                toggleBtn.style.background = enabled ? '#4caf50' : '#ff9800';
+              }
+              // Show overlay for everyone except admins
+              if(overlay){
+                if(enabled && !isAdmin){
+                  // show with animation-friendly approach
+                  overlay.style.display = 'flex';
+                  overlay.classList.remove('hide');
+                  requestAnimationFrame(() => { overlay.classList.add('show'); try{ overlay.focus(); }catch(e){} });
+                  try{ document.documentElement.style.overflow = 'hidden'; }catch(e){}
+                } else {
+                  // hide with class removal then hide after animation
+                  overlay.classList.remove('show');
+                  overlay.classList.add('hide');
+                  try{ overlay.blur(); }catch(e){}
+                  // after animation settle, hide the element
+                  setTimeout(() => { try{ if(!overlay.classList.contains('show')) overlay.style.display = 'none'; overlay.classList.remove('hide'); }catch(e){} }, 420);
+                  try{ document.documentElement.style.overflow = ''; }catch(e){}
+                }
+              }
+              try{ if(typeof updateSidebarVisibility === 'function') updateSidebarVisibility(); }catch(e){}
+            }catch(e){ console.error('applyMaintenanceState error', e); }
+          }
+
+          // Ask for confirmation and optionally a reason before toggling maintenance
+          window.toggleMaintenanceRequest = function(){
+            if(!currentUserRole || currentUserRole !== 'admin') { alert('غير مسموح: هذه الخاصية خاصة بالمدير فقط'); return; }
+            if(typeof db === 'undefined' || !db || typeof db.ref !== 'function'){ alert('خطأ: قاعدة البيانات غير متاحة'); return; }
+            db.ref('system/maintenance').once('value').then((snap)=>{
+              const state = snap.val() || { enabled: false };
+              if(!state.enabled){
+                // enabling
+                const reason = prompt('أدخل سبب الصيانة (اختياري):', '');
+                // Use the custom message from textarea if present
+                const msgEl = document.getElementById('maintenanceCustomMessage');
+                const customMsg = (msgEl && msgEl.value) ? msgEl.value.trim() : null;
+                showConfirmModal('هل تريد تفعيل وضع الصيانة؟', async () => { await setMaintenanceState(true, reason, customMsg); }, null);
+              } else {
+                // disabling
+                showConfirmModal('هل تريد إيقاف وضع الصيانة الآن؟', async () => { await setMaintenanceState(false, ''); }, null);
+              }
+            });
+          };
+
+          // Attach DB listener to reflect real-time changes in UI
+          var _maintenanceListenersAttached = false;
+          function attachMaintenanceListeners(){
+            try{
+              if(_maintenanceListenersAttached) return;
+              if(typeof db === 'undefined' || !db || typeof db.ref !== 'function'){
+                // retry later when db is loaded
+                setTimeout(attachMaintenanceListeners, 550);
+                return;
+              }
+              _maintenanceListenersAttached = true;
+              db.ref('system/maintenance').on('value', (snap) => {
+                applyMaintenanceState(snap.val());
+              });
+              // Listen for the signal node as well (wakes some clients quicker)
+              db.ref('system/maintenance/signal').on('value', async (snap) => {
+                try{
+                  const s = await db.ref('system/maintenance').once('value');
+                  applyMaintenanceState(s.val());
+                }catch(e){ console.warn('signal listener error', e); }
+              });
+            }catch(e){ console.warn('attachMaintenanceListeners error', e); }
+          }
+          attachMaintenanceListeners();
+
+          // Make sure overlay is applied if maintenance is already enabled on load
+          document.addEventListener('DOMContentLoaded', function(){
+            if(typeof db !== 'undefined' && db && typeof db.ref === 'function'){
+              db.ref('system/maintenance').once('value').then((snap) => {
+                applyMaintenanceState(snap.val());
+              }).catch(()=>{});
+            }
+            // Wire button now we are sure the DOM is ready
+            try{ const btn = document.getElementById('toggleMaintenanceBtn'); if(btn) btn.addEventListener('click', toggleMaintenanceRequest); }catch(e){}
+            try{ const saveBtn = document.getElementById('saveMaintenanceMsgBtn'); if(saveBtn) saveBtn.addEventListener('click', async function(){
+              if(!currentUserRole || currentUserRole !== 'admin') return alert('غير مسموح: هذه الخاصية خاصة بالمدير فقط');
+              const txtArea = document.getElementById('maintenanceCustomMessage'); if(!txtArea) return;
+              const val = txtArea.value.trim();
+              if(typeof db === 'undefined' || !db || typeof db.ref !== 'function'){
+                try{ localStorage.setItem('maintenanceMessage', val); alert('✅ تم حفظ رسالة الصيانة محلياً'); }catch(e){ alert('❌ حدث خطأ أثناء الحفظ'); }
+                return;
+              }
+              try{
+                await db.ref('system/maintenance').update({ message: val, messageUpdatedBy: currentUser || 'unknown', messageUpdatedAt: formatDateTimeNoSeconds(new Date()) });
+                // fetch updated state
+                const snap = await db.ref('system/maintenance').once('value');
+                const state = snap.val() || {};
+                try{ await db.ref('system/maintenance/signal').set(Date.now()); }catch(e){}
+                try{ localStorage.setItem('maintenanceSignal', JSON.stringify({ts:Date.now(), enabled: !!state.enabled})); }catch(e){}
+                applyMaintenanceState(state);
+                alert('✅ تم حفظ رسالة الصيانة');
+                logActivity('تحديث رسالة الصيانة', `تم تحديث رسالة الصيانة إلى: ${val}`);
+              }catch(err){ console.error(err); alert('❌ حدث خطأ أثناء حفظ رسالة الصيانة'); }
+            }); }catch(e){}
+            // Listen for localStorage broadcasts for cross-tab instant updates
+            try{ window.addEventListener('storage', function(e){ if(e.key === 'maintenanceSignal'){ try{ db.ref('system/maintenance').once('value').then((snap) => applyMaintenanceState(snap.val())).catch(()=>{}); }catch(err){} } }); }catch(e){}
+          });
+        })();
         // Ensure login box is visible immediately if there's no saved session.
         (function(){
           try{
@@ -1113,6 +1343,26 @@ body::before {
           </thead>
           <tbody id="usersBody"></tbody>
         </table>
+        <!-- Maintenance control (Admin only) -->
+        <div id="maintenanceControl" style="margin-top:14px;padding:12px;border-radius:10px;background:#fff;box-shadow:0 1px 6px #0002;border:1px solid #e6eefc;display:flex;flex-direction:column;gap:8px;align-items:flex-start;">
+          <h4 style="margin:0 0 6px 0">وضع الصيانة</h4>
+          <div style="display:flex;align-items:center;gap:10px;width:100%;justify-content:space-between;">
+            <div style="display:flex;flex-direction:column;align-items:flex-start;">
+              <div id="maintenanceStatus"><strong id="maintenanceStatusText">غير مفعل</strong></div>
+              <div id="maintenanceInfo" style="font-size:12px;color:#666;">لا توجد ملاحظات</div>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;">
+              <button id="toggleMaintenanceBtn" class="small-button" style="background:#bd2121;">تفعيل وضع الصيانة</button>
+            </div>
+          </div>
+          <div style="width:100%;display:flex;flex-direction:column;gap:6px;margin-top:8px;">
+            <label style="font-size:13px;color:#334;">نص رسالة الصيانة الظاهر للمستخدمين</label>
+            <textarea id="maintenanceCustomMessage" placeholder="أدخل نص رسالة الصيانة هنا" style="width:100%;min-height:52px;padding:8px;border-radius:8px;border:1px solid #e0e6f8;box-sizing:border-box;"> </textarea>
+            <div style="display:flex;gap:8px;justify-content:flex-end;">
+              <button id="saveMaintenanceMsgBtn" class="small-button" style="background:#1976d2;color:#fff;">حفظ النص</button>
+            </div>
+          </div>
+        </div>
         <button
           id="toggleEmpStatsBtn"
           style="
@@ -1908,6 +2158,7 @@ body::before {
         const sidebarMenu = document.getElementById("sidebarMenu");
         const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
         const isAdmin = currentUserRole === "admin";
+        try{ const maintenanceSection = document.getElementById('maintenanceControl'); if(maintenanceSection) maintenanceSection.style.display = isAdmin ? 'block' : 'none'; }catch(e){}
         // Show/hide advances admin section and bind add-button safely
         try {
           const advancesSection = document.getElementById('advancesAdminSection');
@@ -3518,6 +3769,14 @@ body::before {
             // debug logs removed
             const ok = await verifyPassword(storedPass, password);
             if (!ok) throw new Error("Wrong password");
+              // If maintenance is enabled in DB, block non-admin users from logging in
+              try{
+                const mSnap = await db.ref('system/maintenance').once('value');
+                const mState = mSnap.val() || { enabled: false };
+                if(mState.enabled && (!userData || (userData.role !== 'admin')) ){
+                  throw new Error('MaintenanceMode');
+                }
+              }catch(e){ if(e.message === 'MaintenanceMode') throw e; }
             // إذا legacy، حدث كلمة المرور فوراً إلى صيغة hash
             if (typeof storedPass === "string") {
               const hashObj = await hashPassword(password);
@@ -3551,7 +3810,9 @@ body::before {
             showMessage(
               error.message === "User not found"
                 ? " اسم المستخدم غير موجود"
-                : " كلمة المرور غير صحيحة",
+                : (
+                  error.message === 'MaintenanceMode' ? ' هناك خطأ في النظام حاول مجددا في وقت لاحق' : ' كلمة المرور غير صحيحة'
+                ),
               true
             );
             console.error("[LOGIN ERROR]", error);
