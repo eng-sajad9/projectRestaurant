@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>نظام حضور المطعم </title>
+    <title>نظام حضور هي هي</title>
     <meta
       name="description"
       content="نظام حضور وانصراف الموظفين - سجل حضور الموظفين وغيابهم بسهولة واحترافية. برنامج حضور وانصراف عربي مجاني وسهل الاستخدام."
@@ -14,6 +14,13 @@
     />
     <meta name="robots" content="index, follow" />
     <script src="crypto-utils.js"></script>
+    <!-- مكتبة jsPDF لإنشاء ملفات PDF مع دعم العربية -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.plugin.standard_fonts_metrics.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.plugin.split_text_to_size.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.plugin.from_html.min.js"></script>
+    <!-- مكتبة html2canvas لتحويل HTML إلى صورة -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
       /* Maintenance overlay */
       #maintenanceOverlay {
@@ -461,6 +468,19 @@
         <h2 class="shimmer">❗  System Error   <span class="maintenancePulse" aria-hidden="true"></span></h2>
         <p id="maintenanceMessageText"> نعتذر، النظام يواجه مشكلة تقنية مفاجئة تمنع الوصول للبيانات حالياً. تجري محاولة المعالجة تلقائياً، يرجى الانتظار قليلاً ثم تحديث الصفحة.  </p> 
         <div class="sub">Error Reference: #500-xc9 | Request ID: 1f4a-7b22</div>
+      </div>
+    </div>
+    <!-- PDF progress overlay -->
+    <div id="pdfProgressOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:2147483650;align-items:center;justify-content:center;">
+      <div style="background:#fff;border-radius:12px;padding:18px 20px;max-width:420px;width:90%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.4);">
+        <div id="pdfProgressIcon" style="font-size:32px;margin-bottom:8px;">🔄</div>
+        <div id="pdfProgressText" style="font-weight:700;color:#0b66c3;margin-bottom:8px">جاري إنشاء PDF وإرساله...</div>
+        <div style="height:10px;background:#eef3fb;border-radius:8px;overflow:hidden;margin-bottom:12px;">
+          <div id="pdfProgressBar" style="width:0%;height:100%;background:#1976d2;transition:width 300ms ease;"></div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:center;">
+          <button id="pdfProgressCloseBtn" style="display:none;background:#1976d2;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer">إغلاق</button>
+        </div>
       </div>
     </div>
     <div class="container">
@@ -1363,6 +1383,32 @@
             </div>
           </div>
         </div>
+        <!-- إعدادات تيليجرام (Admin only) -->
+        <div id="telegramSettings" style="margin-top:14px;padding:12px;border-radius:10px;background:#fff;box-shadow:0 1px 6px #0002;border:1px solid #e6eefc;display:flex;flex-direction:column;gap:8px;">
+          <h4 style="margin:0 0 8px 0">⚙️ إعدادات تيليجرام</h4>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div>
+              <label style="font-size:13px;color:#334;display:block;margin-bottom:4px;">Bot Token:</label>
+              <input type="text" id="telegramBotToken" placeholder="أدخل Bot Token من @BotFather" style="width:100%;padding:8px;border-radius:6px;border:1px solid #e0e6f8;box-sizing:border-box;font-size:13px;" />
+              <small style="color:#666;font-size:11px;">احصل على Token من @BotFather في تيليجرام</small>
+            </div>
+            <div>
+              <label style="font-size:13px;color:#334;display:block;margin-bottom:4px;">Chat ID:</label>
+              <input type="text" id="telegramChatId" placeholder="أدخل Chat ID" style="width:100%;padding:8px;border-radius:6px;border:1px solid #e0e6f8;box-sizing:border-box;font-size:13px;" />
+              <small style="color:#666;font-size:11px;">احصل على Chat ID من @userinfobot</small>
+            </div>
+            <div>
+              <label style="font-size:13px;color:#334;display:block;margin-bottom:4px;">مدة النسخ التلقائي (بالساعات):</label>
+              <input type="number" id="telegramAutoBackupHours" placeholder="48" min="1" value="48" style="width:100%;padding:8px;border-radius:6px;border:1px solid #e0e6f8;box-sizing:border-box;font-size:13px;" />
+              <small style="color:#666;font-size:11px;">مثال: 48 = كل يومين، 24 = يومياً، 168 = أسبوعياً</small>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:4px;">
+              <button id="saveTelegramSettingsBtn" class="small-button" style="background:#0088cc;color:#fff;flex:1;">💾 حفظ الإعدادات</button>
+              <button id="testTelegramBtn" class="small-button" style="background:#28a745;color:#fff;flex:1;">🧪 اختبار الاتصال</button>
+            </div>
+            <div id="telegramStatus" style="font-size:12px;color:#666;margin-top:4px;"></div>
+          </div>
+        </div>
         <button
           id="toggleEmpStatsBtn"
           style="
@@ -1376,6 +1422,36 @@
         >
           📊 تفاصيل إحصائيات الموظفين
         </button>
+        <!-- Salary management (Admin only) -->
+        <div id="salaryAdminSection" class="adv-card" style="margin-top:18px;display:none;">
+          <h4 style="margin:0 0 8px 0">إدارة الرواتب</h4>
+          <div style="display:flex;gap:12px;align-items:center;">
+            <div style="flex:1;">
+              <label style="font-size:13px;color:#334;">سعر الشفت </label>
+              <input type="text" id="salaryShiftRate" placeholder="22,000" />
+            </div>
+            <div style="flex:1;">
+              <label style="font-size:13px;color:#334;">سعر النصف </label>
+              <input type="text" id="salaryHalfRate" placeholder="11,000" />
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <label class="checkbox-label" style="font-size:13px;">
+                <input type="checkbox" id="applyCurrentMonthSalary" /> تطبيق على الشهر الحالي
+              </label>
+              <label class="checkbox-label" style="font-size:13px;">
+                <input type="checkbox" id="applyFutureMonthsSalary" /> تطبيق على الأشهر القادمة
+              </label>
+            </div>
+            <div style="display:flex;align-items:flex-end;">
+              <button id="saveDefaultSalaryBtn" class="small-button" style="background:#1976d2;color:#fff;margin-bottom:2px;">💾 حفظ</button>
+            </div>
+          </div>
+          <hr style="margin:12px 0" />
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+            </div>
+          </div>
+        </div>
         <div
           id="empStatsTab"
           style="
@@ -1603,6 +1679,16 @@
       >
         🗑️ حذف بيانات متقدمة
       </button>
+      
+       <button
+        id="sidebarPrintTelegramBtn"
+        style="background: #0088cc; color: white; display: none; margin-top: 6px;"
+        title="طباعة وإرسال تقرير PDF إلى تيليجرام"
+      >
+        📄 طباعة وإرسال PDF
+      </button>
+      
+      
       <button
         id="sidebarFeaturesTabBtn"
         style="background: #673ab7; color: white; display: none"
@@ -1636,6 +1722,8 @@
       >
         ⚙️ إعدادات الملاحظات
       </button>
+      <!-- زر طباعة وإرسال PDF إلى تيليجرام -->
+    
       <!-- أزرار إدارة قاعدة البيانات -->
     </div>
     <script>
@@ -2159,6 +2247,7 @@
         const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
         const isAdmin = currentUserRole === "admin";
         try{ const maintenanceSection = document.getElementById('maintenanceControl'); if(maintenanceSection) maintenanceSection.style.display = isAdmin ? 'block' : 'none'; }catch(e){}
+        try{ const salarySection = document.getElementById('salaryAdminSection'); if(salarySection) salarySection.style.display = isAdmin ? 'block' : 'none'; }catch(e){}
         // Show/hide advances admin section and bind add-button safely
         try {
           const advancesSection = document.getElementById('advancesAdminSection');
@@ -2186,15 +2275,31 @@
           "sidebarUserControlBtn",
           "sidebarNotesSettingsBtn",
           "sidebarNotificationsBtn",
+          "sidebarPrintTelegramBtn",
         ].forEach((id) => {
+          try {
+            const el = document.getElementById(id);
+            if (el) el.style.display = isAdmin ? "block" : "none";
+          } catch (e) {}
+        });
+        // إخفاء قسم إعدادات تيليجرام للمستخدمين العاديين
+        try {
+          const telegramSection = document.getElementById('telegramSettings');
+          if (telegramSection) telegramSection.style.display = isAdmin ? 'block' : 'none';
+        } catch (e) {}
+        // ربط أحداث الأزرار
+        try {
           // زر الإشعارات للمدير
-          document.getElementById("sidebarNotificationsBtn").onclick =
-            function () {
+          const notificationsBtn = document.getElementById("sidebarNotificationsBtn");
+          if (notificationsBtn) {
+            notificationsBtn.onclick = function () {
               document.getElementById("sidebarMenu").classList.remove("open");
               setTimeout(showNotificationsManager, 100);
             };
+          }
+        } catch (e) {}
 
-          function showNotificationsManager() {
+        function showNotificationsManager() {
             let modal = document.getElementById("notificationsManagerModal");
             if (modal) {
               modal.style.display = "flex";
@@ -2333,15 +2438,18 @@
               if (onOk) onOk();
             };
           }
-          const el = document.getElementById(id);
-          if (el) el.style.display = isAdmin ? "block" : "none";
-        });
         // نافذة إدارة الأشهر الاحترافية
-        document.getElementById("sidebarMonthsManagerBtn").onclick =
-          function () {
-            document.getElementById("sidebarMenu").classList.remove("open");
-            setTimeout(showMonthsManagerModal, 100);
-          };
+        try {
+          const monthsManagerBtn = document.getElementById("sidebarMonthsManagerBtn");
+          if (monthsManagerBtn) {
+            monthsManagerBtn.onclick = function () {
+              document.getElementById("sidebarMenu").classList.remove("open");
+              setTimeout(showMonthsManagerModal, 100);
+            };
+          }
+        } catch (e) {
+          console.warn('خطأ في ربط زر إدارة الأشهر:', e);
+        }
 
         function showMonthsManagerModal() {
           let modal = document.getElementById("monthsManagerModal");
@@ -2933,10 +3041,7 @@
       // ربط أزرار القائمة الجانبية بأزرار الموقع الأصلية
       document.getElementById("sidebarAdminBtn").onclick = () => {
         document.getElementById("sidebarMenu").classList.remove("open");
-        setTimeout(
-          () => document.getElementById("toggleAdminBtn").click(),
-          100
-        );
+        setTimeout(() => toggleAdminPanel(), 100);
       };
       document.getElementById("sidebarEmpStatsBtn").onclick = () => {
         document.getElementById("sidebarMenu").classList.remove("open");
@@ -3018,7 +3123,6 @@
       // إخفاء جميع الأزرار الخارجية
       document.addEventListener("DOMContentLoaded", () => {
         [
-          "toggleAdminBtn",
           "toggleEmpStatsBtn",
           "btnDeleteData",
           "btnFeaturesTab",
@@ -3587,7 +3691,16 @@
           if (typeof updateAnnouncementsVisibility === "function")
             updateAnnouncementsVisibility();
           if (typeof loadAvailableMonths === "function") loadAvailableMonths();
-          listenForNotifications();
+          if (typeof listenForNotifications === "function") {
+            listenForNotifications();
+          } else {
+            // تأخير بسيط إذا لم تكن الدالة جاهزة بعد
+            setTimeout(() => {
+              if (typeof listenForNotifications === "function") {
+                listenForNotifications();
+              }
+            }, 500);
+          }
 
           // مراقبة صلاحية التعديل للمستخدم الحالي وتحديثها فوراً
           if (currentUser !== "admin") {
@@ -3798,6 +3911,12 @@
               document.getElementById("adminPanel").style.display = "block";
               loadUsers();
               loadEmployeesTable();
+              // تحميل إعدادات تيليجرام بعد تسجيل الدخول
+              setTimeout(() => {
+                if (typeof loadTelegramSettings === 'function') {
+                  loadTelegramSettings();
+                }
+              }, 500);
             } else {
               document.getElementById("adminPanel").style.display = "none";
             }
@@ -4560,7 +4679,7 @@
           editBtn.onclick = () => enableEmployeeEdit(idx);
           actionsTd.appendChild(editBtn);
           // زر الحذف يظهر فقط في الشهر الحالي
-          if (isCurrentMonthSelected()) {
+          if (typeof isCurrentMonthSelected === "function" && isCurrentMonthSelected()) {
             const deleteBtn = document.createElement("button");
             deleteBtn.textContent = "حذف";
             deleteBtn.className = "small-button btn-delete";
@@ -4866,9 +4985,108 @@
       }
 
       // ========== إحصائيات ==========
+      // ======= Salary helpers / admin =======
+      window.salariesData = window.salariesData || {};
+      db.ref('salaries').on('value', function(snap){ try{ window.salariesData = snap.val() || {}; }catch(e){ window.salariesData = {}; } try{ if(typeof refreshSalariesList === 'function') refreshSalariesList(); if(typeof calculateStats === 'function') calculateStats(window._lastAttendanceSnapshot); }catch(e){} });
+
+      function formatNumberWithCommas(n){
+        if(n === null || n === undefined || n === '') return '';
+        const num = typeof n === 'number' ? n : Number(String(n).replace(/[^0-9.-]/g, '')) || 0;
+        return num.toLocaleString('en-US');
+      }
+      function parseFormattedNumber(s){
+        if(s === null || s === undefined) return null;
+        const cleaned = String(s).replace(/[^0-9.-]/g, '');
+        if(cleaned.trim() === '') return null;
+        return Number(cleaned) || 0;
+      }
+
+      function getRatesForEmployee(emp, y, m){
+        const salaries = window.salariesData || {};
+        const monthKey = `${y}_${String(m+1).padStart(2,'0')}`;
+        // month overrides
+        if(salaries.months && salaries.months[monthKey]){
+          const monthNode = salaries.months[monthKey];
+          if(monthNode.overrides && monthNode.overrides[emp]) return { shift: Number(monthNode.overrides[emp].shift||0), half: Number(monthNode.overrides[emp].half||0) };
+          if(monthNode.default) return { shift: Number(monthNode.default.shift||0), half: Number(monthNode.default.half||0) };
+        }
+        // per-employee override
+        if(salaries.overrides && salaries.overrides[emp]) return { shift: Number(salaries.overrides[emp].shift||0), half: Number(salaries.overrides[emp].half||0) };
+        // default
+        if(salaries.default) return { shift: Number(salaries.default.shift||22000), half: Number(salaries.default.half||11000) };
+        // fallback
+        return { shift:22000, half:11000 };
+      }
+
+      async function refreshSalariesList(){
+        const container = document.getElementById('salariesListContainer');
+        if(!container) return;
+        container.innerHTML = 'جاري التحميل...';
+        const sal = window.salariesData || {};
+        const monthKey = `${year}_${String(month+1).padStart(2,'0')}`;
+        let items = employees.slice(); items.sort((a,b)=> a.localeCompare(b));
+        let html = '';
+        items.forEach(emp=>{
+          const globalOv = (sal.overrides && sal.overrides[emp]) ? sal.overrides[emp] : null;
+          const monthOv = (sal.months && sal.months[monthKey] && sal.months[monthKey].overrides && sal.months[monthKey].overrides[emp]) ? sal.months[monthKey].overrides[emp] : null;
+          const ov = monthOv || globalOv || {};
+          const shiftVal = ov.shift !== undefined ? formatNumberWithCommas(ov.shift) : '';
+          const halfVal = ov.half !== undefined ? formatNumberWithCommas(ov.half) : '';
+          html += `<div style="display:flex;gap:8px;align-items:center;padding:6px;border-bottom:1px dashed #eef6fb;">
+            <div style="flex:1;min-width:120px;">${emp}</div>
+            <div style="width:120px;"><input placeholder="شفت" data-emp="${emp}" class="empShiftOverride" value="${shiftVal}" style="width:100%;padding:6px;border-radius:6px;border:1px solid #e9eef8;" /></div>
+            <div style="width:120px;"><input placeholder="نص" data-emp="${emp}" class="empHalfOverride" value="${halfVal}" style="width:100%;padding:6px;border-radius:6px;border:1px solid #e9eef8;" /></div>
+            <div style="display:flex;gap:6px;">
+              <button class="small-button btn-save-emp-override" data-emp="${emp}" style="background:#28a745;color:#fff">💾</button>
+              <button class="small-button btn-clear-emp-override" data-emp="${emp}" style="background:#e53935;color:#fff">🗑️</button>
+            </div>
+          </div>`;
+        });
+        container.innerHTML = html;
+        Array.from(document.getElementsByClassName('empShiftOverride')).forEach(el=>{ el.oninput = (e)=>{ el.value = formatNumberWithCommas(parseFormattedNumber(el.value)); }; });
+        Array.from(document.getElementsByClassName('empHalfOverride')).forEach(el=>{ el.oninput = (e)=>{ el.value = formatNumberWithCommas(parseFormattedNumber(el.value)); }; });
+        Array.from(document.getElementsByClassName('btn-save-emp-override')).forEach(btn=>{ btn.onclick = async function(){ const emp = this.dataset.emp; const shiftEl = container.querySelector('.empShiftOverride[data-emp="'+emp+'"]'); const halfEl = container.querySelector('.empHalfOverride[data-emp="'+emp+'"]'); const shift = parseFormattedNumber(shiftEl.value); const half = parseFormattedNumber(halfEl.value); if(!shift && !half){ alert('يرجى إدخال قيمة واحدة على الأقل'); return; } const applyCurrent = document.getElementById('applyCurrentMonthSalary').checked; const applyFuture = document.getElementById('applyFutureMonthsSalary').checked; // save override
+          await db.ref('salaries/overrides/' + emp).set({ shift: shift === null ? null : shift, half: half === null ? null : half });
+          if(applyCurrent){ await db.ref('salaries/months/'+monthKey+'/overrides/'+emp).set({ shift: shift === null ? null : shift, half: half === null ? null : half }); }
+          // For future months - we keep it as global override (overrides apply to all months) so if applyFuture explicitly false nothing else to do
+          await db.ref('salaries/signal').set({ time: Date.now() }); localStorage.setItem('salariesSignal', Date.now()); refreshSalariesList(); calculateStats(window._lastAttendanceSnapshot);
+        }; });
+        Array.from(document.getElementsByClassName('btn-clear-emp-override')).forEach(btn=>{ btn.onclick = async function(){ if(!confirm('هل تريد مسح التعديل لهذا الموظف؟')) return; const emp = this.dataset.emp; const monthKey = `${year}_${String(month+1).padStart(2,'0')}`; await db.ref('salaries/overrides/'+emp).remove(); await db.ref('salaries/months/'+monthKey+'/overrides/'+emp).remove(); await db.ref('salaries/signal').set({ time: Date.now() }); localStorage.setItem('salariesSignal', Date.now()); refreshSalariesList(); calculateStats(window._lastAttendanceSnapshot); }; });
+      }
+
+      async function initSalaryAdmin(){
+        // bind save default button
+        const shiftEl = document.getElementById('salaryShiftRate');
+        const halfEl = document.getElementById('salaryHalfRate');
+        const saveBtn = document.getElementById('saveDefaultSalaryBtn');
+        const refreshBtn = document.getElementById('refreshSalariesListBtn');
+        // format on input
+        [shiftEl, halfEl].forEach(el=>{ if(!el) return; el.oninput = (e)=>{ el.value = formatNumberWithCommas(parseFormattedNumber(el.value)); }; el.onblur = (e)=>{ el.value = formatNumberWithCommas(parseFormattedNumber(el.value)); }; });
+        if(refreshBtn) refreshBtn.onclick = refreshSalariesList;
+        if(saveBtn) saveBtn.onclick = async function(){ const s = parseFormattedNumber(shiftEl.value); const h = parseFormattedNumber(halfEl.value); if(!s && !h){ alert('يرجى إدخال قيمة واحدة على الأقل'); return; } const applyCurrent = document.getElementById('applyCurrentMonthSalary').checked; const applyFuture = document.getElementById('applyFutureMonthsSalary').checked; const nowKey = `${year}_${String(month+1).padStart(2,'0')}`; // update default
+          await db.ref('salaries/default').set({ shift: s === null ? null : s, half: h === null ? null : h });
+          if(applyCurrent){ await db.ref('salaries/months/'+nowKey+'/default').set({ shift: s === null ? null : s, half: h === null ? null : h }); }
+          // applyFuture: updating salaries/default is enough to affect future months
+          await db.ref('salaries/signal').set({ time: Date.now() }); localStorage.setItem('salariesSignal', Date.now()); alert('تم الحفظ');
+          refreshSalariesList(); calculateStats(window._lastAttendanceSnapshot);
+        };
+        // when local salaries updates, refresh
+        window.addEventListener('storage', (e)=>{ if(e.key === 'salariesSignal') refreshSalariesList(); });
+        refreshSalariesList();
+      }
+
+      // تهيئة حقل الراتب عند تحميل المستخدم
+      try{ document.getElementById('sidebarUserControlBtn').onclick = function(){ setTimeout(()=>{ try{ const section = document.getElementById('salaryAdminSection'); if(section){ section.style.display = (window.currentUserRole === 'admin') ? 'block' : 'none'; } }catch(e){} }, 60); }; }catch(e){}
+      // call initSalaryAdmin in the normal init path; if function exists the load will call it
+      try{ initSalaryAdmin(); }catch(e){}
+
       function calculateStats(savedData) {
         // cache last attendance snapshot so UI updates can reuse it without re-fetch
         try { window._lastAttendanceSnapshot = savedData || {}; } catch(e){}
+        // التأكد من أن savedData هو object صالح
+        if (!savedData || typeof savedData !== 'object' || Array.isArray(savedData)) {
+          savedData = {};
+        }
         // جلب صلاحيات المستخدم الحالي
         db.ref("users/" + currentUser)
           .once("value")
@@ -4939,7 +5157,8 @@
                 const shift = counts[emp]["شفت"] || 0;
                 const half = counts[emp]["نص"] || 0;
                 const vac = counts[emp]["❌"] || 0;
-                const salary = shift * 22000 + half * 11000;
+                const rates = getRatesForEmployee(emp, year, month);
+                const salary = shift * (rates.shift || 22000) + half * (rates.half || 11000);
                 // حساب مجموع السلف المسحوبة لهذا الموظف (من التخزين المحلي)
                 const advs = (window._advancesMap && window._advancesMap[emp]) ? window._advancesMap[emp] : [];
                 const totalAdv = advs.reduce((s, a) => s + Number(a.amount || 0), 0);
@@ -5236,43 +5455,24 @@
         loadAvailableMonths();
       }
 
-      // ========== زر فتح/إغلاق لوحة التحكم ==========
-      const toggleAdminBtn = document.createElement("button");
-      toggleAdminBtn.id = "toggleAdminBtn";
-      toggleAdminBtn.textContent = "⚙️ لوحة التحكم";
-      toggleAdminBtn.style.backgroundColor = "#6c757d";
-      toggleAdminBtn.style.color = "white";
-      toggleAdminBtn.style.border = "none";
-      toggleAdminBtn.style.width = "100%";
-      toggleAdminBtn.style.padding = "10px";
-      toggleAdminBtn.style.marginTop = "15px";
-      toggleAdminBtn.style.fontSize = "16px";
-      toggleAdminBtn.style.borderRadius = "5px";
-      toggleAdminBtn.style.cursor = "pointer";
-      toggleAdminBtn.style.transition = "background 0.2s ease";
-      toggleAdminBtn.onmouseover = () => {
-        toggleAdminBtn.style.backgroundColor = "#5a6268";
-      };
-      toggleAdminBtn.onmouseout = () => {
-        if (adminPanel.style.maxHeight === "0px")
-          toggleAdminBtn.style.backgroundColor = "#6c757d";
-      };
-      const logoutBtn = document.querySelector("button[onclick='logout()']");
-      logoutBtn.parentNode.insertBefore(toggleAdminBtn, logoutBtn);
+      // Admin panel toggling: replaced the separate toggle button with a function
       const adminPanel = document.getElementById("adminPanel");
-      adminPanel.style.maxHeight = "0px";
-      adminPanel.style.overflow = "hidden";
-      adminPanel.style.transition = "max-height 0.4s ease";
-      toggleAdminBtn.onclick = () => {
-        if (adminPanel.style.maxHeight === "0px") {
+      if (adminPanel) {
+        adminPanel.style.maxHeight = adminPanel.style.maxHeight || "0px";
+        adminPanel.style.overflow = adminPanel.style.overflow || "hidden";
+        adminPanel.style.transition = adminPanel.style.transition || "max-height 0.4s ease";
+      }
+      function toggleAdminPanel() {
+        const adminPanel = document.getElementById("adminPanel");
+        if (!adminPanel) return;
+        const current = adminPanel.style.maxHeight || "0px";
+        const isOpen = current !== "" && current !== "0px";
+        if (!isOpen) {
           adminPanel.style.maxHeight = adminPanel.scrollHeight + "px";
-          toggleAdminBtn.style.backgroundColor = "green";
-          // Show/hide the About Us edit controls when panel opens (evaluate currentUserRole at click time)
           try{
             const inlineBtn = document.getElementById('aboutPanelEditInline');
             const panelBtn = document.getElementById('aboutPanelEditBtn');
             const isAdmin = (typeof currentUserRole !== 'undefined' && currentUserRole === 'admin');
-            // show only the compact inline button; keep the panelBtn hidden (we still use its handler)
             if(inlineBtn) inlineBtn.style.display = isAdmin ? 'flex' : 'none';
             if(panelBtn) panelBtn.style.display = 'none';
             if(inlineBtn){ inlineBtn.onclick = function(){ const pb = document.getElementById('aboutPanelEditBtn'); if(pb) pb.click(); }; }
@@ -5282,9 +5482,8 @@
           }, 200);
         } else {
           adminPanel.style.maxHeight = "0px";
-          toggleAdminBtn.style.backgroundColor = "#6c757d";
         }
-      };
+      }
 
       // ========== حذف متقدم ==========
       function advancedDelete() {
@@ -5835,7 +6034,8 @@
                       }
                     }
                   });
-                  const salary = shift * 20000 + half * 10000;
+                  const rates = getRatesForEmployee(emp, year, month);
+                  const salary = shift * (rates.shift || 20000) + half * (rates.half || 10000);
                   const card = document.createElement("div");
                   card.className = "emp-card";
                   card.innerHTML = `
@@ -6533,10 +6733,11 @@
     };
 
       // ========== ربط أزرار القائمة الجانبية بأزرار الموقع الأصلية ==========
-      document.getElementById("sidebarAdminBtn").onclick = () => {
-        document.getElementById("sidebarMenu").classList.remove("open");
-        document.getElementById("toggleAdminBtn").click();
-      };
+      // sidebarAdminBtn handler removed (duplicate) - handled earlier when sidebar is initialized
+      // document.getElementById("sidebarAdminBtn").onclick = () => {
+      //   document.getElementById("sidebarMenu").classList.remove("open");
+      // removed: document.getElementById("toggleAdminBtn").click(); — use toggleAdminPanel() instead
+      // };
       document.getElementById("sidebarEmpStatsBtn").onclick = () => {
         document.getElementById("sidebarMenu").classList.remove("open");
         document.getElementById("toggleEmpStatsBtn").click();
@@ -7503,6 +7704,676 @@
       })();
     </script>
 
+    <!-- ============================================ -->
+    <!-- نظام النسخ الاحتياطي عبر تيليجرام -->
+    <!-- ============================================ -->
+    <script>
+      (function() {
+        'use strict';
+
+        // متغيرات عامة
+        let telegramSettings = {
+          botToken: '',
+          chatId: '',
+          autoBackupHours: 48
+        };
+        let autoBackupInterval = null;
+        let lastBackupTime = null;
+
+        // تحميل الإعدادات من Firebase أو localStorage
+        async function loadTelegramSettings() {
+          try {
+            if (typeof db !== 'undefined' && db) {
+              const snap = await db.ref('settings/telegram').once('value');
+              const saved = snap.val();
+              if (saved) {
+                telegramSettings = { ...telegramSettings, ...saved };
+              }
+            } else {
+              const saved = localStorage.getItem('telegramSettings');
+              if (saved) {
+                telegramSettings = { ...telegramSettings, ...JSON.parse(saved) };
+              }
+            }
+
+            // تحديث واجهة المستخدم
+            const tokenInput = document.getElementById('telegramBotToken');
+            const chatIdInput = document.getElementById('telegramChatId');
+            const hoursInput = document.getElementById('telegramAutoBackupHours');
+            
+            if (tokenInput) tokenInput.value = telegramSettings.botToken || '';
+            if (chatIdInput) chatIdInput.value = telegramSettings.chatId || '';
+            if (hoursInput) hoursInput.value = telegramSettings.autoBackupHours || 48;
+
+            // تفعيل النسخ التلقائي إذا كانت الإعدادات موجودة
+            if (telegramSettings.botToken && telegramSettings.chatId) {
+              startAutoBackup();
+            }
+          } catch (error) {
+            console.error('خطأ في تحميل إعدادات تيليجرام:', error);
+          }
+        }
+
+        // حفظ الإعدادات
+        async function saveTelegramSettings() {
+          try {
+            const tokenInput = document.getElementById('telegramBotToken');
+            const chatIdInput = document.getElementById('telegramChatId');
+            const hoursInput = document.getElementById('telegramAutoBackupHours');
+
+            if (!tokenInput || !chatIdInput || !hoursInput) return;
+
+            telegramSettings.botToken = tokenInput.value.trim();
+            telegramSettings.chatId = chatIdInput.value.trim();
+            telegramSettings.autoBackupHours = parseInt(hoursInput.value) || 48;
+
+            if (!telegramSettings.botToken || !telegramSettings.chatId) {
+              alert('❌ يرجى إدخال Bot Token و Chat ID');
+              return;
+            }
+
+            // حفظ في Firebase أو localStorage
+            if (typeof db !== 'undefined' && db) {
+              await db.ref('settings/telegram').set(telegramSettings);
+            } else {
+              localStorage.setItem('telegramSettings', JSON.stringify(telegramSettings));
+            }
+
+            updateTelegramStatus('✅ تم حفظ الإعدادات بنجاح', 'success');
+            startAutoBackup();
+          } catch (error) {
+            console.error('خطأ في حفظ الإعدادات:', error);
+            updateTelegramStatus('❌ حدث خطأ في حفظ الإعدادات', 'error');
+          }
+        }
+
+        // تحديث حالة تيليجرام
+        function updateTelegramStatus(message, type = 'info') {
+          const statusEl = document.getElementById('telegramStatus');
+          if (statusEl) {
+            statusEl.textContent = message;
+            statusEl.style.color = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#666';
+            setTimeout(() => {
+              if (statusEl.textContent === message) {
+                statusEl.textContent = '';
+              }
+            }, 5000);
+          }
+        }
+
+        // اختبار الاتصال بتيليجرام
+        async function testTelegramConnection() {
+          try {
+            const tokenInput = document.getElementById('telegramBotToken');
+            const chatIdInput = document.getElementById('telegramChatId');
+
+            if (!tokenInput || !chatIdInput) return;
+
+            const token = tokenInput.value.trim();
+            const chatId = chatIdInput.value.trim();
+
+            if (!token || !chatId) {
+              alert('❌ يرجى إدخال Bot Token و Chat ID أولاً');
+              return;
+            }
+
+            updateTelegramStatus('🔄 جاري اختبار الاتصال...', 'info');
+
+            // إرسال رسالة اختبار
+            const testMessage = '🧪 هذا اختبار للاتصال بتيليجرام من نظام الحضور\n✅ إذا وصلتك هذه الرسالة، فالاتصال يعمل بنجاح!';
+            
+            const success = await sendTelegramMessage(token, chatId, testMessage);
+            
+            if (success) {
+              updateTelegramStatus('✅ تم الاتصال بنجاح! تحقق من تيليجرام', 'success');
+              alert('✅ تم الاتصال بنجاح! تحقق من رسائل تيليجرام');
+            } else {
+              updateTelegramStatus('❌ فشل الاتصال. تحقق من Token و Chat ID', 'error');
+              alert('❌ فشل الاتصال. تحقق من Token و Chat ID');
+            }
+          } catch (error) {
+            console.error('خطأ في اختبار الاتصال:', error);
+            updateTelegramStatus('❌ حدث خطأ: ' + error.message, 'error');
+          }
+        }
+
+        // إرسال رسالة إلى تيليجرام
+        async function sendTelegramMessage(token, chatId, message) {
+          try {
+            const url = `https://api.telegram.org/bot${token}/sendMessage`;
+            const response = await fetch(url, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                chat_id: chatId,
+                text: message,
+                parse_mode: 'HTML'
+              })
+            });
+
+            const data = await response.json();
+            return data.ok === true;
+          } catch (error) {
+            console.error('خطأ في إرسال الرسالة:', error);
+            return false;
+          }
+        }
+
+        // إرسال ملف PDF إلى تيليجرام
+        async function sendPDFToTelegram(pdfBlob, filename) {
+          try {
+            if (!telegramSettings.botToken || !telegramSettings.chatId) {
+              alert('❌ يرجى إعداد تيليجرام أولاً من لوحة التحكم');
+              return false;
+            }
+
+            // تحويل Blob إلى File
+            const file = new File([pdfBlob], filename, { type: 'application/pdf' });
+            
+            // إرسال الملف عبر FormData
+            const formData = new FormData();
+            formData.append('document', file);
+            formData.append('chat_id', telegramSettings.chatId);
+            formData.append('caption', `📄 ${filename}\n📅 ${new Date().toLocaleDateString('ar-EG')}\n⏰ ${new Date().toLocaleTimeString('ar-EG')}`);
+
+            const url = `https://api.telegram.org/bot${telegramSettings.botToken}/sendDocument`;
+            
+            const response = await fetch(url, {
+              method: 'POST',
+              body: formData
+            });
+
+            const data = await response.json();
+            
+            if (data.ok) {
+              return true;
+            } else {
+              console.error('خطأ من تيليجرام:', data);
+              return false;
+            }
+          } catch (error) {
+            console.error('خطأ في إرسال PDF:', error);
+            return false;
+          }
+        }
+
+        // إنشاء PDF من جدول الحضور والإحصائيات
+        async function generateAttendancePDF() {
+          try {
+            if (typeof window.jspdf === 'undefined' || typeof html2canvas === 'undefined') {
+              alert('❌ المكتبات المطلوبة غير محملة. يرجى تحديث الصفحة');
+              return null;
+            }
+
+            const { jsPDF } = window.jspdf;
+            
+            // استخدام الجدول الفعلي من الصفحة مباشرة
+            const attendanceTable = document.getElementById('attendanceTable');
+            const mainContent = document.getElementById('mainContent');
+            const empStatsDiv = document.getElementById('empStatsBelowTable');
+            const statsBox = document.getElementById('statsBox');
+            
+            if (!attendanceTable || !mainContent) {
+              alert('❌ الجدول غير موجود. يرجى التأكد من تحميل الصفحة بشكل كامل');
+              return null;
+            }
+            
+            // إنشاء container للطباعة
+            const printContainer = document.createElement('div');
+            printContainer.style.position = 'absolute';
+            printContainer.style.left = '-9999px';
+            printContainer.style.top = '0px';
+            printContainer.style.width = '210mm';
+            printContainer.style.backgroundColor = '#fff';
+            printContainer.style.padding = '20px';
+            printContainer.style.direction = 'rtl';
+            printContainer.style.fontFamily = 'inherit';
+            printContainer.style.fontSize = '14px';
+            document.body.appendChild(printContainer);
+            
+            // نسخ العنوان
+            const title = mainContent.querySelector('h2');
+            if (title) {
+              const titleClone = title.cloneNode(true);
+              titleClone.style.marginTop = '0';
+              titleClone.style.marginBottom = '20px';
+              printContainer.appendChild(titleClone);
+            }
+            
+            // نسخ الجدول مع جميع الأنماط
+            const tableClone = attendanceTable.cloneNode(true);
+            tableClone.style.width = '100%';
+            tableClone.style.marginBottom = '30px';
+            tableClone.style.borderCollapse = 'collapse';
+            
+            // إظهار رأس التاريخ إذا كان مخفياً
+            const dateHeader = tableClone.querySelector('#dateHeaderTh');
+            if (dateHeader) {
+              dateHeader.style.display = '';
+              dateHeader.style.display = 'table-cell';
+            }
+            
+            // تحويل جميع select elements إلى نص قبل النسخ
+            const allSelects = tableClone.querySelectorAll('select');
+            allSelects.forEach(select => {
+              const selectedValue = select.value || '';
+              const parent = select.parentElement;
+              if (parent) {
+                // الحصول على لون الخلفية من الخلية الأصلية
+                const originalCell = attendanceTable.querySelector(`select[id="${select.id}"]`)?.parentElement;
+                const bgColor = originalCell ? window.getComputedStyle(originalCell).backgroundColor : '';
+                const textColor = originalCell ? window.getComputedStyle(originalCell).color : '';
+                
+                // إنشاء span بدلاً من select
+                const span = document.createElement('span');
+                span.textContent = selectedValue;
+                span.style.display = 'block';
+                span.style.width = '100%';
+                span.style.height = '100%';
+                span.style.textAlign = 'center';
+                span.style.verticalAlign = 'middle';
+                span.style.padding = '8px 4px';
+                span.style.fontSize = '15px';
+                span.style.fontWeight = 'bold';
+                span.style.minHeight = '30px';
+                span.style.lineHeight = '1.4';
+                
+                // تطبيق نفس الألوان حسب القيمة
+                if (selectedValue === 'شفت') {
+                  span.style.background = '#d4edda';
+                  span.style.color = '#155724';
+                } else if (selectedValue === 'نص') {
+                  span.style.background = '#fff9db';
+                  span.style.color = '#856404';
+                } else if (selectedValue === '❌') {
+                  span.style.background = '#ffe3e3';
+                  span.style.color = '#d32f2f';
+                } else {
+                  span.style.background = bgColor || '#fff';
+                  span.style.color = textColor || '#000';
+                }
+                
+                // استبدال select بـ span
+                parent.replaceChild(span, select);
+              }
+            });
+            
+            // التأكد من أن جميع th elements مرئية ومتساوية العرض
+            const allThs = tableClone.querySelectorAll('thead th');
+            allThs.forEach(th => {
+              th.style.display = 'table-cell';
+              th.style.visibility = 'visible';
+              th.style.opacity = '1';
+              th.style.position = 'relative';
+              th.style.zIndex = '1';
+              // التأكد من أن النص مرئي
+              th.style.textAlign = 'center';
+              th.style.verticalAlign = 'middle';
+              th.style.padding = '10px 5px';
+              th.style.whiteSpace = 'normal';
+              th.style.wordWrap = 'break-word';
+              th.style.fontSize = '17px';
+              th.style.fontWeight = 'bold';
+            });
+            
+            // التأكد من أن جميع td elements مرئية
+            const allTds = tableClone.querySelectorAll('tbody td');
+            allTds.forEach(td => {
+              td.style.display = 'table-cell';
+              td.style.visibility = 'visible';
+              td.style.opacity = '1';
+              td.style.position = 'relative';
+              // إزالة أي border-radius قد يسبب مشاكل
+              td.style.borderRadius = '0';
+              td.style.padding = '5px';
+              td.style.textAlign = 'center';
+              td.style.verticalAlign = 'middle';
+              
+              // التأكد من أن المحتوى مرئي
+              const span = td.querySelector('span');
+              if (span) {
+                span.style.display = 'block';
+                span.style.visibility = 'visible';
+                span.style.opacity = '1';
+              }
+            });
+            
+            printContainer.appendChild(tableClone);
+            
+            // نسخ الإحصائيات إذا كانت موجودة
+            if (statsBox && statsBox.innerHTML && statsBox.innerHTML !== '—') {
+              const statsTitle = document.createElement('h3');
+              statsTitle.textContent = '📊 الإحصائيات';
+              statsTitle.style.marginTop = '20px';
+              statsTitle.style.marginBottom = '10px';
+              printContainer.appendChild(statsTitle);
+              
+              const statsClone = statsBox.cloneNode(true);
+              printContainer.appendChild(statsClone);
+            }
+            
+            // نسخ جدول إحصائيات الموظفين إذا كان موجوداً
+            if (empStatsDiv && empStatsDiv.innerHTML.trim()) {
+              const empStatsClone = empStatsDiv.cloneNode(true);
+              empStatsClone.style.marginTop = '20px';
+              printContainer.appendChild(empStatsClone);
+            }
+            
+            // إضافة معلومات إضافية
+            const footer = document.createElement('div');
+            footer.style.marginTop = '30px';
+            footer.style.paddingTop = '20px';
+            footer.style.borderTop = '1px solid #ccc';
+            footer.style.textAlign = 'center';
+            footer.style.fontSize = '10px';
+            footer.style.color = '#666';
+            footer.innerHTML = `
+              <p>تم إنشاء التقرير بواسطة: ${currentUser || 'غير معروف'}</p>
+              <p>وقت الإنشاء: ${new Date().toLocaleString('ar-EG')}</p>
+            `;
+            printContainer.appendChild(footer);
+
+            // انتظار قليل لضمان تحميل جميع العناصر والخطوط
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // تحديث واجهة التقدم
+            try{ updatePdfProgress(45, '🔄 تحويل المحتوى إلى صورة...'); }catch(e){}
+
+            // تحويل المحتوى إلى صورة باستخدام html2canvas
+            const canvas = await html2canvas(printContainer, {
+              scale: 2.5, // زيادة الدقة
+              useCORS: true,
+              logging: false,
+              backgroundColor: '#ffffff',
+              width: printContainer.scrollWidth,
+              height: printContainer.scrollHeight,
+              windowWidth: printContainer.scrollWidth,
+              windowHeight: printContainer.scrollHeight,
+              allowTaint: false,
+              removeContainer: false,
+              imageTimeout: 15000,
+              onclone: function(clonedDoc) {
+                // التأكد من أن جميع العناصر مرئية في النسخة المستنسخة
+                const clonedContainer = clonedDoc.querySelector('div');
+                if (clonedContainer) {
+                  // إظهار جميع العناصر
+                  const allElements = clonedContainer.querySelectorAll('*');
+                  allElements.forEach(el => {
+                    if (el.style) {
+                      el.style.visibility = 'visible';
+                      el.style.opacity = '1';
+                      if (el.tagName === 'TD' || el.tagName === 'TH') {
+                        el.style.display = 'table-cell';
+                      } else if (el.tagName === 'TR') {
+                        el.style.display = 'table-row';
+                      } else if (el.tagName === 'TABLE') {
+                        el.style.display = 'table';
+                      } else if (el.tagName === 'SPAN') {
+                        el.style.display = 'block';
+                      }
+                    }
+                  });
+                  
+                  // التأكد من أن الجدول مرئي بالكامل
+                  const clonedTable = clonedContainer.querySelector('table');
+                  if (clonedTable) {
+                    clonedTable.style.display = 'table';
+                    clonedTable.style.visibility = 'visible';
+                    clonedTable.style.width = '100%';
+                    clonedTable.style.borderCollapse = 'collapse';
+                  }
+                  
+                  // التأكد من أن جميع النصوص مرئية
+                  const allTexts = clonedContainer.querySelectorAll('th, td, span');
+                  allTexts.forEach(textEl => {
+                    textEl.style.color = window.getComputedStyle(textEl).color || '#000';
+                    textEl.style.textShadow = 'none';
+                  });
+                }
+              }
+            });
+            
+            const imgData = canvas.toDataURL('image/png', 0.95);
+            
+            // إنشاء PDF وإضافة الصورة
+            try{ updatePdfProgress(75, '🔁 تجهيز ملف PDF...'); }catch(e){}
+            const doc = new jsPDF({ 
+              orientation: 'portrait', 
+              unit: 'mm', 
+              format: 'a4',
+              compress: true
+            });
+            
+            const imgWidth = 210; // عرض A4 بالمليمتر
+            const pageHeight = 297; // ارتفاع A4 بالمليمتر
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            
+            let heightLeft = imgHeight;
+            let position = 0;
+            
+            // إضافة الصورة الأولى
+            doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+            heightLeft -= pageHeight;
+            
+            // إضافة صفحات إضافية إذا لزم الأمر
+            while (heightLeft >= 0) {
+              position = heightLeft - imgHeight;
+              doc.addPage();
+              doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+              heightLeft -= pageHeight;
+            }
+            
+            // تنظيف العنصر المؤقت
+            document.body.removeChild(printContainer);
+            
+            return doc.output('blob');
+          } catch (error) {
+            console.error('خطأ في إنشاء PDF:', error);
+            alert('❌ حدث خطأ في إنشاء PDF: ' + error.message);
+            return null;
+          }
+        }
+
+        // دالة مساعدة للحصول على معدلات الراتب
+        function getRatesForEmployee(emp, y, m, salaries) {
+          const monthKey = `${y}_${String(m + 1).padStart(2, '0')}`;
+          if (salaries.months && salaries.months[monthKey]) {
+            const mn = salaries.months[monthKey];
+            if (mn.overrides && mn.overrides[emp]) {
+              return { shift: Number(mn.overrides[emp].shift || 0), half: Number(mn.overrides[emp].half || 0) };
+            }
+            if (mn.default) {
+              return { shift: Number(mn.default.shift || 0), half: Number(mn.default.half || 0) };
+            }
+          }
+          if (salaries.overrides && salaries.overrides[emp]) {
+            return { shift: Number(salaries.overrides[emp].shift || 0), half: Number(salaries.overrides[emp].half || 0) };
+          }
+          if (salaries.default) {
+            return { shift: Number(salaries.default.shift || 22000), half: Number(salaries.default.half || 11000) };
+          }
+          return { shift: 22000, half: 11000 };
+        }
+
+        // طباعة وإرسال PDF
+        async function printAndSendPDF() {
+          try {
+            if (!telegramSettings.botToken || !telegramSettings.chatId) {
+              alert('❌ يرجى إعداد تيليجرام أولاً من لوحة التحكم (Admin Panel)');
+              return;
+            }
+            // Show PDF overlay progress
+            startPdfProgress();
+
+            // إنشاء PDF
+            updatePdfProgress(30, '🔄 إنشاء PDF...');
+            const pdfBlob = await generateAttendancePDF();
+            if (!pdfBlob) {
+              completePdfProgress(false, '❌ فشل إنشاء PDF');
+              return;
+            }
+
+            updatePdfProgress(60, '🔁 جاري إرسال PDF...');
+
+            // إرسال إلى تيليجرام
+            const filename = `تقرير_حضور_${year}_${month + 1}_${new Date().getTime()}.pdf`;
+            const sent = await sendPDFToTelegram(pdfBlob, filename);
+
+            if (sent) {
+              completePdfProgress(true, '✅ تم إرسال PDF بنجاح');
+              showMessage('✅ تم إرسال PDF بنجاح إلى تيليجرام');
+              
+              // تحديث وقت آخر نسخة احتياطية
+              lastBackupTime = Date.now();
+              if (typeof db !== 'undefined' && db) {
+                await db.ref('settings/telegram/lastBackup').set(lastBackupTime);
+              } else {
+                localStorage.setItem('telegramLastBackup', lastBackupTime.toString());
+              }
+
+              // تسجيل في سجل النشاطات
+              if (typeof logActivity === 'function') {
+                logActivity('إرسال PDF إلى تيليجرام', `تم إرسال تقرير PDF بنجاح: ${filename}`);
+              }
+            } else {
+              completePdfProgress(false, '❌ فشل إرسال PDF');
+              showMessage('❌ فشل إرسال PDF إلى تيليجرام. تحقق من الإعدادات', true);
+            }
+          } catch (error) {
+            console.error('خطأ في طباعة وإرسال PDF:', error);
+            completePdfProgress(false, '❌ حدث خطأ: ' + (error.message || 'غير معروف'));
+            showMessage('❌ حدث خطأ: ' + error.message, true);
+          }
+        }
+
+        // بدء النسخ التلقائي
+        function startAutoBackup() {
+          // إيقاف النسخ السابق إن وجد
+          if (autoBackupInterval) {
+            clearInterval(autoBackupInterval);
+          }
+
+          if (!telegramSettings.botToken || !telegramSettings.chatId) {
+            return;
+          }
+
+          const hours = telegramSettings.autoBackupHours || 48;
+          const milliseconds = hours * 60 * 60 * 1000;
+
+          // لا نسخ فوري - فقط النسخ الدوري
+          // النسخ التلقائي يبدأ بعد المدة المحددة
+          autoBackupInterval = setInterval(() => {
+            printAndSendPDF().catch(err => console.error('خطأ في النسخ التلقائي:', err));
+          }, milliseconds);
+
+          console.log(`✅ تم تفعيل النسخ التلقائي كل ${hours} ساعة (بدون نسخ فوري)`);
+        }
+
+        // إيقاف النسخ التلقائي
+        function stopAutoBackup() {
+          if (autoBackupInterval) {
+            clearInterval(autoBackupInterval);
+            autoBackupInterval = null;
+            console.log('⏹️ تم إيقاف النسخ التلقائي');
+          }
+        }
+
+        // ربط الأحداث
+        document.addEventListener('DOMContentLoaded', function() {
+          // تحميل الإعدادات عند تحميل الصفحة (للمدير فقط)
+          setTimeout(() => {
+            if (typeof currentUserRole !== 'undefined' && currentUserRole === 'admin') {
+              loadTelegramSettings();
+            }
+          }, 1000);
+
+          // زر حفظ الإعدادات
+          const saveBtn = document.getElementById('saveTelegramSettingsBtn');
+          if (saveBtn) {
+            saveBtn.addEventListener('click', saveTelegramSettings);
+          }
+
+          // زر اختبار الاتصال
+          const testBtn = document.getElementById('testTelegramBtn');
+          if (testBtn) {
+            testBtn.addEventListener('click', testTelegramConnection);
+          }
+
+          // زر الطباعة والإرسال
+          const printBtn = document.getElementById('sidebarPrintTelegramBtn');
+          if (printBtn) {
+            printBtn.addEventListener('click', function() {
+              document.getElementById('sidebarMenu').classList.remove('open');
+              printAndSendPDF();
+            });
+          }
+        });
+
+        // تحديث ظهور زر الطباعة حسب الصلاحيات
+        function updatePrintButtonVisibility() {
+          const printBtn = document.getElementById('sidebarPrintTelegramBtn');
+          if (printBtn) {
+            const isAdmin = (typeof currentUserRole !== 'undefined' && currentUserRole === 'admin');
+            printBtn.style.display = isAdmin ? 'block' : 'none';
+          }
+        }
+
+        // دمج مع دالة updateSidebarVisibility الموجودة
+        const originalUpdateSidebarVisibility = window.updateSidebarVisibility;
+        if (typeof originalUpdateSidebarVisibility === 'function') {
+          window.updateSidebarVisibility = function() {
+            originalUpdateSidebarVisibility();
+            updatePrintButtonVisibility();
+          };
+        } else {
+          // إذا لم تكن موجودة، أنشئ واحدة بسيطة
+          window.updateSidebarVisibility = updatePrintButtonVisibility;
+        }
+
+        // تحديث فوري
+        setTimeout(updatePrintButtonVisibility, 1000);
+        setInterval(updatePrintButtonVisibility, 2000);
+
+        // ===== PDF progress helpers =====
+        function startPdfProgress(){
+          const overlay = document.getElementById('pdfProgressOverlay');
+          if(!overlay) return;
+          document.getElementById('pdfProgressBar').style.width = '6%';
+          document.getElementById('pdfProgressText').textContent = '🔄 جاري إنشاء PDF وإرساله...';
+          document.getElementById('pdfProgressIcon').textContent = '🔄';
+          document.getElementById('pdfProgressCloseBtn').style.display = 'none';
+          overlay.style.display = 'flex';
+          try{ const printBtn = document.getElementById('sidebarPrintTelegramBtn'); if(printBtn){ printBtn.disabled = true; printBtn.style.opacity = '0.6'; } }catch(e){}
+        }
+        function updatePdfProgress(percent, text){
+          const overlay = document.getElementById('pdfProgressOverlay');
+          if(!overlay || overlay.style.display === 'none') return;
+          document.getElementById('pdfProgressBar').style.width = Math.min(100, Math.max(0, percent)) + '%';
+          if(text) document.getElementById('pdfProgressText').textContent = text;
+        }
+        function completePdfProgress(success, text){
+          const overlay = document.getElementById('pdfProgressOverlay');
+          if(!overlay) return;
+          document.getElementById('pdfProgressBar').style.width = success ? '100%' : '100%';
+          document.getElementById('pdfProgressIcon').textContent = success ? '✅' : '❌';
+          document.getElementById('pdfProgressText').textContent = text || (success ? '✅ اكتمل الإرسال' : '❌ فشل الإرسال');
+          const closeBtn = document.getElementById('pdfProgressCloseBtn');
+          closeBtn.style.display = 'inline-block';
+          closeBtn.onclick = function(){ overlay.style.display = 'none'; };
+          try{ const printBtn = document.getElementById('sidebarPrintTelegramBtn'); if(printBtn){ printBtn.disabled = false; printBtn.style.opacity = ''; } }catch(e){}
+          // auto-hide after short delay on success
+          if(success){ setTimeout(()=>{ try{ overlay.style.display = 'none'; }catch(e){} }, 2200); }
+        }
+
+        // Allow closing overlay with Escape when close button visible
+        document.addEventListener('keydown', function(e){ try{ const overlay = document.getElementById('pdfProgressOverlay'); const closeBtn = document.getElementById('pdfProgressCloseBtn'); if(!overlay || overlay.style.display === 'none') return; if(e.key === 'Escape' && closeBtn && closeBtn.style.display !== 'none'){ overlay.style.display = 'none'; } }catch(e){} });
+
+
+      })();
+    </script>
+
   </body>
 </html>
 
@@ -7550,3 +8421,4 @@
     window.addEventListener('user:logout', update);
   })();
 </script>
+</html>
