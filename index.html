@@ -313,12 +313,57 @@
         transition: background 0.2s;
         box-shadow: 0 2px 8px #e3eafc;
       }
-      @media (max-width: 767px) {
+      @media (max-width: 1024px) {
+        #attendanceTable {
+          font-size: 14px;
+        }
         #attendanceTable th {
-          font-size: 15px;
-          padding: 7px 4px;
+          font-size: 13px;
+          padding: 8px 4px;
+        }
+        #attendanceTable td {
+          padding: 6px 3px;
+          font-size: 13px;
+        }
+        #attendanceTable select {
+          width: 100%;
+          padding: 4px 2px;
+          font-size: 12px;
+        }
+      }
+      @media (max-width: 768px) {
+        #attendanceTable th {
+          font-size: 12px;
+          padding: 6px 3px;
           border-top-left-radius: 4px;
           border-top-right-radius: 4px;
+        }
+        #attendanceTable td {
+          padding: 5px 2px;
+          font-size: 12px;
+        }
+        #attendanceTable select {
+          width: 100%;
+          padding: 3px 2px;
+          font-size: 11px;
+        }
+      }
+      @media (max-width: 480px) {
+        #attendanceTable {
+          font-size: 11px;
+        }
+        #attendanceTable th {
+          font-size: 11px;
+          padding: 5px 2px;
+        }
+        #attendanceTable td {
+          padding: 4px 2px;
+          font-size: 10px;
+        }
+        #attendanceTable select {
+          width: 100%;
+          padding: 2px 1px;
+          font-size: 10px;
         }
       }
       #attendanceTable td {
@@ -1179,16 +1224,18 @@
         z-index: 9999;
         align-items: center;
         justify-content: center;
-        padding: 20px;
+        padding: 12px;
+        overflow-y: auto;
       ">
         <div style="
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          gap: 12px;
           max-width: 400px;
           width: 100%;
           align-items: center;
           animation: welcomeFadeIn 0.5s ease-out;
+          margin: auto 0;
         ">
           <style>
             @keyframes welcomeFadeIn {
@@ -1207,11 +1254,11 @@
           <div style="
             background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
             color: white;
-            padding: 16px 32px;
-            border-radius: 24px;
+            padding: 12px 20px;
+            border-radius: 16px;
             text-align: center;
             font-weight: 700;
-            font-size: 18px;
+            font-size: clamp(14px, 4vw, 18px);
             box-shadow: 0 4px 16px rgba(76, 175, 80, 0.3);
             width: 100%;
             letter-spacing: 0.5px;
@@ -1224,17 +1271,17 @@
           <div style="
             background: linear-gradient(135deg, #64b5f6 0%, #42a5f5 100%);
             color: white;
-            padding: 16px 24px;
-            border-radius: 24px;
+            padding: 12px 16px;
+            border-radius: 16px;
             text-align: center;
             font-weight: 700;
-            font-size: 16px;
+            font-size: clamp(13px, 3.5vw, 16px);
             box-shadow: 0 4px 16px rgba(66, 165, 245, 0.3);
             width: 100%;
             letter-spacing: 0.5px;
             animation: welcomeFadeIn 0.6s ease-out 0.15s both;
           ">
-            <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px;">اسم الحساب</div>
+            <div style="font-size: clamp(11px, 2.5vw, 12px); opacity: 0.9; margin-bottom: 3px;">اسم الحساب</div>
             <div id="welcomeAccountName">مرحباً بك</div>
           </div>
 
@@ -1242,25 +1289,25 @@
           <div style="
             background: linear-gradient(135deg, #42a5f5 0%, #2196f3 100%);
             color: white;
-            padding: 16px 24px;
-            border-radius: 24px;
+            padding: 12px 16px;
+            border-radius: 16px;
             text-align: center;
             font-weight: 700;
-            font-size: 16px;
+            font-size: clamp(13px, 3.5vw, 16px);
             box-shadow: 0 4px 16px rgba(33, 150, 243, 0.3);
             width: 100%;
             letter-spacing: 0.5px;
             animation: welcomeFadeIn 0.6s ease-out 0.2s both;
           ">
-            <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px;">اسم الموظف</div>
+            <div style="font-size: clamp(11px, 2.5vw, 12px); opacity: 0.9; margin-bottom: 3px;">اسم الموظف</div>
             <div id="welcomeEmployeeName">جاري التحميل...</div>
           </div>
 
           <!-- Stats Container - Dark Blue -->
           <div style="
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            border-radius: 24px;
-            padding: 20px;
+            border-radius: 16px;
+            padding: 14px;
             box-shadow: 0 8px 24px rgba(30, 60, 114, 0.3);
             width: 100%;
             animation: welcomeFadeIn 0.6s ease-out 0.25s both;
@@ -1268,63 +1315,63 @@
             <div style="
               display: flex;
               flex-direction: column;
-              gap: 12px;
+              gap: 10px;
             ">
               <div style="
                 background: rgba(255, 255, 255, 0.15);
                 color: white;
-                padding: 12px 20px;
-                border-radius: 16px;
+                padding: 10px 12px;
+                border-radius: 12px;
                 text-align: center;
                 font-weight: 600;
-                font-size: 14px;
+                font-size: clamp(12px, 2.5vw, 14px);
                 letter-spacing: 0.5px;
                 backdrop-filter: blur(10px);
               ">
-                <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px;">عدد الشفت</div>
-                <div id="welcomeShifts" style="font-size: 20px;">0</div>
+                <div style="font-size: clamp(10px, 2vw, 12px); opacity: 0.9; margin-bottom: 3px;">عدد الشفت</div>
+                <div id="welcomeShifts" style="font-size: clamp(16px, 4vw, 20px);">0</div>
               </div>
               <div style="
                 background: rgba(255, 255, 255, 0.15);
                 color: white;
-                padding: 12px 20px;
-                border-radius: 16px;
+                padding: 10px 12px;
+                border-radius: 12px;
                 text-align: center;
                 font-weight: 600;
-                font-size: 14px;
+                font-size: clamp(12px, 2.5vw, 14px);
                 letter-spacing: 0.5px;
                 backdrop-filter: blur(10px);
               ">
-                <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px;">عدد النص</div>
-                <div id="welcomeHalves" style="font-size: 20px;">0</div>
+                <div style="font-size: clamp(10px, 2vw, 12px); opacity: 0.9; margin-bottom: 3px;">عدد النص</div>
+                <div id="welcomeHalves" style="font-size: clamp(16px, 4vw, 20px);">0</div>
               </div>
               <div style="
                 background: rgba(255, 255, 255, 0.15);
                 color: white;
-                padding: 12px 20px;
-                border-radius: 16px;
+                padding: 10px 12px;
+                border-radius: 12px;
                 text-align: center;
                 font-weight: 600;
-                font-size: 14px;
+                font-size: clamp(12px, 2.5vw, 14px);
                 letter-spacing: 0.5px;
                 backdrop-filter: blur(10px);
               ">
-                <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px;">عدد الإجازة</div>
-                <div id="welcomeVacations" style="font-size: 20px;">0</div>
+                <div style="font-size: clamp(10px, 2vw, 12px); opacity: 0.9; margin-bottom: 3px;">عدد الإجازة</div>
+                <div id="welcomeVacations" style="font-size: clamp(16px, 4vw, 20px);">0</div>
               </div>
               <div style="
                 background: rgba(255, 255, 255, 0.15);
                 color: white;
-                padding: 12px 20px;
-                border-radius: 16px;
+                padding: 10px 12px;
+                border-radius: 12px;
                 text-align: center;
                 font-weight: 600;
-                font-size: 14px;
+                font-size: clamp(12px, 2.5vw, 14px);
                 letter-spacing: 0.5px;
                 backdrop-filter: blur(10px);
               ">
-                <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px;">الراتب الكلي</div>
-                <div id="welcomeSalary" style="font-size: 18px;">0 د.ع</div>
+                <div style="font-size: clamp(10px, 2vw, 12px); opacity: 0.9; margin-bottom: 3px;">الراتب الكلي</div>
+                <div id="welcomeSalary" style="font-size: clamp(15px, 3.5vw, 18px);">0 د.ع</div>
               </div>
             </div>
           </div>
@@ -1332,12 +1379,12 @@
           <!-- Enter System Button -->
           <button onclick="closeWelcomeScreen()" style="
             width: 100%;
-            padding: 14px;
+            padding: 12px;
             background: linear-gradient(135deg, #6c5ce7 0%, #5f3dc4 100%);
             color: white;
             border: none;
-            border-radius: 16px;
-            font-size: 16px;
+            border-radius: 12px;
+            font-size: clamp(14px, 3.5vw, 16px);
             font-weight: 700;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -4555,7 +4602,7 @@
           document.getElementById("loginBox").style.display = "none";
           document.getElementById("mainContent").style.display = "block";
           if (currentUserRole === "admin") {
-            document.getElementById("adminPanel").style.display = "block";
+            document.getElementById("adminPanel").style.display = "none";
             loadUsers();
             updateEmployeeDropdown();
             loadEmployeesTable();
@@ -4974,7 +5021,7 @@
               }, 100);
             });
             if (currentUserRole === "admin") {
-              document.getElementById("adminPanel").style.display = "block";
+              document.getElementById("adminPanel").style.display = "none";
               loadUsers();
               loadEmployeesTable();
               updateEmployeeDropdown();
@@ -6835,35 +6882,36 @@
         loadAvailableMonths();
       }
 
-      // Admin panel toggling: replaced the separate toggle button with a function
-      const adminPanel = document.getElementById("adminPanel");
-      if (adminPanel) {
-        adminPanel.style.maxHeight = adminPanel.style.maxHeight || "0px";
-        adminPanel.style.overflow = adminPanel.style.overflow || "hidden";
-        adminPanel.style.transition = adminPanel.style.transition || "max-height 0.4s ease";
-      }
+      // Admin panel toggling: fixed to work with single click
       function toggleAdminPanel() {
         const adminPanel = document.getElementById("adminPanel");
         if (!adminPanel) return;
         
         const isVisible = adminPanel.style.display !== "none";
         
+        // Close the sidebar menu first if open
+        const sidebarMenu = document.getElementById("sidebarMenu");
+        if (sidebarMenu && sidebarMenu.classList.contains("open")) {
+          sidebarMenu.classList.remove("open");
+          const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
+          const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
+          if (sidebarToggleBtn) sidebarToggleBtn.style.display = "flex";
+          if (sidebarCloseBtn) sidebarCloseBtn.style.display = "none";
+        }
+        
         if (!isVisible) {
+          // Show admin panel
           adminPanel.style.display = "flex";
-          adminPanel.style.maxHeight = "none";
-          adminPanel.style.overflow = "hidden";
           try{
-            const inlineBtn = document.getElementById('aboutPanelEditInline');
             const panelBtn = document.getElementById('aboutPanelEditBtn');
             const isAdmin = (typeof currentUserRole !== 'undefined' && currentUserRole === 'admin');
-            if(inlineBtn) inlineBtn.style.display = isAdmin ? 'flex' : 'none';
             if(panelBtn) panelBtn.style.display = isAdmin ? 'flex' : 'none';
-            if(inlineBtn){ inlineBtn.onclick = function(){ const pb = document.getElementById('aboutPanelEditBtn'); if(pb) pb.click(); }; }
           }catch(e){}
           setTimeout(() => {
             adminPanel.scrollIntoView({ behavior: "smooth", block: "start" });
-          }, 200);
+          }, 100);
         } else {
+          // Hide admin panel
           adminPanel.style.display = "none";
         }
       }
