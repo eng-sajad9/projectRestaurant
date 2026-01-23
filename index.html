@@ -14,13 +14,8 @@
     />
     <meta name="robots" content="index, follow" />
     <script src="crypto-utils.js"></script>
-    <!-- مكتبة jsPDF لإنشاء ملفات PDF مع دعم العربية -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.plugin.standard_fonts_metrics.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.plugin.split_text_to_size.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.plugin.from_html.min.js"></script>
-    <!-- مكتبة html2canvas لتحويل HTML إلى صورة -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- 📄 jsPDF و html2canvas سيتم تحميلهما بـ Lazy Load عند الحاجة -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
     <style>
       /* Maintenance overlay */
       #maintenanceOverlay {
@@ -78,6 +73,7 @@
       #maintenanceOverlay h2.shimmer {
         background: linear-gradient(90deg,#ffffff 0%, #ffd9ff 18%, #c2faff 40%, #ffffff 70%);
         background-size: 200% 100%;
+        background-clip: text;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         animation: shimmer 2.8s linear infinite;
@@ -119,9 +115,137 @@
       #maintenanceOverlay .sub { margin-top: 8px; font-size:13px; color:#bbb }
     </style>
     <style>
+      /* ===== Admin Panel Styling ===== */
       #adminPanel {
         box-shadow: 0 2px 12px rgba(151, 86, 86, 0.067);
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        max-height: 100vh;
+        overflow: hidden;
+        z-index: 100;
       }
+
+      /* Admin Panel Tabs */
+      .admin-tabs-container {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        overflow: hidden;
+      }
+
+      .admin-tabs-header {
+        display: flex;
+        gap: 4px;
+        overflow-x: auto;
+        background: linear-gradient(90deg, #f8fbff 0%, #f3f9ff 100%);
+        border-bottom: 2px solid #e3f0ff;
+        padding: 0;
+        margin: 0;
+        scroll-behavior: smooth;
+        flex-shrink: 0;
+      }
+
+      .admin-tabs-header::-webkit-scrollbar {
+        height: 4px;
+      }
+      .admin-tabs-header::-webkit-scrollbar-track {
+        background: #f0f6ff;
+      }
+      .admin-tabs-header::-webkit-scrollbar-thumb {
+        background: #b0d4f1;
+        border-radius: 2px;
+      }
+
+      .admin-tab-btn {
+        flex-shrink: 0;
+        padding: 14px 20px;
+        background: transparent;
+        border: none;
+        border-bottom: 3px solid transparent;
+        color: #6b7280;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+        position: relative;
+      }
+
+      .admin-tab-btn:hover {
+        background: rgba(33, 150, 243, 0.05);
+        color: #1976d2;
+      }
+
+      .admin-tab-btn.active {
+        color: #1976d2;
+        border-bottom-color: #1976d2;
+        background: rgba(33, 150, 243, 0.08);
+      }
+
+      .admin-tabs-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        scroll-behavior: smooth;
+        overflow-x: hidden;
+      }
+
+      .admin-tabs-content::-webkit-scrollbar {
+        width: 8px;
+      }
+      .admin-tabs-content::-webkit-scrollbar-track {
+        background: #f0f6ff;
+      }
+      .admin-tabs-content::-webkit-scrollbar-thumb {
+        background: #1976d2;
+        border-radius: 4px;
+      }
+      .admin-tabs-content::-webkit-scrollbar-thumb:hover {
+        background: #1565c0;
+      }
+
+      .admin-tab-pane {
+        display: none;
+      }
+
+      .admin-tab-pane.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
+      /* Header styling */
+      .admin-panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+        color: white;
+        margin: 0;
+        gap: 12px;
+        flex-wrap: wrap;
+        flex-shrink: 0;
+      }
+
+      .admin-panel-header h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+      }
+
+      .admin-panel-header-subtitle {
+        font-size: 12px;
+        opacity: 0.9;
+        margin-left: auto;
+      }
+
       body {
         font-family: "Segoe UI", sans-serif;
         direction: rtl;
@@ -239,37 +363,146 @@
       }
 
       /* Users table: modern, airy style */
-      #usersPanel { margin-top:12px; }
+      #usersPanel { 
+        margin-top: 12px;
+        overflow-x: auto;
+      }
       table#usersTable { 
-        width:100%;
-        border-collapse:separate; 
-        border-spacing:0;
-        margin-top:12px; 
-        border-radius:10px; 
-        overflow:hidden; 
-        box-shadow:0 10px 30px rgba(9,30,66,0.04);
+        width: 100%;
+        min-width: 600px;
+        border-collapse: separate; 
+        border-spacing: 0;
+        margin-top: 12px; 
+        border-radius: 10px; 
+        overflow: hidden; 
+        box-shadow: 0 10px 30px rgba(9,30,66,0.04);
       }
       table#usersTable thead th{
         background: linear-gradient(90deg, rgba(11,116,201,0.06), rgba(3,169,244,0.03));
-        color:#07345a; font-weight:700; padding:12px 14px; text-align:right; font-size:14px;
+        color: #07345a;
+        font-weight: 700;
+        padding: 12px 14px;
+        text-align: right;
+        font-size: 14px;
         border-bottom: none;
+        white-space: nowrap;
       }
       table#usersTable tbody td{
-        background:#fff; padding:12px 14px; border-bottom:1px solid #f1f6fc; color:#122;
-        text-align:right; font-size:14px; vertical-align:middle;
+        background: #fff;
+        padding: 12px 14px;
+        border-bottom: 1px solid #f1f6fc;
+        color: #122;
+        text-align: right;
+        font-size: 14px;
+        vertical-align: middle;
+        white-space: nowrap;
       }
-      table#usersTable tbody tr:hover td{ background:#f8fbff; }
+      table#usersTable tbody tr:hover td { 
+        background: #f8fbff;
+      }
       /* style action buttons inside users table to look modern */
-      #usersTable .small-button{ padding:6px 10px; border-radius:8px; font-size:13px; }
-      #usersTable .btn-toggle{ background:#0b74c9; color:#fff; border:none; }
-      #usersTable .btn-delete{ background:#e94b4b; color:#fff; border:none; }
-      #usersTable .btn-delete[style*="ff9800"]{ background:#ff9800; color:#082233; }
+      #usersTable .small-button{ 
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-size: 13px;
+        white-space: nowrap;
+      }
+      #usersTable .btn-toggle{ 
+        background: #0b74c9;
+        color: #fff;
+        border: none;
+      }
+      #usersTable .btn-delete{ 
+        background: #e94b4b;
+        color: #fff;
+        border: none;
+      }
+      #usersTable .btn-delete[style*="ff9800"]{ 
+        background: #ff9800;
+        color: #082233;
+      }
       /* compact inputs and add-user button */
-      #usersPanel .input-compact{ padding:9px 10px; border-radius:10px; border:1px solid #eef6ff; box-sizing:border-box; }
-      #usersPanel .btn{ padding:9px 12px; border-radius:10px; }
-      @media (max-width:720px){
-        #usersPanel .panel-row{ flex-direction:column; gap:10px; }
-        table#usersTable thead th, table#usersTable tbody td{ text-align:right; }
+      #usersPanel .input-compact{ 
+        padding: 9px 10px;
+        border-radius: 10px;
+        border: 1px solid #eef6ff;
+        box-sizing: border-box;
+      }
+      #usersPanel .btn{ 
+        padding: 9px 12px;
+        border-radius: 10px;
+      }
+
+      /* Table wrapper for scrolling */
+      .adv-table-wrap {
+        overflow-x: auto;
+        border-radius: 10px;
+      }
+
+      .adv-table-wrap table {
+        width: 100%;
+        min-width: 500px;
+      }
+
+      /* Mobile Responsive Styles */
+      @media (max-width:768px) {
+        .admin-tabs-header {
+          flex-wrap: wrap;
+        }
+        .admin-tab-btn {
+          flex: 1;
+          padding: 12px 10px;
+          font-size: 12px;
+          min-width: 80px;
+        }
+        .admin-tabs-content {
+          padding: 12px;
+        }
+        .admin-panel-header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .admin-panel-header-subtitle {
+          margin-left: 0;
+          margin-top: 4px;
+        }
+        table {
+          font-size: 12px !important;
+        }
+        table th, table td {
+          padding: 8px 6px !important;
+        }
+        #usersPanel .panel-row { flex-direction:column; gap:10px; }
+        table#usersTable thead th, table#usersTable tbody td { text-align:right; }
+        table#employeesTable th, table#employeesTable td {
+          padding: 6px 4px;
+        }
+      }
+
+      @media (max-width:480px) {
+        .admin-panel-header h3 {
+          font-size: 16px;
+        }
+        .admin-tab-btn {
+          padding: 10px 8px;
+          font-size: 11px;
+          min-width: 70px;
+        }
+        .admin-tabs-content {
+          padding: 8px;
+        }
+        table {
+          font-size: 11px !important;
+        }
+        table th, table td {
+          padding: 6px 4px !important;
+        }
+        .adv-card {
+          padding: 12px !important;
+        }
+        #adminPanel {
+          padding: 0 !important;
+        }
       }
       .small-button {
         padding: 5px 10px;
@@ -806,6 +1039,11 @@
               id="loaderUserImg"
               src="sticker.webp"
               alt="صورة المستخدم"
+              fetchpriority="high"
+              loading="eager"
+              width="140"
+              height="140"
+              decoding="async"
               style="
                 width: 140px;
                 height: 140px;
@@ -813,6 +1051,7 @@
                 object-fit: cover;
                 object-position: top center;
                 box-shadow: 0 2px 18px #1976d244;
+                content-visibility: auto;
               "
             />
           </div>
@@ -925,6 +1164,204 @@
         >
           بتصميم المهندس سجاد رشيد<br />
           insta: e ._ mg
+        </div>
+      </div>
+
+      <!-- Welcome Screen - يظهر بعد تسجيل الدخول مباشرة -->
+      <div id="welcomeScreen" style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      ">
+        <div style="
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          max-width: 400px;
+          width: 100%;
+          align-items: center;
+          animation: welcomeFadeIn 0.5s ease-out;
+        ">
+          <style>
+            @keyframes welcomeFadeIn {
+              from {
+                opacity: 0;
+                transform: translateY(20px);
+              }
+              to {
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+          </style>
+
+          <!-- Header Card - Green -->
+          <div style="
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 24px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 18px;
+            box-shadow: 0 4px 16px rgba(76, 175, 80, 0.3);
+            width: 100%;
+            letter-spacing: 0.5px;
+            animation: welcomeFadeIn 0.6s ease-out 0.1s both;
+          ">
+            🏢 صنع بواسطة المهندس سجاد
+          </div>
+
+          <!-- Account Name Card - Light Blue -->
+          <div style="
+            background: linear-gradient(135deg, #64b5f6 0%, #42a5f5 100%);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 24px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 16px;
+            box-shadow: 0 4px 16px rgba(66, 165, 245, 0.3);
+            width: 100%;
+            letter-spacing: 0.5px;
+            animation: welcomeFadeIn 0.6s ease-out 0.15s both;
+          ">
+            <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px;">اسم الحساب</div>
+            <div id="welcomeAccountName">مرحباً بك</div>
+          </div>
+
+          <!-- Employee Name Card - Blue -->
+          <div style="
+            background: linear-gradient(135deg, #42a5f5 0%, #2196f3 100%);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 24px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 16px;
+            box-shadow: 0 4px 16px rgba(33, 150, 243, 0.3);
+            width: 100%;
+            letter-spacing: 0.5px;
+            animation: welcomeFadeIn 0.6s ease-out 0.2s both;
+          ">
+            <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px;">اسم الموظف</div>
+            <div id="welcomeEmployeeName">جاري التحميل...</div>
+          </div>
+
+          <!-- Stats Container - Dark Blue -->
+          <div style="
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 8px 24px rgba(30, 60, 114, 0.3);
+            width: 100%;
+            animation: welcomeFadeIn 0.6s ease-out 0.25s both;
+          ">
+            <div style="
+              display: flex;
+              flex-direction: column;
+              gap: 12px;
+            ">
+              <div style="
+                background: rgba(255, 255, 255, 0.15);
+                color: white;
+                padding: 12px 20px;
+                border-radius: 16px;
+                text-align: center;
+                font-weight: 600;
+                font-size: 14px;
+                letter-spacing: 0.5px;
+                backdrop-filter: blur(10px);
+              ">
+                <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px;">عدد الشفت</div>
+                <div id="welcomeShifts" style="font-size: 20px;">0</div>
+              </div>
+              <div style="
+                background: rgba(255, 255, 255, 0.15);
+                color: white;
+                padding: 12px 20px;
+                border-radius: 16px;
+                text-align: center;
+                font-weight: 600;
+                font-size: 14px;
+                letter-spacing: 0.5px;
+                backdrop-filter: blur(10px);
+              ">
+                <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px;">عدد النص</div>
+                <div id="welcomeHalves" style="font-size: 20px;">0</div>
+              </div>
+              <div style="
+                background: rgba(255, 255, 255, 0.15);
+                color: white;
+                padding: 12px 20px;
+                border-radius: 16px;
+                text-align: center;
+                font-weight: 600;
+                font-size: 14px;
+                letter-spacing: 0.5px;
+                backdrop-filter: blur(10px);
+              ">
+                <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px;">عدد الإجازة</div>
+                <div id="welcomeVacations" style="font-size: 20px;">0</div>
+              </div>
+              <div style="
+                background: rgba(255, 255, 255, 0.15);
+                color: white;
+                padding: 12px 20px;
+                border-radius: 16px;
+                text-align: center;
+                font-weight: 600;
+                font-size: 14px;
+                letter-spacing: 0.5px;
+                backdrop-filter: blur(10px);
+              ">
+                <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px;">الراتب الكلي</div>
+                <div id="welcomeSalary" style="font-size: 18px;">0 د.ع</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Enter System Button -->
+          <button onclick="closeWelcomeScreen()" style="
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #6c5ce7 0%, #5f3dc4 100%);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(108, 92, 231, 0.3);
+            letter-spacing: 0.5px;
+            animation: welcomeFadeIn 0.6s ease-out 0.3s both;
+          "
+          onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 24px rgba(108, 92, 231, 0.4)'"
+          onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(108, 92, 231, 0.3)'"
+          >
+            الدخول الى النظام
+          </button>
+
+          <!-- Credits -->
+          <div style="
+            text-align: center;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #666;
+            font-style: italic;
+            animation: welcomeFadeIn 0.6s ease-out 0.35s both;
+          ">
+            نظام إدارة حضور الموظفين
+          </div>
         </div>
       </div>
 
@@ -1168,7 +1605,7 @@
           🚪 تسجيل خروج
         </button>
         <h3 style="margin-top: 20px">📊 الإحصائيات</h3>
-        <div id="statsBox">—</div>
+        <div id="statsBox" style="min-height: 120px; padding: 15px; margin: 10px 0; background: #f5f5f5; border-radius: 6px; border-left: 4px solid #1976d2; contain: layout style paint;">—</div>
         <!-- إحصائيات الموظفين أسفل الجدول -->
         <!-- زر احصائيه الكعده خارج الجدول وقبل كلمة الراتب الكلي -->
         <div style="display: flex; justify-content: flex-start; margin-top: 30px; margin-bottom: -10px;">
@@ -1191,7 +1628,7 @@
             </table>
           </div>
         </div>
-        <div id="empStatsBelowTable" style="margin: 30px 0 0 0"></div>
+        <div id="empStatsBelowTable" style="margin: 30px 0 0 0; contain: layout style paint;"></div>
       </div>
       <style>
       #kadahStatsTableWrapper {
@@ -1371,202 +1808,568 @@
 
       <!-- مكان ظهور إحصائيات الموظفين أسفل جدول الحضور -->
       <div id="empStatsBelowTable" style="margin: 30px 0 0 0"></div>
-      <!-- لوحة تحكم الـ Admin -->
-      <div id="adminPanel" style="display: none; position:relative;">
-        <!-- small inline edit button (top-left) to match requested placement; icon-only circular control -->
-        <button id="aboutPanelEditInline" title="تعديل من نحن" aria-label="تعديل من نحن" style="position:absolute;left:10px;top:10px;width:36px;height:36px;background:#ffc107;border:none;border-radius:50%;display:none;cursor:pointer;padding:0;align-items:center;justify-content:center;display:flex;box-shadow:0 6px 14px rgba(0,0,0,0.12);">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="#082233"/>
-            <path d="M20.71 7.04a1.003 1.003 0 000-1.42l-2.34-2.34a1.003 1.003 0 00-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z" fill="#082233"/>
-          </svg>
-        </button>
-        <h3 style="text-align:center;margin:8px 0">لوحة تحكم المدير</h3>
-        <!-- زر سريع لتحرير فقرة من نحن داخل لوحة التحكم (يظهر فقط للمدير) - compact icon button so it won't be wide -->
-        <button id="aboutPanelEditBtn" title="تعديل من نحن" style="display:none;width:36px;height:36px;background:#ffc107;border:none;border-radius:50%;padding:0;cursor:pointer;align-items:center;justify-content:center;display:flex;box-shadow:0 6px 14px rgba(0,0,0,0.08);">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="#082233"/>
-            <path d="M20.71 7.04a1.003 1.003 0 000-1.42l-2.34-2.34a1.003 1.003 0 00-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z" fill="#082233"/>
-          </svg>
-        </button>
-        <h4>إدارة الموظفين</h4>
-        <input
-          type="text"
-          id="newEmployeeName"
-          placeholder="اسم الموظف الجديد"
-        />
-        <button onclick="addEmployee()">➕ إضافة موظف</button>
-        <table id="employeesTable">
-          <thead>
-            <tr>
-              <th>اسم الموظف</th>
-              <th>حذف</th>
-            </tr>
-          </thead>
-          <tbody id="employeesBody"></tbody>
-        </table>
-        <!-- ====== قسم السلف (خاص بالمدير فقط) ====== -->
-        <div id="advancesAdminSection" class="adv-card" style="margin-top:18px;">
-          <div class="adv-card-header">
-            <h4 class="adv-title">سجل السلف</h4>
-            <button id="openAddAdvanceBtn" class="small-button adv-add">➕ إضافة سلفة</button>
-          </div>
-          <div class="adv-card-desc">يمكن للمدير تسجيل سلف للموظفين هنا وسيتم خصمها من الراتب الكلي تلقائياً.</div>
-          <div class="adv-table-wrap">
-            <table id="advancesTable" class="advances-table">
-              <thead>
-                <tr>
-                  <th>الموظف</th>
-                  <th>المبلغ</th>
-                  <th>التاريخ</th>
-                  <th>ملاحظة</th>
-                  <th>حذف</th>
-                </tr>
-              </thead>
-              <tbody id="advancesBody"></tbody>
-            </table>
-          </div>
-        </div>
-        <hr />
-        <div id="usersPanel" class="adv-card">
-          <div class="adv-card-header">
-            <h4 class="adv-title">إدارة المستخدمين</h4>
-            <div style="text-align:right; font-size:13px; color:#6b7280">إدارة الحسابات الأساسية والأذونات</div>
-          </div>
-          <div class="adv-card-desc">أنشئ حسابات جديدة</div>
 
-          <div class="panel-row" style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap;">
-            <input type="text" id="newUserName" class="input-compact" placeholder="اسم المستخدم الجديد" />
-            <input type="password" id="newUserPass" class="input-compact" placeholder="كلمة المرور" />
-            <label class="checkbox-label" style="display:flex;align-items:center;gap:8px;">
-              <input type="checkbox" id="newUserCanEdit" checked />
-              <span class="muted">صلاحية تعديل الجدول</span>
-            </label>
-            <button class="btn btn-primary" onclick="addUser()">➕ إنشاء مستخدم</button>
+      <!-- Employee Details Modal -->
+      <div id="employeeDetailsModal" style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10001;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      ">
+        <div style="
+          background: white;
+          border-radius: 16px;
+          box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
+          max-width: 500px;
+          width: 100%;
+          max-height: 90vh;
+          overflow-y: auto;
+          padding: 24px;
+          position: relative;
+          animation: slideUp 0.3s ease-out;
+        ">
+          <style>
+            @keyframes slideUp {
+              from {
+                transform: translateY(30px);
+                opacity: 0;
+              }
+              to {
+                transform: translateY(0);
+                opacity: 1;
+              }
+            }
+          </style>
+          <button onclick="closeEmployeeDetails()" style="
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+          "
+          onmouseover="this.style.background='#ff5252'; this.style.transform='rotate(90deg)'"
+          onmouseout="this.style.background='#ff6b6b'; this.style.transform='rotate(0deg)'"
+          >✖</button>
+
+          <div style="text-align: center; margin-bottom: 24px;">
+            <div style="
+              font-size: 48px;
+              margin-bottom: 12px;
+            ">👤</div>
+            <h2 id="empDetailsName" style="
+              font-size: 26px;
+              color: #1976d2;
+              margin: 0;
+              font-weight: 700;
+            "></h2>
+            <div id="empDetailsRole" style="
+              font-size: 14px;
+              color: #666;
+              margin-top: 6px;
+            "></div>
           </div>
 
-          <div style="margin-top:12px;overflow:auto;">
-            <table id="usersTable">
-              <thead>
-                <tr>
-                  <th>اسم المستخدم</th>
-                  <th>الصلاحية</th>
-                  <th>تغيير</th>
-                  <th>حذف</th>
-                  <th>تسجيل خروج</th>
-                </tr>
-              </thead>
-              <tbody id="usersBody"></tbody>
-            </table>
-          </div>
-        </div>
-        <!-- Maintenance control (Admin only) -->
-        <div id="maintenanceControl" style="margin-top:14px;padding:12px;border-radius:10px;background:#fff;box-shadow:0 1px 6px #0002;border:1px solid #e6eefc;display:flex;flex-direction:column;gap:8px;align-items:flex-start;">
-          <h4 style="margin:0 0 6px 0">وضع الصيانة</h4>
-          <div style="display:flex;align-items:center;gap:10px;width:100%;justify-content:space-between;">
-            <div style="display:flex;flex-direction:column;align-items:flex-start;">
-              <div id="maintenanceStatus"><strong id="maintenanceStatusText">غير مفعل</strong></div>
-              <div id="maintenanceInfo" style="font-size:12px;color:#666;">لا توجد ملاحظات</div>
+          <div style="
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+          ">
+            <!-- Shifts Card -->
+            <div style="
+              background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+              color: white;
+              padding: 16px;
+              border-radius: 12px;
+              text-align: center;
+            ">
+              <div style="
+                font-size: 12px;
+                opacity: 0.9;
+                margin-bottom: 8px;
+              ">عدد الشفت</div>
+              <div id="empDetailsShifts" style="
+                font-size: 32px;
+                font-weight: 700;
+              ">0</div>
             </div>
-            <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;">
-              <button id="toggleMaintenanceBtn" class="small-button" style="background:#bd2121;">تفعيل وضع الصيانة</button>
+
+            <!-- Vacations Card -->
+            <div style="
+              background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+              color: white;
+              padding: 16px;
+              border-radius: 12px;
+              text-align: center;
+            ">
+              <div style="
+                font-size: 12px;
+                opacity: 0.9;
+                margin-bottom: 8px;
+              ">عدد الإجازات</div>
+              <div id="empDetailsVacations" style="
+                font-size: 32px;
+                font-weight: 700;
+              ">0</div>
+            </div>
+
+            <!-- Half Days Card -->
+            <div style="
+              background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+              color: white;
+              padding: 16px;
+              border-radius: 12px;
+              text-align: center;
+            ">
+              <div style="
+                font-size: 12px;
+                opacity: 0.9;
+                margin-bottom: 8px;
+              ">أيام نصف</div>
+              <div id="empDetailsHalves" style="
+                font-size: 32px;
+                font-weight: 700;
+              ">0</div>
+            </div>
+
+            <!-- Total Salary Card -->
+            <div style="
+              background: linear-gradient(135deg, #6c5ce7 0%, #5f3dc4 100%);
+              color: white;
+              padding: 16px;
+              border-radius: 12px;
+              text-align: center;
+            ">
+              <div style="
+                font-size: 12px;
+                opacity: 0.9;
+                margin-bottom: 8px;
+              ">الراتب الكلي</div>
+              <div id="empDetailsSalary" style="
+                font-size: 18px;
+                font-weight: 700;
+              ">0 د.ع</div>
             </div>
           </div>
-          <div style="width:100%;display:flex;flex-direction:column;gap:6px;margin-top:8px;">
-            <label style="font-size:13px;color:#334;">نص رسالة الصيانة الظاهر للمستخدمين</label>
-            <textarea id="maintenanceCustomMessage" placeholder="أدخل نص رسالة الصيانة هنا" style="width:100%;min-height:52px;padding:8px;border-radius:8px;border:1px solid #e0e6f8;box-sizing:border-box;"> </textarea>
-            <div style="display:flex;gap:8px;justify-content:flex-end;">
-              <button id="saveMaintenanceMsgBtn" class="small-button" style="background:#1976d2;color:#fff;">حفظ النص</button>
-            </div>
-          </div>
-        </div>
-        <!-- إعدادات تيليجرام (Admin only) -->
-        <div id="telegramSettings" class="adv-card" style="margin-top:14px;">
-          <div class="adv-card-header">
-            <div style="display:flex;align-items:center;gap:12px;">
-              <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#e9f6ff,#f3fbff);display:flex;align-items:center;justify-content:center;font-size:20px;">📡</div>
+
+          <!-- Additional Info -->
+          <div style="
+            background: #f5f7fa;
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+          ">
+            <div style="
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 12px;
+              font-size: 14px;
+            ">
               <div>
-                <h4 class="adv-title">⚙️ إعدادات تيليجرام</h4>
-                <div class="adv-card-desc">تحكم في إشعارات النسخ الاحتياطي وتهيئة البوت بسهولة.</div>
+                <div style="color: #666; font-size: 12px; margin-bottom: 4px;">السلف المدفوعة</div>
+                <div id="empDetailsAdvances" style="
+                  color: #1976d2;
+                  font-weight: 600;
+                  font-size: 16px;
+                ">0 د.ع</div>
+              </div>
+              <div>
+                <div style="color: #666; font-size: 12px; margin-bottom: 4px;">صافي الراتب</div>
+                <div id="empDetailsNetSalary" style="
+                  color: #4caf50;
+                  font-weight: 600;
+                  font-size: 16px;
+                ">0 د.ع</div>
               </div>
             </div>
-            <div style="text-align:right;">
-              <div id="telegramNextBackup" class="next-backup">النسخة المجدولة: -</div>
-              <div id="telegramNextBackupRelative" class="next-backup-rel"></div>
-            </div>
           </div>
 
-          <div style="margin-top:12px;" class="panel-grid">
-            <div class="panel-col">
-              <label class="muted">Bot Token</label>
-              <input type="text" id="telegramBotToken" class="input-compact" placeholder="أدخل Bot Token من @BotFather" autocomplete="off" />
+          <button onclick="closeEmployeeDetails()" style="
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #1976d2 0%, #0d47a1 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+          "
+          onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(25, 118, 210, 0.3)'"
+          onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'"
+          >إغلاق</button>
+        </div>
+      </div>
 
-              <label class="muted" style="margin-top:10px;">Chat ID</label>
-              <input type="text" id="telegramChatId" class="input-compact" placeholder="مثال: 123456789" autocomplete="off" />
+      <!-- لوحة تحكم الـ Admin -->
+      <div id="adminPanel" style="display: none; position:relative;">
+        <!-- زر أصفر صغير لتعديل من نحن (يظهر فقط للمدير) -->
+        <button id="aboutPanelEditBtn" title="تعديل من نحن" style="display:none;position:absolute;top:12px;left:12px;width:36px;height:36px;background:#ffc107;border:none;border-radius:50%;padding:0;cursor:pointer;align-items:center;justify-content:center;display:flex;box-shadow:0 6px 14px rgba(0,0,0,0.08);z-index:100;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="#082233"/>
+            <path d="M20.71 7.04a1.003 1.003 0 000-1.42l-2.34-2.34a1.003 1.003 0 00-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z" fill="#082233"/>
+          </svg>
+        </button>
+        
+        <div class="admin-panel-header">
+          <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+            <span>⚙️</span>
+            <span>لوحة تحكم الإدارة</span>
+          </h3>
+          <span class="admin-panel-header-subtitle">إدارة الموظفين والمستخدمين والإعدادات</span>
+        </div>
 
-              <div style="display:flex;gap:12px;align-items:center;margin-top:10px;">
-                <label class="switch"><input type="checkbox" id="telegramAutoBackupToggle" /><span class="slider"></span></label>
-                <div style="flex:1;">
-                  <div style="font-weight:600;color:#07345a;">النسخ التلقائي</div>
-                  <div style="display:flex;gap:8px;align-items:center;margin-top:6px;">
-                    <input type="number" id="telegramAutoBackupHours" class="input-compact" min="1" value="48" style="width:140px;" />
-                    <div class="muted" style="font-size:12px;">(ساعات)</div>
+        <div class="admin-tabs-container">
+          <!-- Tab Headers -->
+          <div class="admin-tabs-header">
+            <button class="admin-tab-btn active" data-tab="employees" onclick="switchAdminTab('employees')">👥 الموظفين</button>
+            <button class="admin-tab-btn" data-tab="users" onclick="switchAdminTab('users')">👤 المستخدمون</button>
+            <button class="admin-tab-btn" data-tab="advances" onclick="switchAdminTab('advances')">💰 السلف</button>
+            <button class="admin-tab-btn" data-tab="salary" onclick="switchAdminTab('salary')">📊 الرواتب</button>
+            <button class="admin-tab-btn" data-tab="settings" onclick="switchAdminTab('settings')">⚙️ الإعدادات</button>
+          </div>
+
+          <!-- Tab Content -->
+          <div class="admin-tabs-content">
+            <!-- Employees Tab -->
+            <div id="employees" class="admin-tab-pane active">
+              <div class="adv-card">
+                <div class="adv-card-header">
+                  <h4 class="adv-title">👥 إدارة الموظفين</h4>
+                  <div class="adv-card-desc" style="margin-top:6px;">أضف موظفين جدد وأدر معلوماتهم بسهولة</div>
+                </div>
+
+                <!-- Add New Employee Form -->
+                <div style="
+                  background: linear-gradient(135deg, #f8fbff 0%, #f0f6ff 100%);
+                  padding: 16px;
+                  border-radius: 12px;
+                  margin-top: 12px;
+                  border: 2px solid #e3f0ff;
+                ">
+                  <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 250px;">
+                      <label style="
+                        display: block;
+                        font-size: 12px;
+                        font-weight: 600;
+                        color: #1976d2;
+                        margin-bottom: 6px;
+                      ">اسم الموظف الجديد</label>
+                      <input
+                        type="text"
+                        id="newEmployeeName"
+                        placeholder="مثال: محمد علي"
+                        style="
+                          width: 100%;
+                          padding: 12px 14px;
+                          border: 2px solid #e0e6f8;
+                          border-radius: 8px;
+                          font-size: 14px;
+                          font-family: inherit;
+                          box-sizing: border-box;
+                          transition: border-color 0.3s ease;
+                        "
+                        onfocus="this.style.borderColor='#2196f3'"
+                        onblur="this.style.borderColor='#e0e6f8'"
+                      />
+                    </div>
+                    <button onclick="addEmployee()" style="
+                      background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+                      color: white;
+                      border: none;
+                      padding: 12px 24px;
+                      border-radius: 8px;
+                      font-weight: 600;
+                      cursor: pointer;
+                      transition: all 0.3s ease;
+                      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+                      white-space: nowrap;
+                      font-size: 14px;
+                    "
+                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(76, 175, 80, 0.3)'"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(76, 175, 80, 0.2)'"
+                    >
+                      ➕ إضافة موظف
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Employees List -->
+                <div class="adv-table-wrap" style="margin-top: 12px;">
+                  <table id="employeesTable" style="width: 100%;">
+                    <thead>
+                      <tr>
+                        <th style="text-align: right; width: 40%;">اسم الموظف</th>
+                        <th style="text-align: center; width: 20%;">التفاصيل</th>
+                        <th style="text-align: center; width: 20%;">تعديل</th>
+                        <th style="text-align: center; width: 20%;">حذف</th>
+                      </tr>
+                    </thead>
+                    <tbody id="employeesBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Users Tab -->
+            <div id="users" class="admin-tab-pane">
+              <div id="usersPanel" class="adv-card">
+                <div class="adv-card-header">
+                  <h4 class="adv-title">👤 إدارة المستخدمين</h4>
+                  <div style="text-align:right; font-size:13px; color:#6b7280">إدارة الحسابات والأذونات</div>
+                </div>
+
+                <div class="panel-row" style="display:flex;gap:10px;align-items:flex-end;margin-top:10px;flex-wrap:wrap;">
+                  <div style="flex:1;min-width:200px;">
+                    <label style="display:block;font-size:12px;color:#1976d2;margin-bottom:4px;font-weight:600;">اسم المستخدم</label>
+                    <input type="text" id="newUserName" class="input-compact" placeholder="اسم المستخدم الجديد" />
+                  </div>
+                  <div style="flex:1;min-width:200px;">
+                    <label style="display:block;font-size:12px;color:#1976d2;margin-bottom:4px;font-weight:600;">كلمة المرور</label>
+                    <input type="password" id="newUserPass" class="input-compact" placeholder="كلمة المرور" />
+                  </div>
+                  <div style="flex:1;min-width:200px;">
+                    <label style="display:block;font-size:12px;color:#1976d2;margin-bottom:4px;font-weight:600;">الموظف المحدد</label>
+                    <select id="newUserEmployee" class="input-compact" style="width:100%;padding:8px;border:2px solid #e0e6f8;border-radius:8px;font-family:inherit;">
+                      <option value="">-- اختر موظف (اختياري) --</option>
+                    </select>
+                  </div>
+                  <label class="checkbox-label" style="display:flex;align-items:center;gap:8px;">
+                    <input type="checkbox" id="newUserCanEdit" checked />
+                    <span class="muted" style="font-size:12px;">تعديل الجدول</span>
+                  </label>
+                  <button class="btn btn-primary" onclick="addUser()">➕ إنشاء</button>
+                </div>
+
+                <div style="margin-top:12px;overflow:auto;">
+                  <table id="usersTable">
+                    <thead>
+                      <tr>
+                        <th>اسم المستخدم</th>
+                        <th>الصلاحية</th>
+                        <th>الموظف المحدد</th>
+                        <th>التعديل</th>
+                        <th>التخصيص</th>
+                        <th>حذف</th>
+                        <th>خروج</th>
+                      </tr>
+                    </thead>
+                    <tbody id="usersBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Advances Tab -->
+            <div id="advances" class="admin-tab-pane">
+              <div id="advancesAdminSection" class="adv-card">
+                <div class="adv-card-header">
+                  <h4 class="adv-title">💰 سجل السلف</h4>
+                  <button id="openAddAdvanceBtn" class="small-button adv-add">➕ إضافة سلفة</button>
+                </div>
+                <div class="adv-card-desc">يمكن للمدير تسجيل سلف للموظفين هنا وسيتم خصمها من الراتب الكلي تلقائياً.</div>
+                <div class="adv-table-wrap">
+                  <table id="advancesTable" class="advances-table">
+                    <thead>
+                      <tr>
+                        <th>الموظف</th>
+                        <th>المبلغ</th>
+                        <th>التاريخ</th>
+                        <th>ملاحظة</th>
+                        <th>حذف</th>
+                      </tr>
+                    </thead>
+                    <tbody id="advancesBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Salary Tab -->
+            <div id="salary" class="admin-tab-pane">
+              <div id="salaryAdminSection" class="adv-card">
+                <div class="adv-card-header">
+                  <div>
+                    <h4 class="adv-title">📊 إدارة الرواتب</h4>
+                    <div class="adv-card-desc" style="margin-top:6px;">تعيين أسعار الشفت والنصف وتطبيقها بسهولة.</div>
+                  </div>
+                  <div style="font-size:13px;color:#6b7280">ضبط الأسعار الافتراضية</div>
+                </div>
+
+                <div class="panel-grid" style="margin-top:12px;">
+                  <div class="panel-col">
+                    <label class="muted">سعر الشفت (دينار)</label>
+                    <input type="text" id="salaryShiftRate" class="input-compact" placeholder="22,000" />
+
+                    <label class="muted" style="margin-top:10px;">سعر النصف (دينار)</label>
+                    <input type="text" id="salaryHalfRate" class="input-compact" placeholder="11,000" />
+                  </div>
+                  <div class="panel-col" style="max-width:320px;">
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+                      <label style="display:flex;align-items:center;gap:10px;"><input type="checkbox" id="applyCurrentMonthSalary" /> تطبيق على الشهر الحالي</label>
+                      <label style="display:flex;align-items:center;gap:10px;"><input type="checkbox" id="applyFutureMonthsSalary" /> تطبيق على الأشهر القادمة</label>
+                      <div class="panel-actions" style="margin-top:8px;">
+                        <button id="saveDefaultSalaryBtn" class="btn btn-primary">💾 حفظ</button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
+
+              <button
+                id="toggleEmpStatsBtn"
+                style="
+                  background: #17a2b8;
+                  color: white;
+                  font-size: 13px;
+                  padding: 10px 16px;
+                  margin-top: 16px;
+                  cursor: pointer;
+                  border-radius: 8px;
+                  border: none;
+                  font-weight: 600;
+                  transition: all 0.3s ease;
+                "
+                onmouseover="this.style.background='#138496'"
+                onmouseout="this.style.background='#17a2b8'"
+              >
+                📊 تفاصيل إحصائيات الموظفين
+              </button>
             </div>
 
-            <div class="panel-col" style="max-width:320px;">
-              <div class="panel-note">بعد الحفظ سيُجدول النسخ التالي تلقائياً.</div>
-              <div class="panel-actions" style="margin-top:12px;">
-                <button id="testTelegramBtn" class="btn btn-ghost">🧪 اختبار</button>
-                <button id="saveTelegramSettingsBtn" class="btn btn-primary">💾 حفظ</button>
-              </div>
-              <div id="telegramStatus" style="margin-top:12px;font-size:13px;color:#374151;"></div>
-            </div>
-          </div>
-        </div>
-        <button
-          id="toggleEmpStatsBtn"
-          style="
-            background: #17a2b8;
-            color: white;
-            font-size: 13px;
-            padding: 7px 12px;
-            margin-bottom: 10px;
-            cursor: pointer;
-          "
-        >
-          📊 تفاصيل إحصائيات الموظفين
-        </button>
-        <!-- Salary management (Admin only) -->
-        <div id="salaryAdminSection" class="adv-card" style="margin-top:18px;display:none;">
-          <div class="adv-card-header">
-            <div>
-              <h4 class="adv-title">إدارة الرواتب</h4>
-              <div class="adv-card-desc" style="margin-top:6px;">تعيين أسعار الشفت والنصف وتطبيقها بسهولة.</div>
-            </div>
-            <div style="font-size:13px;color:#6b7280">ضبط الأسعار الافتراضية</div>
-          </div>
-
-          <div class="panel-grid" style="margin-top:12px;">
-            <div class="panel-col">
-              <label class="muted">سعر الشفت (دينار)</label>
-              <input type="text" id="salaryShiftRate" class="input-compact" placeholder="22,000" />
-
-              <label class="muted" style="margin-top:10px;">سعر النصف (دينار)</label>
-              <input type="text" id="salaryHalfRate" class="input-compact" placeholder="11,000" />
-            </div>
-            <div class="panel-col" style="max-width:320px;">
-              <div style="display:flex;flex-direction:column;gap:10px;">
-                <label style="display:flex;align-items:center;gap:10px;"><input type="checkbox" id="applyCurrentMonthSalary" /> تطبيق على الشهر الحالي</label>
-                <label style="display:flex;align-items:center;gap:10px;"><input type="checkbox" id="applyFutureMonthsSalary" /> تطبيق على الأشهر القادمة</label>
-                <div class="panel-actions" style="margin-top:8px;">
-                  <button id="saveDefaultSalaryBtn" class="btn btn-primary">💾 حفظ</button>
+            <!-- Settings Tab -->
+            <div id="settings" class="admin-tab-pane">
+              <!-- Maintenance Control -->
+              <div id="maintenanceControl" style="margin-bottom:14px;padding:16px;border-radius:10px;background:#fff;box-shadow:0 1px 6px #0002;border:1px solid #e6eefc;display:flex;flex-direction:column;gap:10px;align-items:flex-start;">
+                <h4 style="margin:0 0 10px 0;color:#1976d2;font-weight:600">🔧 وضع الصيانة</h4>
+                <div style="display:flex;align-items:center;gap:10px;width:100%;justify-content:space-between;flex-wrap:wrap;">
+                  <div style="display:flex;flex-direction:column;align-items:flex-start;">
+                    <div id="maintenanceStatus"><strong id="maintenanceStatusText">غير مفعل</strong></div>
+                    <div id="maintenanceInfo" style="font-size:12px;color:#666;">لا توجد ملاحظات</div>
+                  </div>
+                  <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;">
+                    <button id="toggleMaintenanceBtn" class="small-button" style="background:#bd2121;">تفعيل وضع الصيانة</button>
+                  </div>
+                </div>
+                <div style="width:100%;display:flex;flex-direction:column;gap:6px;margin-top:8px;">
+                  <label style="font-size:13px;color:#334;">نص رسالة الصيانة الظاهر للمستخدمين</label>
+                  <textarea id="maintenanceCustomMessage" placeholder="أدخل نص رسالة الصيانة هنا" style="width:100%;min-height:52px;padding:8px;border-radius:8px;border:1px solid #e0e6f8;box-sizing:border-box;"> </textarea>
+                  <div style="display:flex;gap:8px;justify-content:flex-end;">
+                    <button id="saveMaintenanceMsgBtn" class="small-button" style="background:#1976d2;color:#fff;">حفظ النص</button>
+                  </div>
                 </div>
               </div>
+
+              <!-- Telegram Settings -->
+              <div id="telegramSettings" class="adv-card">
+                <div class="adv-card-header">
+                  <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#e9f6ff,#f3fbff);display:flex;align-items:center;justify-content:center;font-size:20px;">📡</div>
+                    <div>
+                      <h4 class="adv-title">⚙️ إعدادات تيليجرام</h4>
+                      <div class="adv-card-desc">تحكم في إشعارات النسخ الاحتياطي.</div>
+                    </div>
+                  </div>
+                  <div style="text-align:right;">
+                    <div id="telegramNextBackup" class="next-backup">النسخة المجدولة: -</div>
+                    <div id="telegramNextBackupRelative" class="next-backup-rel"></div>
+                  </div>
+                </div>
+
+                <div style="margin-top:12px;" class="panel-grid">
+                  <div class="panel-col">
+                    <label class="muted">Bot Token</label>
+                    <input type="text" id="telegramBotToken" class="input-compact" placeholder="أدخل Bot Token من @BotFather" autocomplete="off" />
+
+                    <label class="muted" style="margin-top:10px;">Chat ID</label>
+                    <input type="text" id="telegramChatId" class="input-compact" placeholder="مثال: 123456789" autocomplete="off" />
+
+                    <div style="display:flex;gap:12px;align-items:center;margin-top:10px;">
+                      <label class="switch"><input type="checkbox" id="telegramAutoBackupToggle" /><span class="slider"></span></label>
+                      <div style="flex:1;">
+                        <div style="font-weight:600;color:#07345a;">النسخ التلقائي</div>
+                        <div style="display:flex;gap:8px;align-items:center;margin-top:6px;">
+                          <input type="number" id="telegramAutoBackupHours" class="input-compact" min="1" value="48" style="width:140px;" />
+                          <div class="muted" style="font-size:12px;">(ساعات)</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="panel-col" style="max-width:320px;">
+                    <div class="panel-note">بعد الحفظ سيُجدول النسخ التالي تلقائياً.</div>
+                    <div class="panel-actions" style="margin-top:12px;">
+                      <button id="testTelegramBtn" class="btn btn-ghost">🧪 اختبار</button>
+                      <button id="saveTelegramSettingsBtn" class="btn btn-primary">💾 حفظ</button>
+                    </div>
+                    <div id="telegramStatus" style="margin-top:12px;font-size:13px;color:#374151;"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Activity Log & Delete Data -->
+              <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+                <button
+                  id="btnFeaturesTab"
+                  style="
+                    background: #673ab7;
+                    color: white;
+                    font-size: 13px;
+                    padding: 10px 16px;
+                    cursor: pointer;
+                    border-radius: 8px;
+                    border: none;
+                    font-weight: 600;
+                    transition: all 0.3s ease;
+                    flex: 1;
+                    min-width: 150px;
+                  "
+                  onmouseover="this.style.background='#5e35b1'"
+                  onmouseout="this.style.background='#673ab7'"
+                >
+                  ⭐️ سجل النشاطات
+                </button>
+                <button
+                  id="btnDeleteData"
+                  style="
+                    background-color: #dc3545;
+                    color: white;
+                    font-size: 13px;
+                    padding: 10px 16px;
+                    cursor: pointer;
+                    border-radius: 8px;
+                    border: none;
+                    font-weight: 600;
+                    transition: all 0.3s ease;
+                    flex: 1;
+                    min-width: 150px;
+                  "
+                  onmouseover="this.style.background='#c82333'"
+                  onmouseout="this.style.background='#dc3545'"
+                >
+                  🗑️ حذف البيانات
+                </button>
+              </div>
             </div>
           </div>
         </div>
+
+        <!-- Modals for Employee Stats and Activity Log -->
         <div
           id="empStatsTab"
           style="
@@ -1619,33 +2422,7 @@
             <div id="empStatsTabContent"></div>
           </div>
         </div>
-        <button
-          id="btnDeleteData"
-          style="
-            background-color: #dc3545;
-            color: white;
-            font-size: 12px;
-            padding: 5px 10px;
-            margin-top: 15px;
-            cursor: pointer;
-          "
-        >
-          🗑️ حذف بيانات متقدمة
-        </button>
-        <!-- أضف زر الميزات المتقدمة بعد زر حذف البيانات المتقدمة في لوحة التحكم -->
-        <button
-          id="btnFeaturesTab"
-          style="
-            background: #673ab7;
-            color: white;
-            font-size: 13px;
-            padding: 7px 12px;
-            margin-bottom: 10px;
-            cursor: pointer;
-          "
-        >
-          ⭐️سجل النشاطات
-        </button>
+
         <div
           id="featuresTab"
           style="
@@ -1698,6 +2475,7 @@
             <div id="featuresTabContent"></div>
           </div>
         </div>
+
         <style>
           @media (max-width: 600px) {
             #featuresTab > div {
@@ -3779,6 +4557,7 @@
           if (currentUserRole === "admin") {
             document.getElementById("adminPanel").style.display = "block";
             loadUsers();
+            updateEmployeeDropdown();
             loadEmployeesTable();
           } else {
             document.getElementById("adminPanel").style.display = "none";
@@ -3979,6 +4758,162 @@
       }
 
       // ========== تسجيل الدخول ==========
+      // ========== Welcome Screen Functions ==========
+      function updateWelcomeScreenData(username) {
+        const welcomeScreen = document.getElementById("welcomeScreen");
+        if (!welcomeScreen) return;
+        
+        // Update welcome screen with user data
+        document.getElementById("welcomeAccountName").textContent = username;
+        
+        // Get assigned employee for this user from userData
+        let employeeName = username;
+        if (window.currentUserData && window.currentUserData.assignedEmployee) {
+          employeeName = window.currentUserData.assignedEmployee;
+        } else if (employees && employees.length > 0) {
+          employeeName = employees[0] || username;
+        }
+        document.getElementById("welcomeEmployeeName").textContent = employeeName;
+        
+        // Get attendance counts for current month from savedData
+        let shift = 0, halves = 0, vac = 0, salary = 0;
+        
+        try {
+          // Use global savedData that was set in generateTable
+          const data = window.savedData || {};
+          
+          // Count attendance for this employee in current month
+          Object.entries(data).forEach(([dateStr, day]) => {
+            // Skip metadata keys
+            if (dateStr.startsWith('__')) return;
+            
+            if (day && typeof day === 'object') {
+              let parts = dateStr.split("-");
+              if (parts.length === 3) {
+                let dYear = parseInt(parts[0]);
+                let dMonth = parseInt(parts[1]) - 1;
+                // Check if this date is in the current month and year
+                if (dYear === year && dMonth === month) {
+                  if (day[employeeName]) {
+                    const val = day[employeeName];
+                    if (val === "شفت") shift++;
+                    else if (val === "نص") halves++;
+                    else if (val === "❌") vac++;
+                  }
+                }
+              }
+            }
+          });
+          
+          // Get salary rates
+          let shiftRate = 22000;
+          let halfRate = 11000;
+          try {
+            if (salaryRates && salaryRates[year]) {
+              const ratesData = salaryRates[year][(month + 1).toString().padStart(2, '0')];
+              if (ratesData) {
+                shiftRate = ratesData.shift || 22000;
+                halfRate = ratesData.half || 11000;
+              }
+            }
+          } catch (e) {
+            console.log("Error getting salary rates:", e);
+          }
+          
+          salary = (shift * shiftRate) + (halves * halfRate);
+        } catch (e) {
+          console.error("Error loading welcome screen data:", e);
+          // استمر حتى لو حدث خطأ
+          shift = 0;
+          halves = 0;
+          vac = 0;
+          salary = 0;
+        }
+        
+        document.getElementById("welcomeShifts").textContent = shift;
+        document.getElementById("welcomeHalves").textContent = halves;
+        document.getElementById("welcomeVacations").textContent = vac;
+        document.getElementById("welcomeSalary").textContent = salary.toLocaleString() + " د.ع";
+        
+        // Show welcome screen
+        welcomeScreen.style.display = "flex";
+      }
+
+      function showWelcomeScreen(username) {
+        const welcomeScreen = document.getElementById("welcomeScreen");
+        if (!welcomeScreen) return;
+        
+        // Update welcome screen with user data
+        document.getElementById("welcomeAccountName").textContent = username;
+        
+        // Get assigned employee for this user from userData
+        let employeeName = username;
+        if (window.currentUserData && window.currentUserData.assignedEmployee) {
+          employeeName = window.currentUserData.assignedEmployee;
+        } else if (employees && employees.length > 0) {
+          employeeName = employees[0] || username;
+        }
+        document.getElementById("welcomeEmployeeName").textContent = employeeName;
+        
+        // Get attendance counts for current month from savedData
+        let shift = 0, vac = 0, salary = 0;
+        
+        try {
+          // Count attendance for this employee in current month
+          if (savedData) {
+            Object.entries(savedData).forEach(([dateStr, day]) => {
+              let parts = dateStr.split("-");
+              if (parts.length === 3) {
+                let dYear = parseInt(parts[0]);
+                let dMonth = parseInt(parts[1]) - 1;
+                if (dYear === year && dMonth === month && day && day[employeeName]) {
+                  const val = day[employeeName];
+                  if (val === "شفت") shift++;
+                  else if (val === "❌") vac++;
+                }
+              }
+            });
+          }
+          
+          // Get salary rates
+          let shiftRate = 22000;
+          let halfRate = 11000;
+          try {
+            if (salaryRates && salaryRates[year]) {
+              const ratesData = salaryRates[year][(month + 1).toString().padStart(2, '0')];
+              if (ratesData) {
+                shiftRate = ratesData.shift || 22000;
+                halfRate = ratesData.half || 11000;
+              }
+            }
+          } catch (e) {}
+          
+          salary = shift * shiftRate;
+        } catch (e) {
+          console.error("Error loading welcome screen data:", e);
+          // استمر حتى لو حدث خطأ
+          shift = 0;
+          vac = 0;
+          salary = 0;
+        }
+        
+        document.getElementById("welcomeShifts").textContent = shift;
+        document.getElementById("welcomeVacations").textContent = vac;
+        document.getElementById("welcomeSalary").textContent = salary.toLocaleString() + " د.ع";
+        
+        // Show welcome screen
+        welcomeScreen.style.display = "flex";
+      }
+
+      function closeWelcomeScreen() {
+        const welcomeScreen = document.getElementById("welcomeScreen");
+        if (welcomeScreen) {
+          welcomeScreen.style.display = "none";
+        }
+        // Now show the main content
+        document.getElementById("mainContent").style.display = "block";
+      }
+
       function login() {
         const username = document
           .getElementById("username")
@@ -4015,17 +4950,34 @@
               role: userData.role || "user",
               canEdit: userData.canEdit !== undefined ? userData.canEdit : true,
             });
+            // Store userData globally for access in other functions
+            window.currentUserData = userData;
             showMessage("");
             document.getElementById("loginBox").style.display = "none";
-            document.getElementById("mainContent").style.display = "block";
+            
+            // Show welcome screen placeholder first
+            const welcomeScreen = document.getElementById("welcomeScreen");
+            if (welcomeScreen) {
+              welcomeScreen.style.display = "flex";
+              // Update basic info immediately
+              document.getElementById("welcomeAccountName").textContent = username;
+            }
+            
             const empKey = `employees_${year}_${(month + 1)
               .toString()
               .padStart(2, "0")}`;
-            loadEmployees(empKey).then(generateTable);
+            loadEmployees(empKey).then(() => {
+              generateTable();
+              // After employees are loaded, update welcome screen with actual data
+              setTimeout(() => {
+                updateWelcomeScreenData(username);
+              }, 100);
+            });
             if (currentUserRole === "admin") {
               document.getElementById("adminPanel").style.display = "block";
               loadUsers();
               loadEmployeesTable();
+              updateEmployeeDropdown();
               // تحميل إعدادات تيليجرام بعد تسجيل الدخول
               setTimeout(() => {
                 if (typeof loadTelegramSettings === 'function') {
@@ -4307,12 +5259,18 @@
               saveBtn.disabled =
                 !currentUserCanEdit || !isCurrentMonthSelected();
             calculateStats(savedData);
+            // Save savedData globally for use in other functions
+            window.savedData = savedData;
             if (typeof renderUserEmpStats === "function") renderUserEmpStats();
             // إظهار رأس عمود التاريخ بعد اكتمال تحميل الجدول
             if (dateHeader) dateHeader.style.display = "";
             // إخفاء علامة التحميل بعد اكتمال التحميل
             setTimeout(function () {
               document.getElementById("loaderSpinner").style.display = "none";
+              // Update welcome screen after all data is loaded
+              if (window.currentUser) {
+                updateWelcomeScreenData(window.currentUser);
+              }
             }, 350);
           });
         // تعطيل جميع select وinput وtextarea وأزرار الحفظ إذا فقدت الصلاحية (احتياطي)
@@ -4533,6 +5491,72 @@
         };
       }
       // تحميل جدول المستخدمين
+      // Update employee dropdown with current employees list
+      function updateEmployeeDropdown() {
+        const select = document.getElementById("newUserEmployee");
+        if (!select || !employees) return;
+        
+        const currentValue = select.value;
+        select.innerHTML = '<option value="">-- اختر موظف (اختياري) --</option>';
+        employees.forEach(emp => {
+          const option = document.createElement("option");
+          option.value = emp;
+          option.textContent = emp;
+          select.appendChild(option);
+        });
+        select.value = currentValue;
+      }
+
+      // Assign employee to user
+      async function assignEmployeeToUser(username) {
+        if (!employees || employees.length === 0) {
+          alert("❌ لا توجد موظفين محملين");
+          return;
+        }
+
+        let empSelect = `<select id="empSelect" style="width:100%;padding:8px;border:2px solid #e0e6f8;border-radius:8px;margin:10px 0;">`;
+        empSelect += '<option value="">-- لا يوجد تخصيص --</option>';
+        employees.forEach(emp => {
+          empSelect += `<option value="${emp}">${emp}</option>`;
+        });
+        empSelect += '</select>';
+
+        const modal = document.createElement("div");
+        modal.style = `position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;`;
+        modal.innerHTML = `
+          <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.2);max-width:400px;width:95%;">
+            <h3 style="margin:0 0 16px 0;color:#1976d2;text-align:center;">تحديد موظف للمستخدم: <strong>${username}</strong></h3>
+            <div style="margin:16px 0;text-align:right;">
+              <label style="font-weight:600;color:#333;display:block;margin-bottom:8px;">الموظف المحدد:</label>
+              ${empSelect}
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+              <button onclick="this.parentElement.parentElement.parentElement.remove()" style="padding:10px 16px;background:#dc3545;color:#fff;border:none;border-radius:8px;cursor:pointer;">إلغاء</button>
+              <button onclick="saveEmployeeAssignment('${username}', document.getElementById('empSelect').value, this.parentElement.parentElement.parentElement)" style="padding:10px 16px;background:#28a745;color:#fff;border:none;border-radius:8px;cursor:pointer;">حفظ</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+      }
+
+      async function saveEmployeeAssignment(username, employee, modal) {
+        try {
+          const updateData = {};
+          if (employee) {
+            updateData.assignedEmployee = employee;
+          } else {
+            updateData.assignedEmployee = null;
+          }
+          await db.ref("users/" + username).update(updateData);
+          alert("✅ تم تحديث الموظف المحدد بنجاح");
+          modal.remove();
+          loadUsers();
+        } catch (err) {
+          console.error(err);
+          alert("❌ حدث خطأ أثناء حفظ الموظف المحدد");
+        }
+      }
+
       async function loadUsers() {
         const snapshot = await db.ref("users").once("value");
         const users = snapshot.val() || {};
@@ -4540,15 +5564,20 @@
         tbody.innerHTML = "";
         Object.entries(users).forEach(([username, data]) => {
           const tr = document.createElement("tr");
+          const assignedEmp = data.assignedEmployee || "—";
           tr.innerHTML = `
       <td>${username}</td>
       <td>${data.canEdit ? "نعم" : "لا"}</td>
+      <td style="color:#666;font-weight:600;">${assignedEmp}</td>
       <td>
         <button class="small-button btn-toggle" onclick="toggleUserEdit('${username}', ${
             data.canEdit
           })">
-          ${data.canEdit ? "قفل التعديل" : "فتح التعديل"}
+          ${data.canEdit ? "قفل" : "فتح"}
         </button>
+      </td>
+      <td>
+        <button class="small-button" style="background:#17a2b8;color:white;" onclick="assignEmployeeToUser('${username}')">👤 تحديد</button>
       </td>
       <td>
         ${
@@ -4561,12 +5590,13 @@
         ${
           username === currentUser
             ? "—"
-            : `<button class="small-button btn-delete" style="background:#ff9800;" onclick="forceLogoutUser('${username}')">تسجيل خروج</button>`
+            : `<button class="small-button btn-delete" style="background:#ff9800;" onclick="forceLogoutUser('${username}')">خروج</button>`
         }
       </td>
     `;
           tbody.appendChild(tr);
         });
+        updateEmployeeDropdown();
       }
 
       // تسجيل خروج إجباري لمستخدم
@@ -4736,6 +5766,7 @@
           .value.trim()
           .toLowerCase();
         const password = document.getElementById("newUserPass").value.trim();
+        const assignedEmployee = document.getElementById("newUserEmployee").value.trim();
         const canEdit = document.getElementById("newUserCanEdit").checked;
         if (!username || !password) {
           alert("❌ يرجى إدخال اسم المستخدم وكلمة المرور");
@@ -4748,12 +5779,17 @@
         }
         try {
           const hashObj = await hashPassword(password);
+          const userData = { password: hashObj, role: "user", canEdit };
+          if (assignedEmployee) {
+            userData.assignedEmployee = assignedEmployee;
+          }
           await db
             .ref("users/" + username)
-            .set({ password: hashObj, role: "user", canEdit });
+            .set(userData);
           alert("✅ تم إنشاء المستخدم بنجاح");
           document.getElementById("newUserName").value = "";
           document.getElementById("newUserPass").value = "";
+          document.getElementById("newUserEmployee").value = "";
           document.getElementById("newUserCanEdit").checked = true;
           loadUsers();
         } catch (err) {
@@ -4763,6 +5799,118 @@
       }
 
       // ========== إدارة الموظفين ==========
+      function showEmployeeDetails(empName) {
+        console.log("showEmployeeDetails called with:", empName);
+        
+        // Ensure data is loaded before showing details
+        if (!window.savedData) {
+          console.warn("window.savedData not found");
+          alert("⏳ جاري تحميل البيانات، يرجى الانتظار قليلاً");
+          return;
+        }
+        
+        console.log("Current year:", year, "Current month:", month);
+        console.log("Saved data keys:", Object.keys(window.savedData));
+        
+        // Get attendance count for current month/year using savedData
+        let shift = 0, halves = 0, vac = 0, salary = 0;
+        
+        try {
+          // Use global savedData
+          const data = window.savedData || {};
+          
+          // Count attendance for this employee in current month
+          Object.entries(data).forEach(([dateStr, day]) => {
+            // Skip metadata keys
+            if (dateStr.startsWith('__')) return;
+            
+            if (day && typeof day === 'object') {
+              let parts = dateStr.split("-");
+              if (parts.length === 3) {
+                let dYear = parseInt(parts[0]);
+                let dMonth = parseInt(parts[1]) - 1;
+                // Check if this date is in the current month and year
+                if (dYear === year && dMonth === month) {
+                  if (day[empName]) {
+                    const val = day[empName];
+                    if (val === "شفت") shift++;
+                    else if (val === "نص") halves++;
+                    else if (val === "❌") vac++;
+                  }
+                }
+              }
+            }
+          });
+          
+          // Get salary rates
+          let shiftRate = 22000;
+          let halfRate = 11000;
+          try {
+            if (salaryRates && salaryRates[year]) {
+              const ratesData = salaryRates[year][(month + 1).toString().padStart(2, '0')];
+              if (ratesData) {
+                shiftRate = ratesData.shift || 22000;
+                halfRate = ratesData.half || 11000;
+              }
+            }
+          } catch (e) {
+            console.log("Error getting salary rates:", e);
+          }
+          
+          salary = (shift * shiftRate) + (halves * halfRate);
+        } catch (e) {
+          console.error("Error loading employee details:", e);
+        }
+        
+        // Get advances
+        const advs = (window._advancesMap && window._advancesMap[empName]) ? window._advancesMap[empName] : [];
+        const totalAdv = advs.reduce((s, a) => s + Number(a.amount || 0), 0);
+        const netSalary = Math.max(0, salary - totalAdv);
+        
+        // Update modal
+        const nameEl = document.getElementById("empDetailsName");
+        const roleEl = document.getElementById("empDetailsRole");
+        const shiftsEl = document.getElementById("empDetailsShifts");
+        const halvesEl = document.getElementById("empDetailsHalves");
+        const vacEl = document.getElementById("empDetailsVacations");
+        const salaryEl = document.getElementById("empDetailsSalary");
+        const advEl = document.getElementById("empDetailsAdvances");
+        const netEl = document.getElementById("empDetailsNetSalary");
+        
+        if (nameEl) nameEl.textContent = empName;
+        if (roleEl) roleEl.textContent = "موظف";
+        if (shiftsEl) shiftsEl.textContent = shift;
+        if (halvesEl) halvesEl.textContent = halves;
+        if (vacEl) vacEl.textContent = vac;
+        if (salaryEl) salaryEl.textContent = salary.toLocaleString() + " د.ع";
+        if (advEl) advEl.textContent = totalAdv.toLocaleString() + " د.ع";
+        if (netEl) netEl.textContent = netSalary.toLocaleString() + " د.ع";
+        
+        // Show modal
+        const modal = document.getElementById("employeeDetailsModal");
+        if (modal) {
+          modal.style.display = "flex";
+        } else {
+          console.error("Employee details modal not found");
+        }
+      }
+
+      function closeEmployeeDetails() {
+        document.getElementById("employeeDetailsModal").style.display = "none";
+      }
+
+      // Close modal when clicking outside
+      document.addEventListener("DOMContentLoaded", function() {
+        const modal = document.getElementById("employeeDetailsModal");
+        if (modal) {
+          modal.addEventListener("click", function(e) {
+            if (e.target === modal) {
+              closeEmployeeDetails();
+            }
+          });
+        }
+      });
+
       function addEmployee() {
         if (!canEditCurrentMonth()) return;
         const name = document.getElementById("newEmployeeName").value.trim();
@@ -4787,21 +5935,44 @@
           const nameTd = document.createElement("td");
           nameTd.textContent = emp;
           nameTd.id = `employeeName_${idx}`;
-          const actionsTd = document.createElement("td");
+          nameTd.style.textAlign = "right";
+          
+          const detailsTd = document.createElement("td");
+          detailsTd.style.textAlign = "center";
+          const detailsBtn = document.createElement("button");
+          detailsBtn.textContent = "📋 التفاصيل";
+          detailsBtn.className = "small-button";
+          detailsBtn.style.background = "#17a2b8";
+          detailsBtn.style.color = "white";
+          detailsBtn.onclick = () => showEmployeeDetails(emp);
+          detailsTd.appendChild(detailsBtn);
+          
+          const editTd = document.createElement("td");
+          editTd.style.textAlign = "center";
           const editBtn = document.createElement("button");
           editBtn.textContent = "✏️ تعديل";
           editBtn.className = "small-button btn-edit";
+          editBtn.style.background = "#ffc107";
+          editBtn.style.color = "#000";
           editBtn.onclick = () => enableEmployeeEdit(idx);
-          actionsTd.appendChild(editBtn);
+          editTd.appendChild(editBtn);
+          
+          const actionsTd = document.createElement("td");
+          actionsTd.style.textAlign = "center";
           // زر الحذف يظهر فقط في الشهر الحالي
           if (typeof isCurrentMonthSelected === "function" && isCurrentMonthSelected()) {
             const deleteBtn = document.createElement("button");
-            deleteBtn.textContent = "حذف";
+            deleteBtn.textContent = "🗑️ حذف";
             deleteBtn.className = "small-button btn-delete";
+            deleteBtn.style.background = "#dc3545";
+            deleteBtn.style.color = "white";
             deleteBtn.onclick = () => deleteEmployee(idx);
             actionsTd.appendChild(deleteBtn);
           }
+          
           tr.appendChild(nameTd);
+          tr.appendChild(detailsTd);
+          tr.appendChild(editTd);
           tr.appendChild(actionsTd);
           tbody.appendChild(tr);
         });
@@ -5195,6 +6366,37 @@
       // call initSalaryAdmin in the normal init path; if function exists the load will call it
       try{ initSalaryAdmin(); }catch(e){}
 
+      // 📄 Lazy Load jsPDF و html2canvas عند الحاجة فقط
+      let pdfLibsLoading = null;
+      async function loadPDFLibraries() {
+        if (window.jsPDF && window.html2canvas) return Promise.resolve();
+        if (pdfLibsLoading) return pdfLibsLoading;
+        
+        pdfLibsLoading = new Promise((resolve, reject) => {
+          let loaded = 0;
+          const checkLoaded = () => {
+            loaded++;
+            if (loaded === 2) resolve();
+          };
+          
+          // jsPDF الرئيسي
+          const script1 = document.createElement('script');
+          script1.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+          script1.onload = checkLoaded;
+          script1.onerror = () => reject(new Error('Failed to load jsPDF'));
+          document.head.appendChild(script1);
+          
+          // html2canvas
+          const script2 = document.createElement('script');
+          script2.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+          script2.onload = checkLoaded;
+          script2.onerror = () => reject(new Error('Failed to load html2canvas'));
+          document.head.appendChild(script2);
+        });
+        
+        return pdfLibsLoading;
+      }
+
       function calculateStats(savedData) {
         // cache last attendance snapshot so UI updates can reuse it without re-fetch
         try { window._lastAttendanceSnapshot = savedData || {}; } catch(e){}
@@ -5212,12 +6414,14 @@
               ? employees.slice()
               : userData.allowedStatsEmps || [];
             const canViewSalary = isAdmin ? true : !!userData.canViewSalary;
-            // بناء counts فقط للموظفين المسموحين
+            
+            // 🚀 معالجة سريعة: بناء counts بدون DOM operations
             const counts = {};
             allowedEmps.forEach((e) => {
               counts[e] = { شفت: 0, نص: 0, "❌": 0 };
             });
-            // تصفية البيانات حسب الشهر والسنة الحاليين
+            
+            // حسابات البيانات
             Object.entries(savedData).forEach(([dateStr, day]) => {
               let parts = dateStr.split("-");
               if (parts.length === 3) {
@@ -5232,68 +6436,114 @@
                 }
               }
             });
-            const bestShift = Object.entries(counts).sort(
-              (a, b) => b[1]["شفت"] - a[1]["شفت"]
-            )[0];
-            const bestHalf = Object.entries(counts).sort(
-              (a, b) => b[1]["نص"] - a[1]["نص"]
-            )[0];
-            const mostX = Object.entries(counts).sort(
-              (a, b) => b[1]["❌"] - a[1]["❌"]
-            )[0];
-            const statsDiv = document.getElementById("statsBox");
-            statsDiv.innerHTML = `
-      <p>أكثر موظف شفت: <b>${
-        bestShift ? bestShift[0] + ` (${bestShift[1]["شفت"]})` : "—"
-      }</b></p>
-      <p>أكثر موظف نص: <b>${
-        bestHalf ? bestHalf[0] + ` (${bestHalf[1]["نص"]})` : "—"
-      }</b></p>
-      <p>أكثر موظف ❌: <b>${
-        mostX ? mostX[0] + ` (${mostX[1]["❌"]})` : "—"
-      }</b></p>`;
-
-            // عرض إحصائيات كل موظف أسفل الجدول بتصميم حديث مع الراتب وخصم السلف
-            const empStatsDiv = document.getElementById("empStatsBelowTable");
-            if (empStatsDiv) {
-              let html = `<div class="emp-stats-bar-official">
-        <table class="emp-stats-table-official">
-          <thead>
-            <tr>
-              <th>الموظف</th>
-              <th>شفت</th>
-              <th>نص</th>
-              <th>إجازة</th>
-              ${canViewSalary ? "<th>الراتب الكلي</th><th>السلف المسحوبة</th><th>صافي الراتب</th>" : ""}
-            </tr>
-          </thead>
-          <tbody>`;
-              allowedEmps.forEach((emp) => {
-                const shift = counts[emp]["شفت"] || 0;
-                const half = counts[emp]["نص"] || 0;
-                const vac = counts[emp]["❌"] || 0;
-                const rates = getRatesForEmployee(emp, year, month);
-                const salary = shift * (rates.shift || 22000) + half * (rates.half || 11000);
-                // حساب مجموع السلف المسحوبة لهذا الموظف (من التخزين المحلي)
-                const advs = (window._advancesMap && window._advancesMap[emp]) ? window._advancesMap[emp] : [];
-                const totalAdv = advs.reduce((s, a) => s + Number(a.amount || 0), 0);
-                const netSalary = Math.max(0, salary - totalAdv);
-                html += `<tr>
-          <td class="emp-name-official">${emp}</td>
-          <td class="emp-stat-official shift">${shift}</td>
-          <td class="emp-stat-official half">${half}</td>
-          <td class="emp-stat-official vac">${vac}</td>
-          ${
-            canViewSalary
-              ? `<td class="emp-salary-official">${salary.toLocaleString()} د.ع</td><td class="emp-salary-official">${totalAdv.toLocaleString()} د.ع</td><td class="emp-salary-official" style="font-weight:700;color:#0b6">${netSalary.toLocaleString()} د.ع</td>`
-              : ""
-          }
-        </tr>`;
-              });
-              html += `</tbody></table></div>`;
-              empStatsDiv.innerHTML = html;
+            
+            // 🚀 تحديث DOM بـ requestIdleCallback (تأخير إلى بعد الرسم الأول)
+            if ('requestIdleCallback' in window) {
+              requestIdleCallback(() => {
+                renderStatsDOM(counts, allowedEmps, canViewSalary);
+              }, { timeout: 2000 });
+            } else {
+              // fallback للمتصفحات القديمة
+              setTimeout(() => {
+                renderStatsDOM(counts, allowedEmps, canViewSalary);
+              }, 100);
             }
           });
+      }
+      
+      // دالة منفصلة لتحديث DOM (تُستدعى بعد الرسم الأول)
+      function renderStatsDOM(counts, allowedEmps, canViewSalary) {
+        const bestShift = Object.entries(counts).sort(
+          (a, b) => b[1]["شفت"] - a[1]["شفت"]
+        )[0];
+        const bestHalf = Object.entries(counts).sort(
+          (a, b) => b[1]["نص"] - a[1]["نص"]
+        )[0];
+        const mostX = Object.entries(counts).sort(
+          (a, b) => b[1]["❌"] - a[1]["❌"]
+        )[0];
+        
+        // تحديث statsBox
+        const statsDiv = document.getElementById("statsBox");
+        if (statsDiv) {
+          statsDiv.innerHTML = `
+            <p><strong>🏆 أكثر موظف شفت:</strong> ${
+              bestShift ? bestShift[0] + ` (${bestShift[1]["شفت"]})` : "—"
+            }</p>
+            <p><strong>⭐ أكثر موظف نص:</strong> ${
+              bestHalf ? bestHalf[0] + ` (${bestHalf[1]["نص"]})` : "—"
+            }</p>
+            <p><strong>❌ أكثر موظف غياب:</strong> ${
+              mostX ? mostX[0] + ` (${mostX[1]["❌"]})` : "—"
+            }</p>`;
+        }
+        
+        // تحديث جدول الموظفين
+        const empStatsDiv = document.getElementById("empStatsBelowTable");
+        if (empStatsDiv) {
+          // بناء HTML بدون إضافة تدريجية
+          let html = `<div class="emp-stats-bar-official">
+            <table class="emp-stats-table-official">
+              <thead>
+                <tr>
+                  <th>الموظف</th>
+                  <th>شفت</th>
+                  <th>نص</th>
+                  <th>إجازة</th>
+                  ${canViewSalary ? "<th>الراتب الكلي</th><th>السلف</th><th>صافي الراتب</th>" : ""}
+                </tr>
+              </thead>
+              <tbody>`;
+          
+          // متغيرات لحساب المجموع
+          let totalSalary = 0;
+          let totalAdvances = 0;
+          let totalNetSalary = 0;
+          
+          // بناء الجدول بالكامل قبل التحديث
+          allowedEmps.forEach((emp) => {
+            const shift = counts[emp]["شفت"] || 0;
+            const half = counts[emp]["نص"] || 0;
+            const vac = counts[emp]["❌"] || 0;
+            const rates = getRatesForEmployee(emp, year, month);
+            const salary = shift * (rates.shift || 22000) + half * (rates.half || 11000);
+            const advs = (window._advancesMap && window._advancesMap[emp]) ? window._advancesMap[emp] : [];
+            const totalAdv = advs.reduce((s, a) => s + Number(a.amount || 0), 0);
+            const netSalary = Math.max(0, salary - totalAdv);
+            
+            // تراكم المجاميع
+            if (canViewSalary) {
+              totalSalary += salary;
+              totalAdvances += totalAdv;
+              totalNetSalary += netSalary;
+            }
+            
+            html += `<tr>
+              <td class="emp-name-official">${emp}</td>
+              <td class="emp-stat-official shift">${shift}</td>
+              <td class="emp-stat-official half">${half}</td>
+              <td class="emp-stat-official vac">${vac}</td>
+              ${canViewSalary ? `<td class="emp-salary-official">${salary.toLocaleString()} د.ع</td><td class="emp-salary-official">${totalAdv.toLocaleString()} د.ع</td><td class="emp-salary-official" style="font-weight:700;color:#0b6">${netSalary.toLocaleString()} د.ع</td>` : ""}
+            </tr>`;
+          });
+          
+          // إضافة صف المجموع إذا كانت الرواتب مرئية
+          if (canViewSalary) {
+            html += `<tr class="emp-total-row-official">
+              <td class="emp-total-label-official">المجموع</td>
+              <td colspan="3"></td>
+              <td class="emp-salary-official">${totalSalary.toLocaleString()} د.ع</td>
+              <td class="emp-salary-official">${totalAdvances.toLocaleString()} د.ع</td>
+              <td class="emp-salary-official">${totalNetSalary.toLocaleString()} د.ع</td>
+            </tr>`;
+          }
+          
+          html += `</tbody></table></div>`;
+          
+          // تحديث واحد فقط بدلاً من تحديثات متعددة
+          empStatsDiv.innerHTML = html;
+        }
+
         // CSS احترافي ومتجاوب
         if (!document.getElementById("empStatsProStyle")) {
           const style = document.createElement("style");
@@ -5338,12 +6588,27 @@
           background: #e8fbe8;
           border-radius: 6px;
         }
+        
+        /* أنماط صف المجموع - متناسق مع الجدول */
+        .emp-total-row-official {
+          background: #e3f0ff;
+          font-weight: 600;
+        }
+        
+        .emp-total-label-official {
+          color: #1976d2;
+          font-weight: 700;
+          font-size: 16px;
+        }
+        
         @media (max-width: 900px) {
           .emp-stats-table-official th, .emp-stats-table-official td { font-size: 14px; padding: 6px 4px; }
+          .emp-total-row-official { font-size: 14px; }
         }
         @media (max-width: 600px) {
           .emp-stats-bar-official { border-radius: 7px; }
           .emp-stats-table-official th, .emp-stats-table-official td { font-size: 13px; padding: 5px 2px; }
+          .emp-total-row-official { font-size: 12px; }
         }
       `;
           document.head.appendChild(style);
@@ -5580,23 +6845,49 @@
       function toggleAdminPanel() {
         const adminPanel = document.getElementById("adminPanel");
         if (!adminPanel) return;
-        const current = adminPanel.style.maxHeight || "0px";
-        const isOpen = current !== "" && current !== "0px";
-        if (!isOpen) {
-          adminPanel.style.maxHeight = adminPanel.scrollHeight + "px";
+        
+        const isVisible = adminPanel.style.display !== "none";
+        
+        if (!isVisible) {
+          adminPanel.style.display = "flex";
+          adminPanel.style.maxHeight = "none";
+          adminPanel.style.overflow = "hidden";
           try{
             const inlineBtn = document.getElementById('aboutPanelEditInline');
             const panelBtn = document.getElementById('aboutPanelEditBtn');
             const isAdmin = (typeof currentUserRole !== 'undefined' && currentUserRole === 'admin');
             if(inlineBtn) inlineBtn.style.display = isAdmin ? 'flex' : 'none';
-            if(panelBtn) panelBtn.style.display = 'none';
+            if(panelBtn) panelBtn.style.display = isAdmin ? 'flex' : 'none';
             if(inlineBtn){ inlineBtn.onclick = function(){ const pb = document.getElementById('aboutPanelEditBtn'); if(pb) pb.click(); }; }
           }catch(e){}
           setTimeout(() => {
             adminPanel.scrollIntoView({ behavior: "smooth", block: "start" });
           }, 200);
         } else {
-          adminPanel.style.maxHeight = "0px";
+          adminPanel.style.display = "none";
+        }
+      }
+
+      // Function to switch admin tabs
+      function switchAdminTab(tabName) {
+        // Hide all tab panes
+        const panes = document.querySelectorAll('.admin-tab-pane');
+        panes.forEach(pane => pane.classList.remove('active'));
+
+        // Remove active class from all buttons
+        const buttons = document.querySelectorAll('.admin-tab-btn');
+        buttons.forEach(btn => btn.classList.remove('active'));
+
+        // Show selected pane
+        const selectedPane = document.getElementById(tabName);
+        if (selectedPane) {
+          selectedPane.classList.add('active');
+        }
+
+        // Add active class to clicked button
+        const clickedBtn = document.querySelector(`[data-tab="${tabName}"]`);
+        if (clickedBtn) {
+          clickedBtn.classList.add('active');
         }
       }
 
@@ -8042,8 +9333,11 @@
         // إنشاء PDF من جدول الحضور والإحصائيات
         async function generateAttendancePDF() {
           try {
+            // تحميل مكتبات PDF إن لم تكن محملة
+            await loadPDFLibraries();
+            
             if (typeof window.jspdf === 'undefined' || typeof html2canvas === 'undefined') {
-              alert('❌ المكتبات المطلوبة غير محملة. يرجى تحديث الصفحة');
+              alert('❌ فشل تحميل المكتبات المطلوبة');
               return null;
             }
 
@@ -8340,6 +9634,9 @@
         // طباعة وإرسال PDF
         async function printAndSendPDF() {
           try {
+            // تحميل مكتبات PDF قبل الاستخدام
+            await loadPDFLibraries();
+            
             if (!telegramSettings.botToken || !telegramSettings.chatId) {
               alert('❌ يرجى إعداد تيليجرام أولاً من لوحة التحكم (Admin Panel)');
               return;
