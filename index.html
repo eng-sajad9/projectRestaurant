@@ -2373,8 +2373,9 @@
               <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
                 <button
                   id="btnFeaturesTab"
+                  onclick="openActivityLogModal()"
                   style="
-                    background: #673ab7;
+                    background: linear-gradient(135deg, #673ab7 0%, #5e35b1 100%);
                     color: white;
                     font-size: 13px;
                     padding: 10px 16px;
@@ -2385,16 +2386,18 @@
                     transition: all 0.3s ease;
                     flex: 1;
                     min-width: 150px;
+                    box-shadow: 0 4px 12px #673ab744;
                   "
-                  onmouseover="this.style.background='#5e35b1'"
-                  onmouseout="this.style.background='#673ab7'"
+                  onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px #673ab766'"
+                  onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px #673ab744'"
                 >
                   ⭐️ سجل النشاطات
                 </button>
                 <button
                   id="btnDeleteData"
+                  onclick="advancedDelete()"
                   style="
-                    background-color: #dc3545;
+                    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
                     color: white;
                     font-size: 13px;
                     padding: 10px 16px;
@@ -2405,9 +2408,10 @@
                     transition: all 0.3s ease;
                     flex: 1;
                     min-width: 150px;
+                    box-shadow: 0 4px 12px #dc354544;
                   "
-                  onmouseover="this.style.background='#c82333'"
-                  onmouseout="this.style.background='#dc3545'"
+                  onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px #dc354566'"
+                  onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px #dc354544'"
                 >
                   🗑️ حذف البيانات
                 </button>
@@ -2573,56 +2577,145 @@
       <button onclick="saveData()" style="background: #0dc149; color: white">
         💾 حفظ التعديلات
       </button>
-      <button onclick="logout()" style="background: #dc3545; color: white">
+      <button onclick="logout()" style="
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        font-weight: 600;
+        padding: 10px 16px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px #dc354444;
+      " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px #dc354466'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px #dc354444'">
         🚪 تسجيل خروج
       </button>
       <button
         id="sidebarAdminBtn"
-        style="background: #000000; color: white; display: none"
+        style="
+          background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+          color: white;
+          display: none;
+          font-weight: 600;
+          padding: 10px 16px;
+          border-radius: 6px;
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          margin-top: 8px;
+          box-shadow: 0 4px 12px #00000044;
+        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px #00000066'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px #00000044'"
       >
         ⚙️ لوحة التحكم
       </button>
       <button
         id="sidebarMonthsManagerBtn"
         style="
-          background: #1976d2;
+          background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
           color: white;
           display: none;
-          margin-top: 2px;
-        "
+          font-weight: 600;
+          padding: 10px 16px;
+          border-radius: 6px;
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          margin-top: 8px;
+          box-shadow: 0 4px 12px #1976d244;
+        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px #1976d266'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px #1976d244'"
       >
         📅 إدارة الأشهر
       </button>
       <button
         id="sidebarEmpStatsBtn"
-        style="background: #17a2b8; color: white; display: none"
+        style="
+          background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+          color: white;
+          display: none;
+          font-weight: 600;
+          padding: 10px 16px;
+          border-radius: 6px;
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          margin-top: 8px;
+          box-shadow: 0 4px 12px #17a2b844;
+        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px #17a2b866'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px #17a2b844'"
       >
         📊 تفاصيل إحصائيات الموظفين
       </button>
       <button
         id="sidebarNotificationsBtn"
-        style="background: #ff4081; color: white; display: none"
+        style="
+          background: linear-gradient(135deg, #ff4081 0%, #f50057 100%);
+          color: white;
+          display: none;
+          font-weight: 600;
+          padding: 10px 16px;
+          border-radius: 6px;
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          margin-top: 8px;
+          box-shadow: 0 4px 12px #ff408144;
+        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px #ff408166'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px #ff408144'"
       >
         🔔 الإشعارات
       </button>
       <!-- Admin-only Announcements button -->
       <button
         id="sidebarAnnouncementsBtn"
-        style="background: #ff6f00; color: white; display: none; margin-top:6px;"
+        style="
+          background: linear-gradient(135deg, #ff6f00 0%, #e65100 100%);
+          color: white;
+          display: none;
+          font-weight: 600;
+          padding: 10px 16px;
+          border-radius: 6px;
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          margin-top: 8px;
+          box-shadow: 0 4px 12px #ff6f0044;
+        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px #ff6f0066'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px #ff6f0044'"
         title="إعلانات المدير"
       >
         📢 الإعلانات
       </button>
       <button
         id="sidebarDeleteDataBtn"
-        style="background: #dc3545; color: white; display: none"
+        style="
+          background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+          color: white;
+          display: none;
+          font-weight: 600;
+          padding: 10px 16px;
+          border-radius: 6px;
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          margin-top: 8px;
+          box-shadow: 0 4px 12px #dc354444;
+        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px #dc354466'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px #dc354444'"
       >
         🗑️ حذف بيانات متقدمة
       </button>
       
        <button
         id="sidebarPrintTelegramBtn"
-        style="background: #0088cc; color: white; display: none; margin-top: 6px;"
+        style="
+          background: linear-gradient(135deg, #0088cc 0%, #005fcc 100%);
+          color: white;
+          display: none;
+          font-weight: 600;
+          padding: 10px 16px;
+          border-radius: 6px;
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          margin-top: 8px;
+          box-shadow: 0 4px 12px #0088cc44;
+        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px #0088cc66'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px #0088cc44'"
         title="طباعة وإرسال تقرير PDF إلى تيليجرام"
       >
         📄 طباعة وإرسال PDF
@@ -2631,13 +2724,36 @@
       
       <button
         id="sidebarFeaturesTabBtn"
-        style="background: #673ab7; color: white; display: none"
+        style="
+          background: linear-gradient(135deg, #673ab7 0%, #5e35b1 100%);
+          color: white;
+          display: none;
+          font-weight: 600;
+          padding: 10px 16px;
+          border-radius: 6px;
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          margin-top: 8px;
+          box-shadow: 0 4px 12px #673ab744;
+        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px #673ab766'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px #673ab744'"
       >
-        ⭐️سجل النشاطات
+        ⭐️ سجل النشاطات
       </button>
       <button
         id="sidebarChangePassBtn"
-        style="background: #2196f3; color: white"
+        style="
+          background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+          color: white;
+          font-weight: 600;
+          padding: 10px 16px;
+          border-radius: 6px;
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          margin-top: 8px;
+          box-shadow: 0 4px 12px #2196f344;
+        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px #2196f366'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px #2196f344'"
       >
         🔑 تغيير كلمة المرور
       </button>
@@ -3069,11 +3185,14 @@
           notesDiv = notesSection.querySelector("#notesTabContent");
         }
         notesDiv.innerHTML = "جاري التحميل...";
-        // جلب بيانات الملاحظات، الحضور، الرواتب دفعة واحدة
+        
+        const monthFormatted = String(month + 1).padStart(2, '0');
+        
+        // جلب بيانات الملاحظات، الحضور، الرواتب من المسارات الجديدة (الموحدة حسب الشهر)
         Promise.all([
-          db.ref("notes").once("value"),
-          db.ref("attendance").once("value"),
-          db.ref("salaries").once("value"),
+          db.ref(`months/${year}/${monthFormatted}/notes`).once("value"),
+          db.ref(`months/${year}/${monthFormatted}/attendance`).once("value"),
+          db.ref(`months/${year}/${monthFormatted}/salary`).once("value"),
           db.ref("users/" + currentUser).once("value"),
         ]).then(([notesSnap, attSnap, salSnap, userSnap]) => {
           const notes = notesSnap.val() || {};
@@ -3086,20 +3205,17 @@
           employees.forEach((emp) => {
             stats[emp] = { shift: 0, half: 0, vac: 0 };
           });
-          Object.entries(attendance).forEach(([dateStr, day]) => {
-            // فقط الشهر الحالي
-            let parts = dateStr.split("-");
-            if (parts.length === 3) {
-              let dYear = parseInt(parts[0]);
-              let dMonth = parseInt(parts[1]) - 1;
-              if (dYear === year && dMonth === month) {
-                employees.forEach((emp) => {
-                  const val = day[emp];
-                  if (val === "شفت") stats[emp].shift++;
-                  if (val === "نص") stats[emp].half++;
-                  if (val === "❌") stats[emp].vac++;
-                });
-              }
+          // البيانات الآن من المسار الجديد (months/{year}/{month}/attendance)
+          // تصيغة البيانات: { "2026-01-15": { emp001: "حاضر", emp002: "نص" }, ... }
+          Object.entries(attendance).forEach(([dateStr, dayData]) => {
+            // جميع البيانات هنا بالفعل مفلترة للشهر الحالي من المسار الجديد
+            if (dayData && typeof dayData === 'object') {
+              employees.forEach((emp) => {
+                const val = dayData[emp];
+                if (val === "شفت") stats[emp].shift++;
+                if (val === "نص") stats[emp].half++;
+                if (val === "❌") stats[emp].vac++;
+              });
             }
           });
           let html = "";
@@ -3139,7 +3255,8 @@
                   const noteVal = document.getElementById(
                     `noteInput_${emp}`
                   ).value;
-                  db.ref("notes/" + emp)
+                  const monthFormatted = String(month + 1).padStart(2, '0');
+                  db.ref(`months/${year}/${monthFormatted}/notes/${emp}`)
                     .set(noteVal)
                     .then(() => {
                       btn.textContent = "✅ تم الحفظ";
@@ -3467,140 +3584,183 @@
 
         function loadMonthsManagerContent() {
           const contentDiv = document.getElementById("monthsManagerContent");
-          contentDiv.innerHTML = "جاري التحميل...";
+          contentDiv.innerHTML = '<div style="text-align:center;padding:10px;color:#888;">جاري التحميل...</div>';
+          
           Promise.all([
             db.ref("monthsSettings").once("value"),
-            db.ref("attendance").once("value"),
-            db.ref("employees").once("value"),
             db.ref("months").once("value"),
-            db.ref("monthsNotes").once("value"),
             db.ref("activityLog").once("value"),
           ]).then(([
             settingsSnap,
-            attSnap,
-            empSnap,
             monthsSnap,
-            notesSnap,
             logSnap,
           ]) => {
-            const settings = settingsSnap.val() || {
-              auto: true,
-              closed: {},
-              hidden: {},
-            };
-            const data = attSnap.val() || {};
-            const legacyEmployees = empSnap.val() || {};
-            const monthsTree = monthsSnap.val() || {};
-            // Merge employees from legacy `employees` root and new `months` structured nodes
-            const allEmployees = Object.assign({}, legacyEmployees);
-            Object.entries(monthsTree).forEach(([y, monthsObj]) => {
-              Object.entries(monthsObj || {}).forEach(([mm, monthObj]) => {
-                if (monthObj && monthObj.employees) {
-                  Object.entries(monthObj.employees).forEach(([id, val]) => {
-                    // if structured as object {name:..}, extract name, else take value
-                    const name = typeof val === "string" ? val : val.name || "";
-                    if (name) allEmployees[id] = name;
-                  });
-                }
-              });
-            });
-            const monthsNotes = notesSnap.val() || {};
-            const activityLog = logSnap.val() || {};
-            const monthsSet = new Set();
-            Object.keys(data).forEach((key) => {
-              const parts = key.split("-");
-              if (parts.length === 3) {
-                const m = parseInt(parts[1]) - 1;
-                const y = parseInt(parts[0]);
-                monthsSet.add(`${y}-${m}`);
-              }
-            });
-            if (settings.manual && Array.isArray(settings.manual)) {
-              settings.manual.forEach((m) => monthsSet.add(m));
-            }
-            const monthsArr = Array.from(monthsSet).sort((a, b) => {
-              const [ya, ma] = a.split("-").map(Number),
-                [yb, mb] = b.split("-").map(Number);
-              return ya !== yb ? ya - yb : ma - mb;
-            });
-            let html = `<table style='width:100%;border-collapse:collapse;margin-bottom:10px;'>
-      <tr><th>الشهر</th><th>الحالة</th><th>إغلاق</th><th>إخفاء</th><th>خيارات متقدمة</th></tr>`;
-            monthsArr.forEach((m) => {
-              const [y, mo] = m.split("-");
-              const label = `${arMonths[parseInt(mo)]} ${y}`;
-              const isClosed = settings.closed && settings.closed[m];
-              const isHidden = settings.hidden && settings.hidden[m];
-              const isDefault = settings.defaultMonth === m;
-              // حساب عدد الموظفين وعدد أيام الحضور لهذا الشهر
-              let empKey = `employees_${y}_${(parseInt(mo) + 1)
-                .toString()
-                .padStart(2, "0")}`;
-              let empArr = allEmployees[empKey]
-                ? Object.values(allEmployees[empKey])
-                : [];
-              let empCount = empArr.length;
-              let daysCount = Object.keys(data).filter((k) =>
-                k.startsWith(`${y}-${parseInt(mo) + 1}`)
-              ).length;
-              html += `<tr>
-        <td><span style="font-weight:bold;">${label}</span><br><span style="font-size:12px;color:#888;">عدد الموظفين: ${empCount} | أيام: ${daysCount}</span></td>
-        <td>${
-          isClosed
-            ? '<span style="color:#d32f2f;font-weight:bold;">مغلق</span>'
-            : '<span style="color:#388e3c;font-weight:bold;">مفتوح</span>'
-        }${
-                isDefault
-                  ? '<br><span style="color:#1976d2;font-size:12px;">افتراضي</span>'
-                  : ""
-              }</td>
-        <td><input type='checkbox' data-month='${m}' class='closeMonthChk' ${
-                isClosed ? "checked" : ""
-              }></td>
-        <td><input type='checkbox' data-month='${m}' class='hideMonthChk' ${
-                isHidden ? "checked" : ""
-              }></td>
-        <td>
-          <button class='advMonthBtn' data-month='${m}' style='background:#eee;color:#333;font-size:13px;padding:3px 8px;border-radius:5px;border:none;cursor:pointer;'>⚙️ إدارة</button>
-        </td>
-      </tr>`;
-            });
-            html += `</table>`;
-            contentDiv.innerHTML = html;
-            // ربط الأحداث
-            Array.from(
-              document.getElementsByClassName("closeMonthChk")
-            ).forEach((chk) => {
-              chk.onchange = function () {
-                const m = chk.getAttribute("data-month");
-                db.ref("monthsSettings/closed/" + m).set(chk.checked);
+            try {
+              const settings = settingsSnap.val() || {
+                auto: true,
+                closed: {},
+                hidden: {},
               };
-            });
-            Array.from(document.getElementsByClassName("hideMonthChk")).forEach(
-              (chk) => {
+              const monthsTree = monthsSnap.val() || {};
+              const activityLog = logSnap.val() || {};
+
+              // دمج الموظفين من جميع الأشهر
+              const allEmployees = {};
+              const monthsNotes = {};
+              const monthsSet = new Set();
+
+              Object.entries(monthsTree || {}).forEach(([y, monthsObj]) => {
+                Object.entries(monthsObj || {}).forEach(([mm, monthObj]) => {
+                  // mm is expected as "01".."12"
+                  const mmNum = parseInt(mm);
+                  if (isNaN(mmNum)) return;
+                  const mKey = `${y}-${mmNum - 1}`; // match existing key format (year - zeroBasedMonth)
+                  monthsSet.add(mKey);
+
+                  if (monthObj && monthObj.employees) {
+                    Object.entries(monthObj.employees).forEach(([id, val]) => {
+                      const name = typeof val === "string" ? val : val.name || "";
+                      if (name) allEmployees[id] = name;
+                    });
+                  }
+
+                  // collect month notes summary (store object or empty)
+                  monthsNotes[mKey] = (monthObj && monthObj.notes) ? monthObj.notes : {};
+                });
+              });
+              
+              // إضافة الأشهر اليدوية
+              if (settings.manual && Array.isArray(settings.manual)) {
+                settings.manual.forEach((m) => {
+                  if (typeof m === 'string' && /^\d{4}-\d{1,2}$/.test(m)) {
+                    monthsSet.add(m);
+                  }
+                });
+              }
+              
+              // فرز الأشهر من الأقدم للأحدث
+              const monthsArr = Array.from(monthsSet).sort((a, b) => {
+                const [ya, ma] = a.split("-").map(Number);
+                const [yb, mb] = b.split("-").map(Number);
+                return ya !== yb ? yb - ya : mb - ma;  // تنازلي
+              });
+              
+              if (monthsArr.length === 0) {
+                contentDiv.innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;">لا توجد بيانات أشهر حتى الآن</div>';
+                return;
+              }
+              
+              let html = `<table style='width:100%;border-collapse:collapse;margin-bottom:10px;'>
+                <tr>
+                  <th style="width:40%;">الشهر</th>
+                  <th style="width:20%;">الحالة</th>
+                  <th style="width:15%;">إغلاق</th>
+                  <th style="width:15%;">إخفاء</th>
+                  <th style="width:10%;">خيارات</th>
+                </tr>`;
+              
+              monthsArr.forEach((m) => {
+                const [y, mo] = m.split("-");
+                const yNum = parseInt(y);
+                const moNum = parseInt(mo);
+                
+                if (isNaN(yNum) || isNaN(moNum) || moNum < 0 || moNum > 11) {
+                  console.warn('شهر غير صحيح:', m);
+                  return;
+                }
+                
+                const label = `${arMonths[moNum]} ${y}`;
+                const isClosed = settings.closed && settings.closed[m];
+                const isHidden = settings.hidden && settings.hidden[m];
+                const isDefault = settings.defaultMonth === m;
+
+                // استخدم monthsTree للحصول على بيانات هذا الشهر
+                const mmKey = (moNum + 1).toString().padStart(2, "0");
+                const monthObj = (monthsTree[y] && monthsTree[y][mmKey]) || {};
+                const empCount = monthObj.employees ? Object.keys(monthObj.employees).length : 0;
+                const daysCount = monthObj.attendance ? Object.keys(monthObj.attendance).length : 0;
+                
+                const statusColor = isClosed ? '#d32f2f' : '#388e3c';
+                const statusText = isClosed ? 'مغلق' : 'مفتوح';
+                
+                html += `<tr style="border-bottom:1px solid #e0e0e0;hover:background:#f5f5f5;">
+                  <td style="padding:10px 8px;">
+                    <span style="font-weight:bold;color:#1976d2;">${label}</span><br>
+                    <span style="font-size:12px;color:#888;">👥 ${empCount} | 📅 ${daysCount}</span>
+                    ${isDefault ? '<br><span style="color:#1976d2;font-size:11px;font-weight:bold;">⭐ افتراضي</span>' : ''}
+                  </td>
+                  <td style="padding:10px 8px;">
+                    <span style="color:${statusColor};font-weight:bold;font-size:14px;">${statusText}</span>
+                  </td>
+                  <td style="padding:10px 8px;text-align:center;">
+                    <input type='checkbox' data-month='${m}' class='closeMonthChk' ${isClosed ? 'checked' : ''} title="قفل الشهر">
+                  </td>
+                  <td style="padding:10px 8px;text-align:center;">
+                    <input type='checkbox' data-month='${m}' class='hideMonthChk' ${isHidden ? 'checked' : ''} title="إخفاء الشهر">
+                  </td>
+                  <td style="padding:10px 4px;text-align:center;">
+                    <button class='advMonthBtn' data-month='${m}' style='background:#1976d2;color:white;font-size:12px;padding:4px 8px;border-radius:4px;border:none;cursor:pointer;'>⚙️</button>
+                  </td>
+                </tr>`;
+              });
+              
+              html += `</table>`;
+              contentDiv.innerHTML = html;
+              
+              // ربط أحداث إغلاق الشهر
+              Array.from(document.getElementsByClassName("closeMonthChk")).forEach((chk) => {
                 chk.onchange = function () {
                   const m = chk.getAttribute("data-month");
-                  db.ref("monthsSettings/hidden/" + m).set(chk.checked);
+                  const status = chk.checked ? 'مغلق' : 'مفتوح';
+                  db.ref("monthsSettings/closed/" + m).set(chk.checked).then(() => {
+                    logActivity("تغيير حالة الشهر", `تم تغيير حالة الشهر إلى ${status}`);
+                  }).catch(err => {
+                    console.error('خطأ في تحديث حالة الشهر:', err);
+                    chk.checked = !chk.checked;  // استرجاع الحالة القديمة
+                    alert('❌ فشل تحديث حالة الشهر');
+                  });
                 };
-              }
-            );
-            // خيارات متقدمة لكل شهر
-            Array.from(document.getElementsByClassName("advMonthBtn")).forEach(
-              (btn) => {
+              });
+              
+              // ربط أحداث إخفاء الشهر
+              Array.from(document.getElementsByClassName("hideMonthChk")).forEach((chk) => {
+                chk.onchange = function () {
+                  const m = chk.getAttribute("data-month");
+                  const status = chk.checked ? 'مخفي' : 'مرئي';
+                  db.ref("monthsSettings/hidden/" + m).set(chk.checked).then(() => {
+                    logActivity("تغيير رؤية الشهر", `تم تغيير رؤية الشهر إلى ${status}`);
+                  }).catch(err => {
+                    console.error('خطأ في تحديث رؤية الشهر:', err);
+                    chk.checked = !chk.checked;
+                    alert('❌ فشل تحديث رؤية الشهر');
+                  });
+                };
+              });
+              
+              // ربط أزرار الخيارات المتقدمة
+              Array.from(document.getElementsByClassName("advMonthBtn")).forEach((btn) => {
                 btn.onclick = function () {
                   const m = btn.getAttribute("data-month");
                   showMonthAdvancedOptions(
                     m,
                     monthsArr,
                     settings,
-                    data,
+                    monthsTree,
                     allEmployees,
                     monthsNotes,
                     activityLog
                   );
                 };
-              }
-            );
+              });
+            } catch (error) {
+              console.error('خطأ في تحميل بيانات الأشهر:', error);
+              contentDiv.innerHTML = '<div style="color:#d32f2f;padding:10px;">❌ حدث خطأ في تحميل البيانات</div>';
+            }
+          }).catch(err => {
+            console.error('خطأ في جلب بيانات الأشهر:', err);
+            contentDiv.innerHTML = '<div style="color:#d32f2f;padding:10px;">❌ خطأ في الاتصال بقاعدة البيانات</div>';
           });
+          
           // زر إضافة شهر جديد
           document.getElementById("addNewMonthBtn").onclick = function () {
             let now = new Date();
@@ -3617,12 +3777,25 @@
               .once("value")
               .then((snap) => {
                 let arr = snap.val() || [];
-                if (!arr.includes(key)) arr.push(key);
-                db.ref("monthsSettings/manual")
-                  .set(arr)
-                  .then(loadMonthsManagerContent);
+                if (!Array.isArray(arr)) arr = [];
+                if (!arr.includes(key)) {
+                  arr.push(key);
+                  db.ref("monthsSettings/manual")
+                    .set(arr)
+                    .then(() => {
+                      logActivity("إضافة شهر", `تم إضافة شهر جديد: ${arMonths[nextM]} ${nextY}`);
+                      loadMonthsManagerContent();
+                    })
+                    .catch(err => {
+                      console.error('خطأ في إضافة الشهر:', err);
+                      alert('❌ فشل إضافة الشهر');
+                    });
+                } else {
+                  alert('⚠️ الشهر موجود بالفعل');
+                }
               });
           };
+          
           // زر تفعيل/تعطيل الوضع التلقائي
           db.ref("monthsSettings/auto")
             .once("value")
@@ -3630,219 +3803,628 @@
               const auto = snap.val() !== false;
               const btn = document.getElementById("toggleAutoMonthBtn");
               btn.textContent = auto
-                ? "🔄 الوضع التلقائي: مفعل"
-                : "⏸️ الوضع التلقائي: معطل";
-              btn.style.background = auto ? "#ffb300" : "#bdbdbd";
+                ? "🔄 تلقائي: مفعل"
+                : "⏸️ تلقائي: معطل";
+              btn.style.background = auto ? "#4caf50" : "#f44336";
+              btn.style.color = "#fff";
               btn.onclick = function () {
                 db.ref("monthsSettings/auto")
                   .set(!auto)
-                  .then(loadMonthsManagerContent);
+                  .then(() => {
+                    logActivity("تغيير الوضع التلقائي", auto ? "تم تعطيل الوضع التلقائي" : "تم تفعيل الوضع التلقائي");
+                    loadMonthsManagerContent();
+                  })
+                  .catch(err => {
+                    console.error('خطأ في تغيير الوضع:', err);
+                    alert('❌ فشل تغيير الوضع');
+                  });
               };
+            })
+            .catch(err => {
+              console.error('خطأ في جلب الوضع التلقائي:', err);
             });
         }
 
-        // نافذة الخيارات المتقدمة لكل شهر
+        // نافذة الخيارات المتقدمة لكل شهر - محسنة جداً
         function showMonthAdvancedOptions(
           m,
           monthsArr,
           settings,
-          data,
+          monthsTree,
           allEmployees,
           monthsNotes,
           activityLog
         ) {
           let advModal = document.getElementById("monthAdvModal");
           if (advModal) advModal.remove();
+          
           advModal = document.createElement("div");
           advModal.id = "monthAdvModal";
-          advModal.style =
-            "position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);z-index:9500;display:flex;align-items:center;justify-content:center;";
+          advModal.style = "position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.3);z-index:9500;display:flex;align-items:center;justify-content:center;";
+          
           const [y, mo] = m.split("-");
-          const label = `${arMonths[parseInt(mo)]} ${y}`;
-          let empKey = `employees_${y}_${(parseInt(mo) + 1)
-            .toString()
-            .padStart(2, "0")}`;
-          let empCount = allEmployees[empKey]
-            ? Object.values(allEmployees[empKey]).length
-            : 0;
-          let daysCount = Object.keys(data).filter((k) =>
-            k.startsWith(`${y}-${parseInt(mo) + 1}`)
-          ).length;
+          const yNum = parseInt(y);
+          const moNum = parseInt(mo);
+          
+          if (isNaN(yNum) || isNaN(moNum)) {
+            alert('❌ شهر غير صحيح');
+            return;
+          }
+          
+          const label = `${arMonths[moNum]} ${y}`;
+          const mmKey = (moNum + 1).toString().padStart(2, "0");
+          const monthObj = (monthsTree[y] && monthsTree[y][mmKey]) || {};
+          let empCount = monthObj.employees ? Object.keys(monthObj.employees).length : 0;
+          let daysCount = monthObj.attendance ? Object.keys(monthObj.attendance).length : 0;
+          
           let note = monthsNotes[m] || "";
           let isClosed = settings.closed && settings.closed[m];
           let isHidden = settings.hidden && settings.hidden[m];
           let isDefault = settings.defaultMonth === m;
-          let closeMsg =
-            settings.closeMsg && settings.closeMsg[m]
-              ? settings.closeMsg[m]
-              : "";
-          // سجل النشاطات لهذا الشهر فقط
-          let monthLog = Object.values(activityLog).filter(
-            (l) => l.month === m || (l.details && l.details.includes(m))
-          );
+          let closeMsg = (settings.closeMsg && settings.closeMsg[m]) || "";
+          
+          // سجل النشاطات لهذا الشهر
+          let monthLog = Object.entries(activityLog || {})
+            .map(([k, v]) => v)
+            .filter((l) => l && (l.month === m || (l.details && l.details.includes(m))))
+            .slice(-10)  // آخر 10 نشاطات
+            .reverse();
+          
           advModal.innerHTML = `
-    <div style="background:#fff;max-width:440px;width:97vw;border-radius:16px;box-shadow:0 8px 32px #0002;padding:28px 18px 18px 18px;position:relative;display:flex;flex-direction:column;animation:fadeIn 0.3s;">
-      <button id="closeMonthAdvModalBtn" style="position:absolute;top:10px;left:10px;background:#dc3545;color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;">✖</button>
-      <div style="font-size:20px;color:#1976d2;margin-bottom:10px;font-weight:600;text-align:center;">⚙️ إدارة شهر: ${label}</div>
-      <div style="font-size:13px;color:#888;margin-bottom:8px;">عدد الموظفين: ${empCount} | أيام: ${daysCount}</div>
-      <label style="font-size:15px;font-weight:500;">اسم الشهر:
-        <input id="renameMonthInput" type="text" value="${label}" style="width:70%;margin:0 0 8px 0;padding:5px 8px;border-radius:6px;border:1px solid #ccc;font-size:15px;">
-        <button id="renameMonthBtn" style="background:#1976d2;color:white;padding:4px 10px;border:none;border-radius:6px;font-size:14px;">تغيير</button>
-      </label>
-      <label style="font-size:15px;font-weight:500;">ملاحظة إدارية:
-        <textarea id="monthNoteInput" style="width:95%;min-height:40px;margin:0 0 8px 0;border-radius:6px;border:1px solid #ccc;font-size:15px;">${note}</textarea>
-        <button id="saveMonthNoteBtn" style="background:#ffb300;color:#333;padding:4px 10px;border:none;border-radius:6px;font-size:14px;">حفظ</button>
-      </label>
-      <label style="font-size:15px;font-weight:500;">رسالة عند قفل الشهر:
-        <input id="closeMsgInput" type="text" value="${closeMsg}" style="width:80%;margin:0 0 8px 0;padding:5px 8px;border-radius:6px;border:1px solid #ccc;font-size:15px;">
-        <button id="saveCloseMsgBtn" style="background:#d32f2f;color:white;padding:4px 10px;border:none;border-radius:6px;font-size:14px;">حفظ</button>
-      </label>
-      <div style="margin:8px 0 0 0;display:flex;gap:7px;flex-wrap:wrap;">
-        <button id="setDefaultMonthBtn" style="background:${
-          isDefault ? "#1976d2" : "#eee"
-        };color:${
-            isDefault ? "#fff" : "#333"
-          };padding:4px 10px;border:none;border-radius:6px;font-size:14px;">${
-            isDefault ? "افتراضي حالياً" : "تعيين كافتراضي"
-          }</button>
-        <button id="copyMonthBtn" style="background:#2196f3;color:white;padding:4px 10px;border:none;border-radius:6px;font-size:14px;">نسخ بيانات إلى شهر آخر</button>
-        <button id="deleteMonthBtn" style="background:#dc3545;color:white;padding:4px 10px;border:none;border-radius:6px;font-size:14px;">حذف الشهر</button>
-        <button id="restoreMonthBtn" style="background:#388e3c;color:white;padding:4px 10px;border:none;border-radius:6px;font-size:14px;display:${
-          isHidden ? "inline-block" : "none"
-        };">استعادة الشهر</button>
-      </div>
-      <div style="margin:12px 0 0 0;">
-        <b>سجل النشاطات لهذا الشهر:</b>
-        <div style="max-height:90px;overflow:auto;border:1px solid #eee;border-radius:7px;padding:5px 7px;background:#fafafa;font-size:13px;">
-          ${
-            monthLog.length
-              ? monthLog
-                  .map(
-                    (l) =>
-                      `<div style='border-bottom:1px solid #eee;margin-bottom:3px;'>${
-                        l.time || ""
-                      } - ${l.user || ""}: ${l.action || ""}</div>`
-                  )
-                  .join("")
-              : "لا يوجد نشاطات."
-          }
-        </div>
-      </div>
-    </div>
-  `;
+            <div style="background:#fff;max-width:500px;width:97vw;border-radius:16px;box-shadow:0 10px 40px #0003;padding:28px 20px 20px 20px;position:relative;display:flex;flex-direction:column;animation:fadeIn 0.3s;max-height:90vh;overflow-y:auto;">
+              <button id="closeMonthAdvModalBtn" style="position:absolute;top:12px;left:12px;background:#dc3545;color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;transition:all 0.2s;">✖</button>
+              
+              <div style="font-size:22px;color:#1976d2;margin-bottom:4px;font-weight:700;text-align:center;">⚙️ إدارة: ${label}</div>
+              <div style="font-size:13px;color:#888;margin-bottom:16px;text-align:center;">👥 ${empCount} موظف | 📅 ${daysCount} يوم</div>
+              
+              <!-- اسم الشهر -->
+              <div style="margin-bottom:14px;padding:10px;background:#f5f5f5;border-radius:8px;">
+                <label style="font-size:14px;font-weight:600;color:#333;">📝 اسم الشهر:</label>
+                <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;">
+                  <input id="renameMonthInput" type="text" value="${label}" style="flex:1;min-width:120px;padding:8px;border-radius:6px;border:1px solid #ddd;font-size:14px;box-sizing:border-box;">
+                  <button id="renameMonthBtn" style="background:#1976d2;color:white;padding:8px 14px;border:none;border-radius:6px;cursor:pointer;font-weight:500;white-space:nowrap;">تحديث</button>
+                </div>
+              </div>
+              
+              <!-- الأزرار الرئيسية -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+                <button id="setDefaultMonthBtn" style="background:${isDefault ? '#1976d2' : '#eee'};color:${isDefault ? '#fff' : '#333'};padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:500;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                  ${isDefault ? '✅ افتراضي حالياً' : '⭐ جعل افتراضياً'}
+                </button>
+                <button id="copyMonthBtn" style="background:#2196f3;color:white;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:500;font-size:13px;white-space:nowrap;">📋 نسخ البيانات</button>
+              </div>
+              
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+                <button id="exportMonthBtn" style="background:#4caf50;color:white;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:500;font-size:13px;white-space:nowrap;">📥 تصدير</button>
+                <button id="importMonthBtn" style="background:#ff9800;color:white;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:500;font-size:13px;white-space:nowrap;">📤 استيراد</button>
+              </div>
+              
+              <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:12px;">
+                <button id="deleteMonthBtn" style="background:#dc3545;color:white;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:500;font-size:13px;">🗑️ حذف</button>
+              </div>
+              
+              ${isHidden ? '<button id="restoreMonthBtn" style="background:#388e3c;color:white;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:500;width:100%;font-size:13px;margin-bottom:12px;">🔄 استعادة الشهر</button>' : ''}
+              
+              <!-- سجل النشاطات (كلاسيكي متقدم) -->
+              <style>
+                .activity-table-wrapper { margin:10px 0;border-radius:8px;overflow:auto;border:1px solid #ddd;background:#fff; }
+                .activity-table { width:100%;border-collapse:collapse;background:#fff;min-width:600px; }
+                .activity-table thead { background:linear-gradient(90deg,#1976d2,#1565c0);color:#fff;position:sticky;top:0; }
+                .activity-table th { padding:12px;text-align:right;font-weight:700;font-size:13px;border-bottom:2px solid #0d47a1; }
+                .activity-table td { padding:12px;border-bottom:1px solid #f0f0f0;color:#444;font-size:13px; }
+                .activity-table tbody tr:hover { background:#f5f5f5;transition:all 0.2s; }
+                .activity-table tbody tr:nth-child(even) { background:#fafbfc; }
+                .activity-user-badge { background:#bbdefb;color:#0d47a1;padding:6px 10px;border-radius:6px;font-weight:600;display:inline-block;white-space:nowrap; }
+                .activity-time { color:#666;font-size:12px;white-space:nowrap; }
+                .activity-action { color:#1976d2;font-weight:600; }
+                .activity-desc { color:#777;font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+                .activity-emp { color:#c2185b;font-weight:700; }
+                .activity-type { color:#2e7d32;font-weight:700; }
+                .activity-type.alt { color:#f57f17; }
+                @media (max-width:768px) { .activity-table { min-width:auto; } .activity-table th, .activity-table td { padding:10px;font-size:12px; } .activity-desc { max-width:150px; } }
+                @media (max-width:480px) { .activity-table th, .activity-table td { padding:8px;font-size:11px; } .activity-time { font-size:11px; } .activity-desc { max-width:100px; } }
+              </style>
+              <div class="activity-table-wrapper">
+                <table class="activity-table">
+                  <thead>
+                    <tr>
+                      <th style="width:18%;">الوقت</th>
+                      <th style="width:18%;">المستخدم</th>
+                      <th style="width:24%;">النشاط</th>
+                      <th style="width:40%;">الوصف</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${
+                      monthLog.length
+                        ? monthLog.map((l) => {
+                            const timeISO = l.time || '';
+                            let timeStr = '';
+                            try{ const d = new Date(timeISO || (l.ts || l.timeStamp || Date.now())); if(!isNaN(d)) timeStr = d.toLocaleString('ar'); }catch(e){}
+                            const user = l.user || 'نظام';
+                            const action = l.action || (l.type || 'نشاط');
+                            const desc = l.details || l.desc || l.description || '-';
+                            return (`<tr><td class='activity-time'>${timeStr}</td><td><span class='activity-user-badge'>${user}</span></td><td class='activity-action'>${action}</td><td class='activity-desc' title='${desc}'>${desc}</td></tr>`);
+                          }).join('')
+                        : '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:20px;">لا توجد نشاطات</td></tr>'
+                    }
+                  </tbody>
+                </table>
+              </div>
+              </div>
+            </div>
+          `;
+          
           document.body.appendChild(advModal);
-          document.getElementById("closeMonthAdvModalBtn").onclick =
-            function () {
-              advModal.remove();
-            };
-          // إعادة التسمية (فقط واجهة، الاسم في القوائم)
+          
+          document.getElementById("closeMonthAdvModalBtn").onclick = function () {
+            advModal.remove();
+          };
+          
+          // تحديث اسم الشهر
           document.getElementById("renameMonthBtn").onclick = function () {
-            const newName = document
-              .getElementById("renameMonthInput")
-              .value.trim();
-            if (!newName) return alert("❌ الاسم لا يمكن أن يكون فارغاً");
+            const newName = document.getElementById("renameMonthInput").value.trim();
+            if (!newName) {
+              alert("❌ الاسم لا يمكن أن يكون فارغاً");
+              return;
+            }
             db.ref("monthsSettings/renames/" + m)
               .set(newName)
               .then(() => {
-                alert("✅ تم تغيير اسم الشهر في القوائم فقط");
+                logActivity("تغيير اسم الشهر", `تم تغيير اسم الشهر من ${label} إلى ${newName}`);
+                alert("✅ تم تحديث اسم الشهر");
                 advModal.remove();
                 loadMonthsManagerContent();
+              })
+              .catch(err => {
+                console.error('خطأ في تحديث الاسم:', err);
+                alert('❌ فشل تحديث الاسم');
               });
           };
-          // ملاحظة إدارية
-          document.getElementById("saveMonthNoteBtn").onclick = function () {
-            const noteVal = document.getElementById("monthNoteInput").value;
-            db.ref("monthsNotes/" + m)
-              .set(noteVal)
-              .then(() => {
-                alert("✅ تم حفظ الملاحظة");
-              });
-          };
-          // رسالة القفل
-          document.getElementById("saveCloseMsgBtn").onclick = function () {
-            const msg = document.getElementById("closeMsgInput").value;
-            db.ref("monthsSettings/closeMsg/" + m)
-              .set(msg)
-              .then(() => {
-                alert("✅ تم حفظ الرسالة");
-              });
-          };
+          
+          // حفظ رسالة الإغلاق
+          if (document.getElementById("saveCloseMsgBtn")) {
+            document.getElementById("saveCloseMsgBtn").onclick = function () {
+              const msg = document.getElementById("closeMsgInput").value;
+              db.ref("monthsSettings/closeMsg/" + m)
+                .set(msg)
+                .then(() => {
+                  logActivity("تحديث رسالة الإغلاق", `تم تحديث رسالة الإغلاق للشهر: ${label}`);
+                  alert("✅ تم حفظ الرسالة");
+                })
+                .catch(err => {
+                  console.error('خطأ في حفظ الرسالة:', err);
+                  alert('❌ فشل حفظ الرسالة');
+                });
+            };
+          }
+          
           // تعيين كافتراضي
           document.getElementById("setDefaultMonthBtn").onclick = function () {
+            if (isDefault) {
+              alert("⚠️ هذا الشهر افتراضي بالفعل");
+              return;
+            }
             db.ref("monthsSettings/defaultMonth")
               .set(m)
               .then(() => {
+                logActivity("تعيين الشهر الافتراضي", `تم تعيين الشهر: ${label} كافتراضي`);
                 alert("✅ تم تعيين الشهر كافتراضي");
                 advModal.remove();
                 loadMonthsManagerContent();
+              })
+              .catch(err => {
+                console.error('خطأ في تعيين الشهر الافتراضي:', err);
+                alert('❌ فشل تعيين الشهر الافتراضي');
               });
           };
-          // نسخ بيانات شهر
-          document.getElementById("copyMonthBtn").onclick = function () {
-            let target = prompt("أدخل السنة والشهر الهدف (مثال: 2025-8)");
-            if (!target || !/^\d{4}-\d{1,2}$/.test(target))
-              return alert("❌ صيغة غير صحيحة");
-            // نسخ الموظفين
-            let srcEmpKey = empKey;
-            let tgtEmpKey = `employees_${target.split("-")[0]}_${(
-              parseInt(target.split("-")[1]) + 1
-            )
-              .toString()
-              .padStart(2, "0")}`;
-            db.ref(srcEmpKey)
-              .once("value")
-              .then((snap) => {
-                db.ref(tgtEmpKey).set(snap.val() || []);
-              });
-            // نسخ الحضور
-            Object.keys(data)
-              .filter((k) => k.startsWith(`${y}-${parseInt(mo) + 1}`))
-              .forEach((dayKey) => {
-                let tgtDayKey = target + "-" + dayKey.split("-")[2];
-                db.ref("attendance/" + tgtDayKey).set(data[dayKey]);
-              });
-            alert("✅ تم نسخ بيانات الشهر");
-          };
-          // حذف شهر
-          document.getElementById("deleteMonthBtn").onclick = function () {
-            if (
-              !confirm(
-                "هل أنت متأكد من حذف الشهر؟ سيتم حذف جميع بيانات الحضور والموظفين لهذا الشهر."
-              )
-            )
+          
+          // نسخ البيانات
+          document.getElementById("copyMonthBtn").onclick = async function () {
+            const targetStr = prompt("أدخل السنة والشهر الهدف\nمثال: 2026-2 (فبراير 2026)\n\n(استخدم 1-12 للأشهر: 1=يناير، 2=فبراير، ... 12=ديسمبر)");
+            if (!targetStr) return;
+            
+            if (!/^\d{4}-\d{1,2}$/.test(targetStr)) {
+              alert("❌ صيغة غير صحيحة\nالصيغة الصحيحة: 2026-2");
               return;
-            // حذف الموظفين
-            db.ref(empKey).remove();
-            // حذف الحضور
-            Object.keys(data)
-              .filter((k) => k.startsWith(`${y}-${parseInt(mo) + 1}`))
-              .forEach((dayKey) => {
-                db.ref("attendance/" + dayKey).remove();
-              });
+            }
+            
+            const [tgtY, tgtMo] = targetStr.split("-");
+            const tgtMoNum = parseInt(tgtMo);
+            
+            console.log('🔍 تم إدخال:', targetStr);
+            console.log('السنة:', tgtY, 'الشهر (1-12):', tgtMoNum);
+            
+            if (tgtMoNum < 1 || tgtMoNum > 12) {
+              alert("❌ رقم الشهر يجب أن يكون بين 1 و 12\nمثال: 1=يناير، 2=فبراير، 3=مارس");
+              return;
+            }
+            
+            const tgtMoFormatted = tgtMoNum.toString().padStart(2, "0");
+            const targetMonth = `${tgtY}-${tgtMoFormatted}`;
+            const sourceMoFormatted = (moNum + 1).toString().padStart(2, "0");
+            
+            console.log('🔄 معلومات المصدر:', {
+              year: y,
+              month: moNum,
+              monthFormatted: sourceMoFormatted,
+              label: label
+            });
+            
+            console.log('🎯 معلومات الهدف:', {
+              year: tgtY,
+              month: tgtMoNum,
+              monthFormatted: tgtMoFormatted,
+              label: arMonths[tgtMoNum - 1]
+            });
+            
+            if (targetMonth === `${y}-${sourceMoFormatted}`) {
+              alert("⚠️ الشهر الهدف هو نفس الشهر المصدر");
+              return;
+            }
+            
+            if (!confirm(`هل تريد نسخ بيانات ${label} إلى ${arMonths[tgtMoNum - 1]} ${tgtY}؟\n\nسيتم نسخ:\n- بيانات الموظفين\n- سجل الحضور\n- السلف والخصومات`)) {
+              return;
+            }
+            
+            console.log('✅ تم تأكيد العملية - جاري النسخ...');
+            
+            try {
+              // 1️⃣ نسخ الموظفين من المسار الجديد
+              console.log('📥 جاري نسخ الموظفين...');
+              const sourceEmpPath = `months/${y}/${sourceMoFormatted}/employees`;
+              const targetEmpPath = `months/${tgtY}/${tgtMoFormatted}/employees`;
+              const legacyEmpKey = `employees_${tgtY}_${tgtMoFormatted}`;
+              
+              console.log('  المسار المصدر (جديد):', sourceEmpPath);
+              console.log('  المسار الهدف (جديد):', targetEmpPath);
+              console.log('  المسار الهدف (قديم):', legacyEmpKey);
+              
+              // محاولة قراءة من المسار الجديد أولاً
+              let sourceEmpData = {};
+              const newEmpSnap = await db.ref(sourceEmpPath).once("value");
+              if (newEmpSnap.exists()) {
+                sourceEmpData = newEmpSnap.val() || {};
+                console.log('  ✅ وجدنا موظفين في المسار الجديد:', Object.keys(sourceEmpData).length);
+              } else {
+                console.log('  ⚠️ لم نجد موظفين في المسار الجديد، جاري البحث في المسار القديم...');
+                // محاولة قراءة من المسار القديم
+                const legacyEmpSnap = await db.ref(`employees_${y}_${sourceMoFormatted}`).once("value");
+                if (legacyEmpSnap.exists()) {
+                  sourceEmpData = legacyEmpSnap.val() || {};
+                  console.log('  ✅ وجدنا موظفين في المسار القديم:', Object.keys(sourceEmpData).length);
+                }
+              }
+              
+              if (Object.keys(sourceEmpData).length > 0) {
+                // حفظ في المسار الجديد
+                await db.ref(targetEmpPath).set(sourceEmpData);
+                console.log('  ✅ تم الحفظ في المسار الجديد');
+                
+                // حفظ في المسار القديم للتوافق
+                await db.ref(legacyEmpKey).set(sourceEmpData);
+                console.log('  ✅ تم الحفظ في المسار القديم');
+                
+                console.log('✅ تم نسخ', Object.keys(sourceEmpData).length, 'موظف بنجاح');
+              } else {
+                console.warn('⚠️ لا توجد موظفين في المصدر للنسخ');
+              }
+              
+              // 2️⃣ نسخ الحضور
+              console.log('📅 جاري نسخ الحضور...');
+              const sourceAttendancePath = `months/${y}/${sourceMoFormatted}/attendance`;
+              const targetAttendancePath = `months/${tgtY}/${tgtMoFormatted}/attendance`;
+              
+              console.log('  المسار المصدر (جديد):', sourceAttendancePath);
+              console.log('  المسار الهدف (جديد):', targetAttendancePath);
+              
+              // قراءة من المسار الجديد فقط (موحد حسب الشهر)
+              let sourceAttendanceData = {};
+              const newAttSnap = await db.ref(sourceAttendancePath).once("value");
+              if (newAttSnap.exists()) {
+                sourceAttendanceData = newAttSnap.val() || {};
+                console.log('  ✅ وجدنا بيانات حضور:', Object.keys(sourceAttendanceData).length, 'يوم');
+              } else {
+                console.log('  ℹ️ لا توجد بيانات حضور لهذا الشهر بعد.');
+              }
+              
+              // نسخ البيانات
+              if (Object.keys(sourceAttendanceData).length > 0) {
+                // تحويل مفاتيح الأيام إلى الشهر الجديد
+                let targetAttendanceData = {};
+                Object.entries(sourceAttendanceData).forEach(([dayKey, dayData]) => {
+                  const dayNum = dayKey.split("-")[2];
+                  const newDayKey = `${tgtY}-${tgtMoFormatted}-${dayNum}`;
+                  targetAttendanceData[newDayKey] = dayData;
+                });
+                
+                // حفظ في المسار الجديد فقط (بدون المسار القديم لتجنب إنشاء أشهر تلقائية)
+                await db.ref(targetAttendancePath).set(targetAttendanceData);
+                console.log('✅ تم نسخ', Object.keys(targetAttendanceData).length, 'يوم بنجاح');
+              } else {
+                console.warn('⚠️ لم يتم العثور على أيام للنسخ');
+              }
+              
+              // 3️⃣ نسخ السلف والخصومات
+              console.log('💰 جاري نسخ السلف والخصومات...');
+              const advSourcePath = `advances/${y}/${sourceMoFormatted}`;
+              const advTargetPath = `advances/${tgtY}/${tgtMoFormatted}`;
+              console.log('  المصدر:', advSourcePath);
+              console.log('  الهدف:', advTargetPath);
+              
+              const advSnap = await db.ref(advSourcePath).once("value");
+              if (advSnap.exists()) {
+                const advData = advSnap.val() || {};
+                console.log('  عدد السجلات:', Object.keys(advData).length);
+                if (Object.keys(advData).length > 0) {
+                  await db.ref(advTargetPath).set(advData);
+                  console.log('✅ تم نسخ السلف والخصومات');
+                }
+              } else {
+                console.log('⚠️ لا توجد سلف للنسخ');
+              }
+              
+              // 4️⃣ إضافة الشهر الهدف إلى إدارة الأشهر
+              console.log('📌 جاري إضافة الشهر الهدف إلى المدير...');
+              const targetMonthEntry = `${tgtY}-${tgtMoFormatted}`;
+              console.log('  إدخال الشهر:', targetMonthEntry);
+              
+              const manualMonthsSnap = await db.ref("monthsSettings/manual").once("value");
+              let monthsList = manualMonthsSnap.val() || [];
+              
+              if (!Array.isArray(monthsList)) {
+                monthsList = [];
+              }
+              
+              console.log('  الأشهر الموجودة حالياً:', monthsList);
+              
+              if (!monthsList.includes(targetMonthEntry)) {
+                monthsList.push(targetMonthEntry);
+                console.log('  جاري إضافة الشهر الجديد...');
+                await db.ref("monthsSettings/manual").set(monthsList);
+                console.log('✅ تم إضافة الشهر الهدف إلى المدير');
+              } else {
+                console.log('ℹ️ الشهر موجود بالفعل في المدير');
+              }
+              
+              console.log('========================================');
+              console.log('✅ تم النسخ بنجاح!');
+              console.log('========================================');
+              
+              logActivity("نسخ البيانات", `تم نسخ بيانات ${label} إلى ${arMonths[tgtMoNum - 1]} ${tgtY}`);
+              alert(`✅ تم النسخ بنجاح!\n\n📊 البيانات المنسوخة جاهزة في ${arMonths[tgtMoNum - 1]} ${tgtY}`);
+              
+              // إغلاق النافذة وإعادة تحميل مدير الأشهر
+              advModal.remove();
+              setTimeout(() => loadMonthsManagerContent(), 500);
+              
+            } catch (error) {
+              console.error('❌ خطأ في النسخ:', error);
+              console.error('Stack:', error.stack);
+              alert('❌ حدث خطأ في النسخ:\n' + error.message);
+            }
+          };
+          
+          // تصدير البيانات
+          document.getElementById("exportMonthBtn").onclick = async function () {
+            try {
+              // قراءة بيانات الموظفين من المسار الجديد
+              const empPath = `months/${y}/${(moNum + 1).toString().padStart(2, "0")}/employees`;
+              const empSnap = await db.ref(empPath).once("value");
+              const employeesData = empSnap.val() || {};
+              
+              const monthData = {
+                month: label,
+                employees: empCount,
+                days: daysCount,
+                employeesData: employeesData,
+                attendanceData: monthObj.attendance || {},
+                notes: note,
+                exported: new Date().toISOString()
+              };
+              
+              const json = JSON.stringify(monthData, null, 2);
+              const blob = new Blob([json], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = `${label.replace(/\s+/g, '_')}_export.json`;
+              link.click();
+              URL.revokeObjectURL(url);
+              
+              logActivity("تصدير البيانات", `تم تصدير بيانات ${label}`);
+              alert("✅ تم تصدير البيانات");
+            } catch (error) {
+              console.error('❌ خطأ في التصدير:', error);
+              alert('❌ خطأ في التصدير:\n' + error.message);
+            }
+          };
+          
+          // استيراد البيانات
+          document.getElementById("importMonthBtn").onclick = function () {
+            const fileInput = document.createElement("input");
+            fileInput.type = "file";
+            fileInput.accept = ".json";
+            fileInput.addEventListener("change", async function (e) {
+              const file = e.target.files[0];
+              if (!file) return;
+              
+              try {
+                const text = await file.text();
+                const importedData = JSON.parse(text);
+                
+                console.log('📂 البيانات المستوردة:', importedData);
+                
+                // التحقق من صحة البيانات
+                if (!importedData.month || !importedData.attendanceData) {
+                  alert("❌ ملف غير صحيح! يجب أن يكون من تصدير النظام");
+                  return;
+                }
+                
+                if (!confirm(`هل تريد استيراد بيانات ${importedData.month}؟\n\nسيتم استيراد:\n- ${Object.keys(importedData.attendanceData || {}).length} يوم\n- البيانات الموجودة ستُستبدل!`)) {
+                  return;
+                }
+                
+                console.log('🔄 جاري الاستيراد...');
+                
+                // استخراج السنة والشهر من بيانات الحضور
+                const sampleKey = Object.keys(importedData.attendanceData)[0];
+                if (!sampleKey || !sampleKey.includes('-')) {
+                  alert("❌ لا توجد بيانات حضور صحيحة في الملف");
+                  return;
+                }
+                
+                const [importYear, importMonth] = sampleKey.split('-').slice(0, 2);
+                const importMonthKey = `${importYear}-${(parseInt(importMonth)).toString().padStart(2, "0")}`;
+                const importMonthFormatted = parseInt(importMonth).toString().padStart(2, "0");
+                
+                console.log('📅 شهر الاستيراد:', importMonthKey);
+                console.log('السنة:', importYear, 'الشهر:', importMonthFormatted);
+                
+                // 1️⃣ استيراد الموظفين
+                console.log('👥 جاري استيراد الموظفين...');
+                const targetEmpPath = `months/${importYear}/${importMonthFormatted}/employees`;
+                const legacyEmpKey = `employees_${importYear}_${importMonthFormatted}`;
+                
+                // قراءة الموظفين من الملف إذا كانت موجودة
+                let employeesFromFile = {};
+                if (importedData.employeesData && typeof importedData.employeesData === 'object') {
+                  employeesFromFile = importedData.employeesData;
+                } else {
+                  // محاولة استخراج الموظفين من بيانات الحضور
+                  const sampleDay = Object.values(importedData.attendanceData)[0] || {};
+                  Object.keys(sampleDay).forEach(empName => {
+                    if (empName !== '__editor' && empName !== '__editedAt') {
+                      employeesFromFile[empName] = {name: empName};
+                    }
+                  });
+                }
+                
+                if (Object.keys(employeesFromFile).length > 0) {
+                  await db.ref(targetEmpPath).set(employeesFromFile);
+                  await db.ref(legacyEmpKey).set(employeesFromFile);
+                  console.log('✅ تم استيراد', Object.keys(employeesFromFile).length, 'موظف');
+                }
+                
+                // 2️⃣ استيراد الحضور
+                console.log('📋 جاري استيراد الحضور...');
+                const targetAttendancePath = `months/${importYear}/${importMonthFormatted}/attendance`;
+                
+                if (Object.keys(importedData.attendanceData).length > 0) {
+                  await db.ref(targetAttendancePath).set(importedData.attendanceData);
+                  console.log('✅ تم استيراد', Object.keys(importedData.attendanceData).length, 'يوم');
+                }
+                
+                // 3️⃣ استيراد الملاحظات
+                if (importedData.notes) {
+                  console.log('📝 جاري استيراد الملاحظات...');
+                  await db.ref("monthsNotes/" + importMonthKey).set(importedData.notes);
+                  console.log('✅ تم استيراد الملاحظات');
+                }
+                
+                // 4️⃣ إضافة الشهر المستورد إلى قائمة الأشهر
+                console.log('📌 جاري إضافة الشهر إلى المدير...');
+                const manualMonthsSnap = await db.ref("monthsSettings/manual").once("value");
+                let monthsList = manualMonthsSnap.val() || [];
+                
+                if (!Array.isArray(monthsList)) {
+                  monthsList = [];
+                }
+                
+                if (!monthsList.includes(importMonthKey)) {
+                  monthsList.push(importMonthKey);
+                  await db.ref("monthsSettings/manual").set(monthsList);
+                  console.log('✅ تم إضافة الشهر إلى المدير');
+                }
+                
+                console.log('========================================');
+                console.log('✅ تم الاستيراد بنجاح!');
+                console.log('========================================');
+                
+                logActivity("استيراد البيانات", `تم استيراد بيانات ${importedData.month}`);
+                alert(`✅ تم الاستيراد بنجاح!\n\n📊 تم استيراد:\n- ${Object.keys(employeesFromFile).length || '؟'} موظف\n- ${Object.keys(importedData.attendanceData).length} يوم`);
+                
+                // إغلاق النافذة وإعادة تحميل مدير الأشهر
+                advModal.remove();
+                setTimeout(() => loadMonthsManagerContent(), 500);
+                
+              } catch (error) {
+                console.error('❌ خطأ في الاستيراد:', error);
+                alert('❌ خطأ في قراءة الملف:\n' + error.message);
+              }
+            });
+            
+            fileInput.click();
+          };
+          
+          // حذف الشهر
+          document.getElementById("deleteMonthBtn").onclick = async function () {
+            if (!confirm(`⚠️ هل أنت متأكد من حذف شهر ${label}؟\n\nسيتم حذف:\n- ${empCount} موظف\n- ${daysCount} يوم من البيانات\n\nهذا الإجراء لا يمكن التراجع عنه!`)) {
+              return;
+            }
+            
+            if (!confirm("تأكيد نهائي: هل تريد المتابعة؟")) {
+              return;
+            }
+            
+            // حذف جميع بيانات الشهر من المسارات الجديدة والقديمة
+            const newEmpPath = `months/${y}/${mmKey}/employees`;
+            await db.ref(newEmpPath).remove().catch(()=>{});
+
+            // حذف الحضور (جديد وقديم)
+            const attendanceObj = monthObj.attendance || {};
+            await Promise.all(Object.keys(attendanceObj).map(dayKey => {
+              return Promise.all([
+                db.ref(`months/${y}/${mmKey}/attendance/${dayKey}`).remove().catch(()=>{}),
+                attendanceRefForDay(dayKey).remove().catch(()=>{}),
+              ]);
+            })).catch(()=>{});
+
             // حذف الملاحظة
-            db.ref("monthsNotes/" + m).remove();
-            // حذف من monthsSettings.manual إذا كان يدوي
-            db.ref("monthsSettings/manual")
-              .once("value")
-              .then((snap) => {
-                let arr = snap.val() || [];
-                arr = arr.filter((x) => x !== m);
-                db.ref("monthsSettings/manual").set(arr);
-              });
-            alert("✅ تم حذف الشهر");
+            await db.ref("monthsNotes/" + m).remove().catch(()=>{});
+
+            // حذف العقدة الكاملة للشهر من الشجرة الموحدة
+            await db.ref(`months/${y}/${mmKey}`).remove().catch(()=>{});
+
+            // حذف أي مفاتيح إعداد مرتبطة بالشهر
+            await db.ref(`monthsSettings/renames/${m}`).remove().catch(()=>{});
+            await db.ref(`monthsSettings/closed/${m}`).remove().catch(()=>{});
+            await db.ref(`monthsSettings/hidden/${m}`).remove().catch(()=>{});
+            // إعادة ضبط الافتراضي إذا كان هذا الشهر هو الافتراضي
+            const defaultSnap = await db.ref('monthsSettings/defaultMonth').once('value');
+            if (defaultSnap.val() === m) { await db.ref('monthsSettings/defaultMonth').remove().catch(()=>{}); }
+
+            // حذف من اليدوي
+            const manualSnap = await db.ref("monthsSettings/manual").once("value");
+            let arr = manualSnap.val() || [];
+            if (Array.isArray(arr)) {
+              arr = arr.filter((x) => x !== m);
+              await db.ref("monthsSettings/manual").set(arr).catch(()=>{});
+            }
+
+            logActivity("حذف الشهر", `تم حذف شهر: ${label}`);
+            alert("✅ تم حذف الشهر نهائياً");
             advModal.remove();
             loadMonthsManagerContent();
           };
-          // استعادة شهر مخفي
-          document.getElementById("restoreMonthBtn").onclick = function () {
-            db.ref("monthsSettings/hidden/" + m)
-              .set(false)
-              .then(() => {
-                alert("✅ تم استعادة الشهر");
-                advModal.remove();
-                loadMonthsManagerContent();
-              });
-          };
+          
+          // استعادة الشهر المخفي
+          if (document.getElementById("restoreMonthBtn")) {
+            document.getElementById("restoreMonthBtn").onclick = function () {
+              db.ref("monthsSettings/hidden/" + m)
+                .set(false)
+                .then(() => {
+                  logActivity("استعادة الشهر", `تم استعادة شهر: ${label}`);
+                  alert("✅ تم استعادة الشهر");
+                  advModal.remove();
+                  loadMonthsManagerContent();
+                })
+                .catch(err => {
+                  console.error('خطأ في استعادة الشهر:', err);
+                  alert('❌ فشل استعادة الشهر');
+                });
+            };
+          }
         }
 
         // زر الملاحظات: يظهر فقط إذا كان للمستخدم صلاحية (edit أو read)
@@ -4175,10 +4757,13 @@
           return;
         }
         const days = getDays();
+        const monthFormatted = String(month + 1).padStart(2, '0');
+        const attendancePath = `months/${year}/${monthFormatted}/attendance`;
+        
         // الموظفين لهذا الشهر فقط من قاعدة البيانات الشهرية
         let monthEmployees = employees.slice();
         try {
-          const attendanceSnapshot = await db.ref("attendance").once("value");
+          const attendanceSnapshot = await db.ref(attendancePath).once("value");
           const savedData = attendanceSnapshot.val() || {};
           const updatedData = { ...savedData };
           let changes = [];
@@ -4220,7 +4805,7 @@
             alert("لا يوجد أي تعديل لحفظه.");
             return;
           }
-          await db.ref("attendance").set(updatedData);
+          await db.ref(attendancePath).set(updatedData);
           alert("✅ تم حفظ التعديلات بنجاح");
           generateTable();
           changes.forEach((change) => {
@@ -4330,11 +4915,34 @@
                 <th style='background:#f0f0f0;padding:7px;'>الوصف</th>
               </tr>`;
             Object.values(log).reverse().forEach((item) => {
+              let details = item.details || "";
+              // simplify descriptions for adding month/employee: remove day counts
+              try {
+                if (item.action && /شهر/.test(item.action) && /اضاف|أضف|إضافة/.test(item.action)) {
+                  details = details.replace(/عدد\s*[:\-–]?\s*\d+\s*يوم(?:اً)?/g, "").replace(/\d+\s*يوم(?:اً)?/g, "").trim();
+                  // if becomes empty, fallback to concise action text
+                  if (!details) details = item.action;
+                }
+              } catch (e) {}
+              // highlight common change-type words (e.g., شفت, نص)
+              try {
+                details = details.replace(/(شفت|نص)/g, '<span class="activity-type">$1</span>');
+              } catch (e) {}
+              // highlight employee names present in global `employees` array
+              try {
+                const emps = Array.isArray(window.employees) ? window.employees : [];
+                emps.forEach((emp) => {
+                  if (!emp) return;
+                  const esc = emp.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&");
+                  details = details.replace(new RegExp(esc, 'g'), `<span class="activity-emp">${emp}</span>`);
+                });
+              } catch (e) {}
+
               html += `<tr style='${item.style || ""}'>
-                <td>${toEnglishNumbers(item.time || "")}</td>
-                <td>${item.user || ""}</td>
-                <td>${item.action || ""}</td>
-                <td>${item.details || ""}</td>
+                <td class="activity-time">${toEnglishNumbers(item.time || "")}</td>
+                <td><span class="activity-user-badge">${item.user || ""}</span></td>
+                <td class="activity-action">${item.action || ""}</td>
+                <td class="activity-desc">${details}</td>
               </tr>`;
             });
             html += `</table>`;
@@ -4513,6 +5121,29 @@
       firebase.initializeApp(firebaseConfig);
       const db = firebase.database();
 
+      // Helpers to resolve attendance/employees paths (new unified structure with legacy fallback)
+      function attendancePathForDay(dayKey) {
+        try {
+          if (!dayKey || typeof dayKey !== 'string') return `attendance/${dayKey}`;
+          const parts = dayKey.split('-');
+          if (parts.length >= 3) {
+            const y = parts[0];
+            const mm = String(Number(parts[1])).padStart(2, '0');
+            return `months/${y}/${mm}/attendance/${dayKey}`;
+          }
+        } catch (e) {}
+        return `attendance/${dayKey}`;
+      }
+
+      function attendanceRefForDay(dayKey) {
+        return db.ref(attendancePathForDay(dayKey));
+      }
+
+      function monthEmployeesPath(year, mmKey) {
+        if (!year || !mmKey) return null;
+        return `months/${year}/${mmKey}/employees`;
+      }
+
       // دوال إدارة قاعدة البيانات
       function clearDatabase() {
         // نافذة إدخال كلمة مرور المدير
@@ -4683,13 +5314,12 @@
               function (snap) {
                 if (!window.currentUserData) window.currentUserData = {};
                 window.currentUserData[key] = snap.val();
-                db.ref("attendance")
-                  .once("value")
-                  .then((snap2) => {
+                const monthFormatted = (typeof month !== 'undefined' ? String(month + 1).padStart(2,'0') : (new Date().getMonth()+1).toString().padStart(2,'0'));
+                const attendancePath = `months/${(typeof year !== 'undefined' ? year : new Date().getFullYear())}/${monthFormatted}/attendance`;
+                db.ref(attendancePath).once("value").then((snap2) => {
                     calculateStats(snap2.val() || {});
-                    if (typeof renderUserEmpStats === "function")
-                      renderUserEmpStats();
-                  });
+                    if (typeof renderUserEmpStats === "function") renderUserEmpStats();
+                }).catch(()=>{});
               }
             );
           });
@@ -5197,6 +5827,9 @@
         // إظهار علامة التحميل
         document.getElementById("loaderSpinner").style.display = "flex";
         const days = getDays();
+        const monthFormatted = String(month + 1).padStart(2, '0');
+        const attendancePath = `months/${year}/${monthFormatted}/attendance`;
+        
         // تحديث عنوان الجدول باسم الشهر الحالي
         document.querySelector(
           "#mainContent h2"
@@ -5206,7 +5839,7 @@
         // إخفاء رأس عمود التاريخ أثناء التحميل
         var dateHeader = document.getElementById("dateHeaderTh");
         if (dateHeader) dateHeader.style.display = "none";
-        db.ref("attendance")
+        db.ref(attendancePath)
           .once("value")
           .then((snapshot) => {
             const savedData = snapshot.val() || {};
@@ -5369,8 +6002,11 @@
       async function saveAttendanceData() {
         if (!canEditCurrentMonth()) return;
         const days = getDays();
+        const monthFormatted = String(month + 1).padStart(2, '0');
+        const attendancePath = `months/${year}/${monthFormatted}/attendance`;
+        
         try {
-          const attendanceSnapshot = await db.ref("attendance").once("value");
+          const attendanceSnapshot = await db.ref(attendancePath).once("value");
           const savedData = attendanceSnapshot.val() || {};
           const updatedData = { ...savedData };
           let changes = [];
@@ -5412,7 +6048,7 @@
             alert("لا يوجد أي تعديل لحفظه.");
             return;
           }
-          await db.ref("attendance").set(updatedData);
+          await db.ref(attendancePath).set(updatedData);
           alert("✅ تم حفظ التعديلات بنجاح");
           generateTable();
           changes.forEach((change) => {
@@ -6284,9 +6920,11 @@
             alert("❌ اسم الموظف موجود مسبقاً");
             return;
           }
-          // تحديث بيانات الحضور فقط لأيام الشهر الحالي
+          // تحديث بيانات الحضور فقط لأيام الشهر الحالي (استخدم المسار الشهري الموحد)
           const days = getDays();
-          const attendanceSnapshot = await db.ref("attendance").once("value");
+          const monthFormatted = (month + 1).toString().padStart(2, '0');
+          const attendancePath = `months/${year}/${monthFormatted}/attendance`;
+          const attendanceSnapshot = await db.ref(attendancePath).once("value");
           const attendance = attendanceSnapshot.val() || {};
           days.forEach((day) => {
             const dayKey = day.key;
@@ -6298,7 +6936,7 @@
               delete attendance[dayKey][oldName];
             }
           });
-          await db.ref("attendance").set(attendance);
+          await db.ref(attendancePath).set(attendance);
           // تحديث اسم الموظف في allowedStatsEmps لجميع المستخدمين لهذا الشهر
           const usersSnap = await db.ref("users").once("value");
           const users = usersSnap.val() || {};
@@ -6803,6 +7441,10 @@
                 .padStart(2, "0")}`;
               loadEmployees(empKey).then(() => {
                 generateTable();
+                // تحميل وعرض السلف للشهر الجديد
+                Promise.resolve(loadAdvancesFromStorage()).then(() => {
+                  renderAdvancesTable();
+                }).catch((e) => { console.warn('Failed to load advances', e); renderAdvancesTable(); });
                 renderMonthFab(months);
                 fabList.style.display = "none";
               });
@@ -6939,6 +7581,369 @@
         }
       }
 
+      // ========== سجل النشاطات - دالة محسّنة ==========
+      async function openActivityLogModal() {
+        // إنشاء modal محترف
+        let modal = document.getElementById('activityLogModal');
+        if (modal) modal.remove();
+        
+        modal = document.createElement('div');
+        modal.id = 'activityLogModal';
+        modal.style = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background: rgba(0, 0, 0, 0.5);
+          z-index: 9999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          backdrop-filter: blur(4px);
+        `;
+        
+        modal.innerHTML = `
+          <div style="
+            background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+            width: 95vw;
+            max-width: 900px;
+            max-height: 85vh;
+            border-radius: 16px;
+            box-shadow: 0 12px 48px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: slideUp 0.3s ease;
+          ">
+            <!-- رأس -->
+            <div style="
+              background: linear-gradient(135deg, #673ab7 0%, #5e35b1 100%);
+              color: white;
+              padding: 24px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              border-bottom: 1px solid #e0e0e0;
+            ">
+              <div>
+                <h2 style="margin: 0; font-size: 20px; font-weight: 700;">⭐️ سجل النشاطات</h2>
+                <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.9;">آخر النشاطات في النظام</p>
+              </div>
+              <button onclick="document.getElementById('activityLogModal').remove()" style="
+                background: rgba(255,255,255,0.2);
+                border: none;
+                color: white;
+                font-size: 24px;
+                cursor: pointer;
+                padding: 0;
+                width: 32px;
+                height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                transition: all 0.2s;
+              " onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">✕</button>
+            </div>
+            
+            <!-- المحتوى -->
+            <div id="activityLogContent" style="
+              flex: 1;
+              overflow-y: auto;
+              padding: 24px;
+              direction: rtl;
+            ">
+              <div style="text-align: center; padding: 40px 20px; color: #999;">
+                <p>⏳ جاري التحميل...</p>
+              </div>
+            </div>
+            
+            <!-- الإحصائيات -->
+            <div id="activityLogStats" style="
+              background: linear-gradient(135deg, #f0f0f0 0%, #fafafa 100%);
+              padding: 16px 24px;
+              border-top: 1px solid #e0e0e0;
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+              gap: 12px;
+              text-align: center;
+            "></div>
+          </div>
+          
+          <style>
+            @keyframes slideUp {
+              from {
+                opacity: 0;
+                transform: translateY(20px);
+              }
+              to {
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+
+            /* جدول النشاطات */
+            .system-activity-table { width:100%;border-collapse:collapse;background:#fff; }
+            .system-activity-table thead { background:linear-gradient(90deg,#673ab7,#5e35b1);color:#fff;position:sticky;top:0; }
+            .system-activity-table th { padding:12px;text-align:right;font-weight:700;font-size:13px;border-bottom:2px solid #4527a0; }
+            .system-activity-table td { padding:12px;border-bottom:1px solid #f0f0f0;color:#444;font-size:13px;word-wrap:break-word;overflow-wrap:break-word; }
+            .system-activity-table tbody tr:hover { background:#f5f5f5;transition:all 0.2s; }
+            .system-activity-table tbody tr:nth-child(even) { background:#fafbfc; }
+            .activity-user-badge { background:#e1bee7;color:#4527a0;padding:6px 10px;border-radius:6px;font-weight:600;display:inline-block;white-space:nowrap; }
+            .activity-time { color:#666;font-size:12px;white-space:normal; }
+            .activity-date { color:#ef6c00;font-weight:700; }
+            .activity-action { color:#673ab7;font-weight:700; }
+            .action-delete { color:#c62828!important; }
+            .action-update { color:#2e7d32!important; }
+            .action-add { color:#1565c0!important; }
+            .action-import { color:#ef6c00!important; }
+            .activity-details { color:#777;font-size:12px;white-space:normal;word-wrap:break-word;overflow-wrap:break-word;max-height:120px;overflow-y:auto; }
+            .activity-desc-date { color:#ef6c00;font-weight:700;background:#fff8e1;padding:2px 6px;border-radius:4px; }
+            .activity-table-wrapper { overflow:auto;border-radius:8px;border:1px solid #e0e0e0;margin:10px 0; }
+            @media (max-width:768px) { .system-activity-table th, .system-activity-table td { padding:10px;font-size:12px; } }
+            @media (max-width:480px) { .system-activity-table th, .system-activity-table td { padding:8px;font-size:11px; } .activity-time { font-size:12px; } }
+          </style>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // تحميل البيانات
+        try {
+          const snapshot = await db.ref("activityLog").limitToLast(50).once("value");
+          const logs = snapshot.val() || {};
+          const logsArray = Object.values(logs).reverse();
+          
+          // حساب الإحصائيات
+          const uniqueUsers = new Set(logsArray.map(l => l.user)).size;
+          const today = new Date().toLocaleDateString('ar-SA');
+          const todayLogs = logsArray.filter(l => {
+            const logDate = new Date(l.time || '').toLocaleDateString('ar-SA');
+            return logDate === today;
+          }).length;
+          
+          // عرض الإحصائيات
+          const statsDiv = document.getElementById('activityLogStats');
+          statsDiv.innerHTML = `
+            <div class="stat-box">
+              <div class="stat-number">${logsArray.length}</div>
+              <div class="stat-label">إجمالي النشاطات</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number">${uniqueUsers}</div>
+              <div class="stat-label">عدد المستخدمين</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number">${todayLogs}</div>
+              <div class="stat-label">نشاطات اليوم</div>
+            </div>
+          `;
+          
+          // عرض السجلات في جدول
+          let html = '';
+          if (logsArray.length > 0) {
+            html = `
+              <div class="activity-table-wrapper">
+                <table class="system-activity-table">
+                  <thead>
+                    <tr>
+                      <th style="width:18%;">الوقت</th>
+                      <th style="width:18%;">المستخدم</th>
+                      <th style="width:24%;">النشاط</th>
+                      <th style="width:40%;">الوصف</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+            `;
+            logsArray.forEach(log => {
+              let time = '';
+              let dateOnly = '';
+              try {
+                const d = new Date(log.time || Date.now());
+                if(!isNaN(d.getTime())) {
+                  const year = d.getFullYear();
+                  const monthNum = d.getMonth() + 1; // no zero-pad as requested
+                  const dayNum = d.getDate();
+                  const hours = String(d.getHours()).padStart(2, '0');
+                  const minutes = String(d.getMinutes()).padStart(2, '0');
+                  dateOnly = `${year}-${monthNum}-${dayNum}`;
+                  time = `${dateOnly} ${hours}:${minutes}`;
+                } else {
+                  time = log.time || 'غير محدد';
+                  dateOnly = time;
+                }
+              } catch(e) {
+                time = log.time || 'غير محدد';
+                dateOnly = time;
+              }
+
+              const user = (log.user || 'مجهول').toString().replace(/"/g, '&quot;');
+              const action = (log.action || 'نشاط').toString();
+              const desc = (log.details || '-').toString().replace(/"/g, '&quot;');
+              // highlight date-like substrings inside description (YYYY-M-D or YYYY-MM-DD)
+              const dateRegex = /(\d{4}-\d{1,2}-\d{1,2})/g;
+              const descHtml = desc.replace(dateRegex, function(m){ return '<span class="activity-desc-date">'+m+'</span>'; });
+
+              // determine simple action color class
+              const aLow = action.toLowerCase();
+              let actionClass = 'action-info';
+              if (aLow.includes('حذف') || aLow.includes('delete') || aLow.includes('remove')) actionClass = 'action-delete';
+              else if (aLow.includes('نسخ') || aLow.includes('استيراد') || aLow.includes('import')) actionClass = 'action-import';
+              else if (aLow.includes('تحديث') || aLow.includes('تعديل') || aLow.includes('update') || aLow.includes('edit')) actionClass = 'action-update';
+              else if (aLow.includes('إضافة') || aLow.includes('اضافة') || aLow.includes('add') || aLow.includes('create')) actionClass = 'action-add';
+
+              html += `
+                <tr>
+                  <td class="activity-time"><span class="activity-date">${dateOnly}</span>&nbsp;<span class="activity-time-only">${time.split(' ')[1] || ''}</span></td>
+                  <td><span class="activity-user-badge">${user}</span></td>
+                  <td class="activity-action ${actionClass}">${action}</td>
+                  <td class="activity-details">${descHtml}</td>
+                </tr>
+              `;
+            });
+            html += `
+                  </tbody>
+                </table>
+              </div>
+            `;
+          } else {
+            html = '<div style="text-align: center; color: #999; padding: 40px 20px;">لا توجد نشاطات مسجلة بعد</div>';
+          }
+          
+          document.getElementById('activityLogContent').innerHTML = html;
+        } catch (error) {
+          console.error('Error loading activity log:', error);
+          document.getElementById('activityLogContent').innerHTML = `
+            <div style="text-align: center; color: #d32f2f; padding: 40px 20px;">
+              ❌ حدث خطأ في تحميل السجل
+            </div>
+          `;
+        }
+        
+        // إغلاق عند الضغط خارج الـ modal
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            modal.remove();
+          }
+        });
+      }
+
+      // ========== دالة الاستيراد العام ==========
+      function importDataGeneral() {
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = ".json";
+        fileInput.addEventListener("change", async function (e) {
+          const file = e.target.files[0];
+          if (!file) return;
+          
+          try {
+            const text = await file.text();
+            const importedData = JSON.parse(text);
+            
+            console.log('📂 البيانات المستوردة:', importedData);
+            
+            // التحقق من صحة البيانات
+            if (!importedData.month || !importedData.attendanceData) {
+              alert("❌ ملف غير صحيح! يجب أن يكون من تصدير النظام");
+              return;
+            }
+            
+            if (!confirm(`هل تريد استيراد بيانات ${importedData.month}؟\n\nسيتم استيراد:\n- ${Object.keys(importedData.attendanceData || {}).length} يوم\n- البيانات الموجودة ستُستبدل!`)) {
+              return;
+            }
+            
+            console.log('🔄 جاري الاستيراد...');
+            
+            // استخراج السنة والشهر من بيانات الحضور
+            const sampleKey = Object.keys(importedData.attendanceData)[0];
+            if (!sampleKey || !sampleKey.includes('-')) {
+              alert("❌ لا توجد بيانات حضور صحيحة في الملف");
+              return;
+            }
+            
+            const [importYear, importMonth] = sampleKey.split('-').slice(0, 2);
+            const importMonthKey = `${importYear}-${(parseInt(importMonth)).toString().padStart(2, "0")}`;
+            const importMonthFormatted = parseInt(importMonth).toString().padStart(2, "0");
+            
+            console.log('📅 شهر الاستيراد:', importMonthKey);
+            console.log('السنة:', importYear, 'الشهر:', importMonthFormatted);
+            
+            // 1️⃣ استيراد الموظفين
+            console.log('👥 جاري استيراد الموظفين...');
+            const targetEmpPath = `months/${importYear}/${importMonthFormatted}/employees`;
+            const legacyEmpKey = `employees_${importYear}_${importMonthFormatted}`;
+            
+            // قراءة الموظفين من الملف إذا كانت موجودة
+            let employeesFromFile = {};
+            if (importedData.employeesData && typeof importedData.employeesData === 'object') {
+              employeesFromFile = importedData.employeesData;
+            } else {
+              // محاولة استخراج الموظفين من بيانات الحضور
+              const sampleDay = Object.values(importedData.attendanceData)[0] || {};
+              Object.keys(sampleDay).forEach(empName => {
+                if (empName !== '__editor' && empName !== '__editedAt') {
+                  employeesFromFile[empName] = {name: empName};
+                }
+              });
+            }
+            
+            if (Object.keys(employeesFromFile).length > 0) {
+              await db.ref(targetEmpPath).set(employeesFromFile);
+              await db.ref(legacyEmpKey).set(employeesFromFile);
+              console.log('✅ تم استيراد', Object.keys(employeesFromFile).length, 'موظف');
+            }
+            
+            // 2️⃣ استيراد الحضور
+            console.log('📋 جاري استيراد الحضور...');
+            const targetAttendancePath = `months/${importYear}/${importMonthFormatted}/attendance`;
+            
+            if (Object.keys(importedData.attendanceData).length > 0) {
+              await db.ref(targetAttendancePath).set(importedData.attendanceData);
+              console.log('✅ تم استيراد', Object.keys(importedData.attendanceData).length, 'يوم');
+            }
+            
+            // 3️⃣ استيراد الملاحظات
+            if (importedData.notes) {
+              console.log('📝 جاري استيراد الملاحظات...');
+              await db.ref("monthsNotes/" + importMonthKey).set(importedData.notes);
+              console.log('✅ تم استيراد الملاحظات');
+            }
+            
+            // 4️⃣ إضافة الشهر المستورد إلى قائمة الأشهر
+            console.log('📌 جاري إضافة الشهر إلى المدير...');
+            const manualMonthsSnap = await db.ref("monthsSettings/manual").once("value");
+            let monthsList = manualMonthsSnap.val() || [];
+            
+            if (!Array.isArray(monthsList)) {
+              monthsList = [];
+            }
+            
+            if (!monthsList.includes(importMonthKey)) {
+              monthsList.push(importMonthKey);
+              await db.ref("monthsSettings/manual").set(monthsList);
+              console.log('✅ تم إضافة الشهر إلى المدير');
+            }
+            
+            console.log('========================================');
+            console.log('✅ تم الاستيراد بنجاح!');
+            console.log('========================================');
+            
+            logActivity("استيراد البيانات", `تم استيراد بيانات ${importedData.month}`);
+            alert(`✅ تم الاستيراد بنجاح!\n\n📊 تم استيراد:\n- ${Object.keys(employeesFromFile).length || '؟'} موظف\n- ${Object.keys(importedData.attendanceData).length} يوم`);
+            
+            // إعادة تحميل الصفحة لعرض البيانات الجديدة
+            setTimeout(() => location.reload(), 1000);
+            
+          } catch (error) {
+            console.error('❌ خطأ في الاستيراد:', error);
+            alert('❌ خطأ في قراءة الملف:\n' + error.message);
+          }
+        });
+        
+        fileInput.click();
+      }
+
       // ========== حذف متقدم ==========
       function advancedDelete() {
         // نافذة اختيار العملية بشكل أزرار واضحة
@@ -6966,6 +7971,7 @@
           function () {
             modal.remove();
           };
+
         Array.from(document.getElementsByClassName("deleteOpBtn")).forEach(
           (btn) => {
             btn.onclick = function () {
@@ -7007,17 +8013,15 @@
                       switch (choice) {
                         case "1": {
                           // حذف موظفي الشهر الحالي فقط
-                          const empKey = `employees_${year}_${(month + 1)
-                            .toString()
-                            .padStart(2, "0")}`;
-                          db.ref("employees/" + empKey)
-                            .remove()
-                            .then(() =>
-                              alert("✅ تم حذف موظفي الشهر الحالي فقط.")
-                            )
-                            .catch((e) =>
-                              alert("❌ خطأ في حذف الموظفين: " + e.message)
-                            );
+                          const empKey = `employees_${year}_${(month + 1).toString().padStart(2, "0")}`;
+                          const monthFormatted = (month + 1).toString().padStart(2, '0');
+                          const newEmpPath = `months/${year}/${monthFormatted}/employees`;
+                          Promise.all([
+                            db.ref("employees/" + empKey).remove().catch(()=>{}),
+                            db.ref(newEmpPath).remove().catch(()=>{}),
+                          ])
+                            .then(() => alert("✅ تم حذف موظفي الشهر الحالي فقط."))
+                            .catch((e) => alert("❌ خطأ في حذف الموظفين: " + e.message));
                           break;
                         }
                         case "2":
@@ -7035,16 +8039,22 @@
                           const days = getDays();
                           const updates = {};
                           days.forEach((day) => {
-                            updates[day.key] = null;
+                            const dayKey = day.key;
+                            updates[`attendance/${dayKey}`] = null;
+                            // also remove in months structure if possible
+                            try {
+                              const parts = dayKey.split('-');
+                              if (parts.length >= 3) {
+                                const y = parts[0];
+                                const mm = String(Number(parts[1])).padStart(2, '0');
+                                updates[`months/${y}/${mm}/attendance/${dayKey}`] = null;
+                              }
+                            } catch(e){}
                           });
-                          db.ref("attendance")
+                          db.ref()
                             .update(updates)
-                            .then(() =>
-                              alert("✅ تم حذف تاشيرات الشهر الحالي فقط.")
-                            )
-                            .catch((e) =>
-                              alert("❌ خطأ في حذف التاشيرات: " + e.message)
-                            );
+                            .then(() => alert("✅ تم حذف تاشيرات الشهر الحالي فقط."))
+                            .catch((e) => alert("❌ خطأ في حذف التاشيرات: " + e.message));
                           break;
                         }
                         case "4":
@@ -7057,9 +8067,11 @@
                           break;
                         case "5":
                           Promise.all([
-                            db.ref("employees").remove(),
-                            db.ref("attendance").remove(),
-                            db.ref("activityLog").remove(),
+                            db.ref("employees").remove().catch(()=>{}),
+                            db.ref("attendance").remove().catch(()=>{}),
+                            db.ref("months").remove().catch(()=>{}),
+                            db.ref("monthsNotes").remove().catch(()=>{}),
+                            db.ref("activityLog").remove().catch(()=>{}),
                             db
                               .ref("users")
                               .once("value")
@@ -7067,16 +8079,13 @@
                                 const users = snapshot.val() || {};
                                 const updates = {};
                                 Object.keys(users).forEach((username) => {
-                                  if (username !== currentUser)
-                                    updates[username] = null;
+                                  if (username !== currentUser) updates[username] = null;
                                 });
-                                return db.ref("users").update(updates);
+                                return db.ref("users").update(updates).catch(()=>{});
                               }),
                           ])
                             .then(() => {
-                              alert(
-                                "✅ تم حذف كل البيانات ما عدا حسابك الحالي."
-                              );
+                              alert("✅ تم حذف كل البيانات ما عدا حسابك الحالي.");
                             })
                             .catch((e) => {
                               alert("❌ خطأ في حذف البيانات: " + e.message);
@@ -7094,6 +8103,138 @@
           }
         );
       }
+      function advancedDeleteContinue() {
+        Array.from(document.getElementsByClassName("deleteOpBtn")).forEach(
+          (btn) => {
+            btn.onclick = function () {
+              const choice = btn.getAttribute("data-op");
+              modal.remove();
+              // نافذة إدخال كلمة مرور المدير
+              let passModal = document.getElementById("adminPassModal");
+              if (passModal) passModal.remove();
+              passModal = document.createElement("div");
+              passModal.id = "adminPassModal";
+              passModal.style = `position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.35);z-index:9999;display:flex;align-items:center;justify-content:center;`;
+              passModal.innerHTML = `
+        <div style=\"background:#fff;max-width:350px;width:90vw;padding:22px 18px 18px 18px;border-radius:14px;box-shadow:0 8px 32px #0002;position:relative;text-align:center;\">
+          <button id=\"closeAdminPassModalBtn\" style=\"position:absolute;top:10px;left:10px;background:#dc3545;color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;\">✖</button>
+          <div style=\"font-size:17px;color:#333;margin-bottom:18px;\">يرجى إدخال كلمة مرور المدير للتأكيد:</div>
+          <input id=\"adminPassInput\" type=\"password\" style=\"width:90%;padding:8px 10px;font-size:16px;border-radius:6px;border:1px solid #ccc;margin-bottom:14px;\" />
+          <button id=\"adminPassConfirmBtn\" style=\"background:#007bff;color:white;padding:8px 18px;border:none;border-radius:6px;font-size:16px;cursor:pointer;\">تأكيد</button>
+        </div>
+      `;
+              document.body.appendChild(passModal);
+              document.getElementById("adminPassConfirmBtn").onclick =
+                async function () {
+                  const adminPass =
+                    document.getElementById("adminPassInput").value;
+                  passModal.remove();
+                  const snapshot = await db
+                    .ref("users/admin/password")
+                    .once("value");
+                  const realAdminPass = snapshot.val();
+                  const ok = await verifyPassword(realAdminPass, adminPass);
+                  if (!ok) {
+                    alert("❌ كلمة المرور غير صحيحة!");
+                    return;
+                  }
+                  // نافذة تأكيد نهائي
+                  showConfirmModal(
+                    "هل أنت متأكد من تنفيذ هذا الإجراء؟ لا يمكن التراجع عنه!",
+                    () => {
+                      switch (choice) {
+                        case "1": {
+                          // حذف موظفي الشهر الحالي فقط
+                          const empKey = `employees_${year}_${(month + 1).toString().padStart(2, "0")}`;
+                          const monthFormatted = (month + 1).toString().padStart(2, '0');
+                          const newEmpPath = `months/${year}/${monthFormatted}/employees`;
+                          Promise.all([
+                            db.ref("employees/" + empKey).remove().catch(()=>{}),
+                            db.ref(newEmpPath).remove().catch(()=>{}),
+                          ])
+                            .then(() => alert("✅ تم حذف موظفي الشهر الحالي فقط."))
+                            .catch((e) => alert("❌ خطأ في حذف الموظفين: " + e.message));
+                          break;
+                        }
+                        case "2":
+                          db.ref("users")
+                            .remove()
+                            .then(() => alert("✅ تم حذف حسابات المستخدمين."))
+                            .catch((e) =>
+                              alert(
+                                "❌ خطأ في حذف حسابات المستخدمين: " + e.message
+                              )
+                            );
+                          break;
+                        case "3": {
+                          // حذف التاشيرات (الحضور) للشهر الحالي فقط
+                          const days = getDays();
+                          const updates = {};
+                          days.forEach((day) => {
+                            const dayKey = day.key;
+                            updates[`attendance/${dayKey}`] = null;
+                            try {
+                              const parts = dayKey.split('-');
+                              if (parts.length >= 3) {
+                                const y = parts[0];
+                                const mm = String(Number(parts[1])).padStart(2, '0');
+                                updates[`months/${y}/${mm}/attendance/${dayKey}`] = null;
+                              }
+                            } catch(e){}
+                          });
+                          db.ref()
+                            .update(updates)
+                            .then(() => alert("✅ تم حذف تاشيرات الشهر الحالي فقط."))
+                            .catch((e) => alert("❌ خطأ في حذف التاشيرات: " + e.message));
+                          break;
+                        }
+                        case "4":
+                          db.ref("activityLog")
+                            .remove()
+                            .then(() => alert("✅ تم حذف سجل النشاطات."))
+                            .catch((e) =>
+                              alert("❌ خطأ في حذف سجل النشاطات: " + e.message)
+                            );
+                          break;
+                        case "5":
+                          Promise.all([
+                            db.ref("employees").remove().catch(()=>{}),
+                            db.ref("attendance").remove().catch(()=>{}),
+                            db.ref("months").remove().catch(()=>{}),
+                            db.ref("monthsNotes").remove().catch(()=>{}),
+                            db.ref("activityLog").remove().catch(()=>{}),
+                            db
+                              .ref("users")
+                              .once("value")
+                              .then((snapshot) => {
+                                const users = snapshot.val() || {};
+                                const updates = {};
+                                Object.keys(users).forEach((username) => {
+                                  if (username !== currentUser) updates[username] = null;
+                                });
+                                return db.ref("users").update(updates).catch(()=>{});
+                              }),
+                          ])
+                            .then(() => {
+                              alert("✅ تم حذف كل البيانات ما عدا حسابك الحالي.");
+                            })
+                            .catch((e) => {
+                              alert("❌ خطأ في حذف البيانات: " + e.message);
+                            });
+                          break;
+                      }
+                    }
+                  );
+                };
+              document.getElementById("closeAdminPassModalBtn").onclick =
+                function () {
+                  passModal.remove();
+                };
+            };
+          }
+        );
+      }
+      
       document.addEventListener("DOMContentLoaded", () => {
         const btnDeleteData = document.getElementById("btnDeleteData");
         if (btnDeleteData)
@@ -7591,19 +8732,24 @@
         }
         showConfirmModal(
           `هل أنت متأكد من حذف الموظف \"${empName}\"؟ سيتم حذف جميع بيانات حضوره أيضا.`,
-          async () => {
+            async () => {
             if (!canEditCurrentMonth()) return;
             const newEmployees = employees.slice();
             newEmployees.splice(index, 1);
-            // Remove employee attendance
-            const attendanceSnapshot = await db.ref("attendance").once("value");
+            // Remove employee attendance for current month only
+            const monthFormatted = String(month + 1).padStart(2, '0');
+            const attendancePath = `months/${year}/${monthFormatted}/attendance`;
+            const attendanceSnapshot = await db.ref(attendancePath).once("value");
             const attendance = attendanceSnapshot.val() || {};
             Object.keys(attendance).forEach((dayKey) => {
-              if (attendance[dayKey][empName] !== undefined) {
+              if (attendance[dayKey] && attendance[dayKey][empName] !== undefined) {
                 delete attendance[dayKey][empName];
+                if (Object.keys(attendance[dayKey]).length === 0) {
+                  delete attendance[dayKey];
+                }
               }
             });
-            await db.ref("attendance").set(attendance);
+            await db.ref(attendancePath).set(attendance);
             // Remove employee from allowedStatsEmps for all users
             const usersSnap = await db.ref("users").once("value");
             const users = usersSnap.val() || {};
@@ -8196,70 +9342,11 @@
       };
       document.getElementById("sidebarDeleteDataBtn").onclick = () => {
         document.getElementById("sidebarMenu").classList.remove("open");
-        document.getElementById("btnDeleteData").click();
+        advancedDelete();
       };
       document.getElementById("sidebarFeaturesTabBtn").onclick = () => {
         document.getElementById("sidebarMenu").classList.remove("open");
-        document.getElementById("btnFeaturesTab").click();
-        document.getElementById("featuresTab").style.display = "flex";
-        const featuresTabContent =
-          document.getElementById("featuresTabContent");
-        featuresTabContent.innerHTML = `
-    <div class="feature-section">
-      <h4>سجل النشاطات</h4>
-      <div id="activityLogBox">جاري التحميل...</div>
-    </div>
-    <div class="feature-section" style="display:flex;flex-direction:column;gap:8px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <h4 style="margin:0">معلومات النظام</h4>
-        <div id="featuresShowMorePlaceholder"></div>
-      </div>
-      <ul style="margin:0;padding:0 0 0 15px;">
-        <li>عدد الموظفين الحالي: <b>${employees.length}</b></li>
-        <li>اسم المستخدم الحالي: <b>${currentUser}</b></li>
-        <li>الدور: <b>${currentUserRole}</b></li>
-      </ul>
-    </div>
-  `;
-        db.ref("activityLog")
-          .limitToLast(30)
-          .once("value")
-          .then((snapshot) => {
-            const log = snapshot.val() || {};
-            // render via helper if available
-            if (typeof renderActivityLog === 'function') {
-              renderActivityLog(30, 'activityLogBox');
-            } else {
-              let html = `<table class="activity-log-table">
-      <tr>
-        <th>الوقت</th>
-        <th>المستخدم</th>
-        <th>النشاط</th>
-        <th>الوصف</th>
-      </tr>`;
-              Object.values(log)
-                .reverse()
-                .forEach((item) => {
-                  html += `<tr>
-        <td>${toEnglishNumbers(item.time || "")}</td>
-        <td>${item.user || ""}</td>
-        <td>${item.action || ""}</td>
-        <td>${item.details || ""}</td>
-      </tr>`;
-                });
-              html += `</table>`;
-              document.getElementById("activityLogBox").innerHTML = html;
-            }
-            // ensure single button instance and attach handler
-            ensureFeaturesShowMoreButton('activityLogBox');
-          });
-        // زر إغلاق التبويبة
-        const closeBtn = document.getElementById("closeFeaturesTab");
-        if (closeBtn) {
-          closeBtn.onclick = () => {
-            document.getElementById("featuresTab").style.display = "none";
-          };
-        }
+        openActivityLogModal();
       };
 
       // نافذة تحكم صلاحيات سجل النشاطات للمدير
