@@ -658,9 +658,9 @@
       }
       #sidebarMenu button {
         width: 88%;
-        margin: 8px 6%;
-        padding: 8px;
-        font-size: 15px;
+        margin: 6px 6%;
+        padding: 8px 10px;
+        font-size: 14px;
         border-radius: 6px;
         border: none;
         background: #f4f4f4;
@@ -668,6 +668,7 @@
         cursor: pointer;
         text-align: right;
         transition: background 0.08s;
+        font-weight: 500;
       }
       #sidebarMenu button:hover {
         background: #e0e0e0;
@@ -2574,20 +2575,22 @@
   <button id="sidebarCloseBtn" style="display: none; z-index:12001; position:fixed; top:14px; right:14px">✖</button>
     <div id="sidebarMenu">
       <div class="sidebar-header" id="sidebarUserName"></div>
-      <button onclick="saveData()" style="background: #0dc149; color: white">
+      <button onclick="saveData()" style="background: #0dc149; color: white; font-size: 13px; padding: 8px 10px; margin: 6px 6%; font-weight: 500;">
         💾 حفظ التعديلات
       </button>
       <button onclick="logout()" style="
         background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
         color: white;
-        font-weight: 600;
-        padding: 10px 16px;
+        font-weight: 500;
+        font-size: 13px;
+        padding: 8px 10px;
+        margin: 6px 6%;
         border-radius: 6px;
         border: none;
         cursor: pointer;
         transition: all 0.3s ease;
-        box-shadow: 0 4px 12px #dc354444;
-      " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px #dc354466'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px #dc354444'">
+        box-shadow: 0 2px 6px #dc354433;
+      " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 3px 8px #dc354444'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 6px #dc354433'">
         🚪 تسجيل خروج
       </button>
       <button
@@ -2596,15 +2599,16 @@
           background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
           color: white;
           display: none;
-          font-weight: 600;
-          padding: 10px 16px;
+          font-weight: 500;
+          font-size: 13px;
+          padding: 8px 10px;
+          margin: 6px 6%;
           border-radius: 6px;
           border: none;
           cursor: pointer;
           transition: all 0.3s ease;
-          margin-top: 8px;
-          box-shadow: 0 4px 12px #00000044;
-        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px #00000066'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px #00000044'"
+          box-shadow: 0 2px 6px #00000033;
+        " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 3px 8px #00000044'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 6px #00000033'"
       >
         ⚙️ لوحة التحكم
       </button>
@@ -2614,15 +2618,16 @@
           background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
           color: white;
           display: none;
-          font-weight: 600;
-          padding: 10px 16px;
+          font-weight: 500;
+          font-size: 13px;
+          padding: 8px 10px;
+          margin: 6px 6%;
           border-radius: 6px;
           border: none;
           cursor: pointer;
           transition: all 0.3s ease;
-          margin-top: 8px;
-          box-shadow: 0 4px 12px #1976d244;
-        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px #1976d266'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px #1976d244'"
+          box-shadow: 0 2px 6px #1976d233;
+        " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 3px 8px #1976d244'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 6px #1976d233'"
       >
         📅 إدارة الأشهر
       </button>
@@ -2632,17 +2637,18 @@
           background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
           color: white;
           display: none;
-          font-weight: 600;
-          padding: 10px 16px;
+          font-weight: 500;
+          font-size: 13px;
+          padding: 8px 10px;
+          margin: 6px 6%;
           border-radius: 6px;
           border: none;
           cursor: pointer;
           transition: all 0.3s ease;
-          margin-top: 8px;
-          box-shadow: 0 4px 12px #17a2b844;
-        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px #17a2b866'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px #17a2b844'"
+          box-shadow: 0 2px 6px #17a2b833;
+        " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 3px 8px #17a2b844'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 6px #17a2b833'"
       >
-        📊 تفاصيل إحصائيات الموظفين
+        📊 إحصائيات الموظفين
       </button>
       <button
         id="sidebarNotificationsBtn"
@@ -2650,15 +2656,16 @@
           background: linear-gradient(135deg, #ff4081 0%, #f50057 100%);
           color: white;
           display: none;
-          font-weight: 600;
-          padding: 10px 16px;
+          font-weight: 500;
+          font-size: 13px;
+          padding: 8px 10px;
+          margin: 6px 6%;
           border-radius: 6px;
           border: none;
           cursor: pointer;
           transition: all 0.3s ease;
-          margin-top: 8px;
-          box-shadow: 0 4px 12px #ff408144;
-        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px #ff408166'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px #ff408144'"
+          box-shadow: 0 2px 6px #ff408133;
+        " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 3px 8px #ff408144'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 6px #ff408133'"
       >
         🔔 الإشعارات
       </button>
@@ -2669,15 +2676,16 @@
           background: linear-gradient(135deg, #ff6f00 0%, #e65100 100%);
           color: white;
           display: none;
-          font-weight: 600;
-          padding: 10px 16px;
+          font-weight: 500;
+          font-size: 13px;
+          padding: 8px 10px;
+          margin: 6px 6%;
           border-radius: 6px;
           border: none;
           cursor: pointer;
           transition: all 0.3s ease;
-          margin-top: 8px;
-          box-shadow: 0 4px 12px #ff6f0044;
-        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px #ff6f0066'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px #ff6f0044'"
+          box-shadow: 0 2px 6px #ff6f0033;
+        " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 3px 8px #ff6f0044'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 6px #ff6f0033'"
         title="إعلانات المدير"
       >
         📢 الإعلانات
@@ -2688,15 +2696,16 @@
           background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
           color: white;
           display: none;
-          font-weight: 600;
-          padding: 10px 16px;
+          font-weight: 500;
+          font-size: 13px;
+          padding: 8px 10px;
+          margin: 6px 6%;
           border-radius: 6px;
           border: none;
           cursor: pointer;
           transition: all 0.3s ease;
-          margin-top: 8px;
-          box-shadow: 0 4px 12px #dc354444;
-        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px #dc354466'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px #dc354444'"
+          box-shadow: 0 2px 6px #dc354433;
+        " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 3px 8px #dc354444'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 6px #dc354433'"
       >
         🗑️ حذف بيانات متقدمة
       </button>
@@ -2707,15 +2716,16 @@
           background: linear-gradient(135deg, #0088cc 0%, #005fcc 100%);
           color: white;
           display: none;
-          font-weight: 600;
-          padding: 10px 16px;
+          font-weight: 500;
+          font-size: 13px;
+          padding: 8px 10px;
+          margin: 6px 6%;
           border-radius: 6px;
           border: none;
           cursor: pointer;
           transition: all 0.3s ease;
-          margin-top: 8px;
-          box-shadow: 0 4px 12px #0088cc44;
-        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px #0088cc66'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px #0088cc44'"
+          box-shadow: 0 2px 6px #0088cc33;
+        " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 3px 8px #0088cc44'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 6px #0088cc33'"
         title="طباعة وإرسال تقرير PDF إلى تيليجرام"
       >
         📄 طباعة وإرسال PDF
