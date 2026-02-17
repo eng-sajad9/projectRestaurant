@@ -1,0 +1,1606 @@
+<!DOCTYPE html>
+<html lang="ar">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>نظام إدارة حضور الموظفين</title>
+    <meta
+      name="description"
+      content="نظام حضور وانصراف الموظفين - سجل حضور الموظفين وغيابهم بسهولة واحترافية. برنامج حضور وانصراف عربي مجاني وسهل الاستخدام."
+    />
+    <meta
+      name="keywords"
+      content="نظام حضور, نظام حضور وانصراف, برنامج حضور, برنامج حضور وانصراف, حضور الموظفين, نظام حضور هي هي, سجل حضور, attendance system, employee attendance, حضور الكتروني, برنامج دوام, نظام دوام, حضور وانصراف مجاني, حضور وانصراف عربي"
+    />
+    <meta name="robots" content="index, follow" />
+    <script src="crypto-utils.js"></script>
+    <!-- 📄 jsPDF و html2canvas سيتم تحميلهما بـ Lazy Load عند الحاجة -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+    
+    
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!-- Maintenance overlay (global) -->
+    <div id="maintenanceOverlay" role="alert" aria-live="assertive" tabindex="0">
+      <div class="overlay-bg">
+        <div class="sparkles" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+      <div class="box">
+        <h2 class="shimmer">❗  System Error   <span class="maintenancePulse" aria-hidden="true"></span></h2>
+        <p id="maintenanceMessageText"> نعتذر، النظام يواجه مشكلة تقنية مفاجئة تمنع الوصول للبيانات حالياً. تجري محاولة المعالجة تلقائياً، يرجى الانتظار قليلاً ثم تحديث الصفحة.  </p> 
+        <div class="sub">Error Reference: #500-xc9 | Request ID: 1f4a-7b22</div>
+      </div>
+    </div>
+    <!-- PDF progress overlay -->
+    <div id="pdfProgressOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:2147483650;align-items:center;justify-content:center;">
+      <div style="background:#fff;border-radius:12px;padding:18px 20px;max-width:420px;width:90%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.4);">
+        <div id="pdfProgressIcon" style="font-size:32px;margin-bottom:8px;">🔄</div>
+        <div id="pdfProgressText" style="font-weight:700;color:#0b66c3;margin-bottom:8px">جاري إنشاء PDF وإرساله...</div>
+        <div style="height:10px;background:#eef3fb;border-radius:8px;overflow:hidden;margin-bottom:12px;">
+          <div id="pdfProgressBar" style="width:0%;height:100%;background:#1976d2;transition:width 300ms ease;"></div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:center;">
+          <button id="pdfProgressCloseBtn" style="display:none;background:#1976d2;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer">إغلاق</button>
+        </div>
+      </div>
+    </div>
+    <div class="container">
+      <!-- نافذة تفاصيل اليوم -->
+      <div
+        id="dayDetailsModal"
+        style="
+          display: none;
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background: rgba(0, 0, 0, 0.18);
+          z-index: 10000;
+          align-items: center;
+          justify-content: center;
+        "
+      >
+        <div
+          style="
+            background: #fff;
+            max-width: 420px;
+            width: 97vw;
+            max-height: 90vh;
+            overflow: auto;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px #0002;
+            padding: 28px 18px 18px 18px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+          "
+        >
+          <button
+            id="closeDayDetailsModal"
+            style="
+              position: absolute;
+              top: 10px;
+              left: 10px;
+              background: #dc3545;
+              color: white;
+              border: none;
+              border-radius: 50%;
+              width: 32px;
+              height: 32px;
+              font-size: 18px;
+              cursor: pointer;
+            "
+          >
+            ✖
+          </button>
+          <div
+            id="dayDetailsTitle"
+            style="
+              font-size: 20px;
+              color: #1976d2;
+              font-weight: 600;
+              text-align: center;
+              margin-bottom: 12px;
+            "
+          ></div>
+          <div id="dayDetailsTable"></div>
+          <div id="dayDetailsStatus" style="margin-top: 10px; font-size: 14px; text-align: center"></div>
+
+          <!-- App version (single-source) - inserts ribbon below the attendance table when present; falls back to fixed bottom ribbon -->
+          
+
+          
+        </div>
+      </div>
+      <!-- عنصر التحميل الاحترافي -->
+      <div
+        id="loaderSpinner"
+        style="
+          display: none;
+          justify-content: center;
+          align-items: center;
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background: rgba(255, 255, 255, 0.55);
+          z-index: 99999;
+        "
+      >
+        <div style="display: flex; flex-direction: column; align-items: center">
+          <div
+            style="
+              background: linear-gradient(135deg, #e3f0ff 60%, #cbe6ff 100%);
+              padding: 10px;
+              border-radius: 50%;
+              box-shadow: 0 6px 32px #1976d244;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              margin-bottom: 12px;
+            "
+          >
+            <img
+              id="loaderUserImg"
+              src="sticker.webp"
+              alt="صورة المستخدم"
+              fetchpriority="high"
+              loading="eager"
+              width="140"
+              height="140"
+              decoding="async"
+              style="
+                width: 140px;
+                height: 140px;
+                border-radius: 50%;
+                object-fit: cover;
+                object-position: top center;
+                box-shadow: 0 2px 18px #1976d244;
+                content-visibility: auto;
+              "
+            />
+          </div>
+          <div
+            style="
+              color: #1976d2;
+              font-size: 20px;
+              font-weight: 600;
+              letter-spacing: 0.5px;
+            "
+          >
+            اصبر النت ضعيف والله...
+          </div>
+          <div style="color: #555; font-size: 15px; margin-top: 7px">
+            يتم تحميل البيانات بشكل آمن
+          </div>
+        </div>
+        
+      </div>
+
+      <!-- تسجيل الدخول -->
+      <div id="loginBox">
+        <div
+          style="
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 22px;
+          "
+        >
+          <div class="login-user-img-wrapper">
+            <img
+              src="sticker.webp"
+              alt="صورة المستخدم"
+              class="login-user-img"
+            />
+          </div>
+        </div>
+        
+        <h2>تسجيل الدخول</h2>
+        <input
+          type="text"
+          id="username"
+          placeholder="اسم المستخدم"
+          autocomplete="off"
+        />
+        <input
+          type="password"
+          id="password"
+          placeholder="كلمة المرور"
+          autocomplete="off"
+        />
+        <button onclick="login()">دخول</button>
+        <div id="loginMessage"></div>
+        <div
+          style="
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #555;
+            font-style: italic;
+            line-height: 1.3;
+          "
+        >
+          بتصميم المهندس سجاد رشيد<br />
+          insta: e ._ mg
+        </div>
+      </div>
+
+      <!-- Welcome Screen - يظهر بعد تسجيل الدخول مباشرة -->
+      <div id="welcomeScreen" style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        padding: 12px;
+        overflow-y: auto;
+      ">
+        <div style="
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          max-width: 400px;
+          width: 100%;
+          align-items: center;
+          animation: welcomeFadeIn 0.5s ease-out;
+          margin: auto 0;
+        ">
+          
+
+          <!-- Header Card - Green -->
+          <div style="
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 16px;
+            text-align: center;
+            font-weight: 700;
+            font-size: clamp(14px, 4vw, 18px);
+            box-shadow: 0 4px 16px rgba(76, 175, 80, 0.3);
+            width: 100%;
+            letter-spacing: 0.5px;
+            animation: welcomeFadeIn 0.6s ease-out 0.1s both;
+          ">
+            🏢 صنع بواسطة المهندس سجاد
+          </div>
+
+          <!-- Account Name Card - Light Blue -->
+          <div style="
+            background: linear-gradient(135deg, #64b5f6 0%, #42a5f5 100%);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 16px;
+            text-align: center;
+            font-weight: 700;
+            font-size: clamp(13px, 3.5vw, 16px);
+            box-shadow: 0 4px 16px rgba(66, 165, 245, 0.3);
+            width: 100%;
+            letter-spacing: 0.5px;
+            animation: welcomeFadeIn 0.6s ease-out 0.15s both;
+          ">
+            <div style="font-size: clamp(11px, 2.5vw, 12px); opacity: 0.9; margin-bottom: 3px;">اسم الحساب</div>
+            <div id="welcomeAccountName">مرحباً بك</div>
+          </div>
+
+          <!-- Employee Name Card - Blue -->
+          <div style="
+            background: linear-gradient(135deg, #42a5f5 0%, #2196f3 100%);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 16px;
+            text-align: center;
+            font-weight: 700;
+            font-size: clamp(13px, 3.5vw, 16px);
+            box-shadow: 0 4px 16px rgba(33, 150, 243, 0.3);
+            width: 100%;
+            letter-spacing: 0.5px;
+            animation: welcomeFadeIn 0.6s ease-out 0.2s both;
+          ">
+            <div style="font-size: clamp(11px, 2.5vw, 12px); opacity: 0.9; margin-bottom: 3px;">اسم الموظف</div>
+            <div id="welcomeEmployeeName">جاري التحميل...</div>
+          </div>
+
+          <!-- Stats Container - Dark Blue -->
+          <div style="
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            border-radius: 16px;
+            padding: 14px;
+            box-shadow: 0 8px 24px rgba(30, 60, 114, 0.3);
+            width: 100%;
+            animation: welcomeFadeIn 0.6s ease-out 0.25s both;
+          ">
+            <div style="
+              display: flex;
+              flex-direction: column;
+              gap: 10px;
+            ">
+              <div style="
+                background: rgba(255, 255, 255, 0.15);
+                color: white;
+                padding: 10px 12px;
+                border-radius: 12px;
+                text-align: center;
+                font-weight: 600;
+                font-size: clamp(12px, 2.5vw, 14px);
+                letter-spacing: 0.5px;
+                backdrop-filter: blur(10px);
+              ">
+                <div style="font-size: clamp(10px, 2vw, 12px); opacity: 0.9; margin-bottom: 3px;">عدد الشفت</div>
+                <div id="welcomeShifts" style="font-size: clamp(16px, 4vw, 20px);">0</div>
+              </div>
+              <div style="
+                background: rgba(255, 255, 255, 0.15);
+                color: white;
+                padding: 10px 12px;
+                border-radius: 12px;
+                text-align: center;
+                font-weight: 600;
+                font-size: clamp(12px, 2.5vw, 14px);
+                letter-spacing: 0.5px;
+                backdrop-filter: blur(10px);
+              ">
+                <div style="font-size: clamp(10px, 2vw, 12px); opacity: 0.9; margin-bottom: 3px;">عدد النص</div>
+                <div id="welcomeHalves" style="font-size: clamp(16px, 4vw, 20px);">0</div>
+              </div>
+              <div style="
+                background: rgba(255, 255, 255, 0.15);
+                color: white;
+                padding: 10px 12px;
+                border-radius: 12px;
+                text-align: center;
+                font-weight: 600;
+                font-size: clamp(12px, 2.5vw, 14px);
+                letter-spacing: 0.5px;
+                backdrop-filter: blur(10px);
+              ">
+                <div style="font-size: clamp(10px, 2vw, 12px); opacity: 0.9; margin-bottom: 3px;">عدد الإجازة</div>
+                <div id="welcomeVacations" style="font-size: clamp(16px, 4vw, 20px);">0</div>
+              </div>
+              <div style="
+                background: rgba(255, 255, 255, 0.15);
+                color: white;
+                padding: 10px 12px;
+                border-radius: 12px;
+                text-align: center;
+                font-weight: 600;
+                font-size: clamp(12px, 2.5vw, 14px);
+                letter-spacing: 0.5px;
+                backdrop-filter: blur(10px);
+              ">
+                <div style="font-size: clamp(10px, 2vw, 12px); opacity: 0.9; margin-bottom: 3px;">الراتب الكلي</div>
+                <div id="welcomeSalary" style="font-size: clamp(15px, 3.5vw, 18px);">0 د.ع</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Enter System Button -->
+          <button onclick="closeWelcomeScreen()" style="
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #6c5ce7 0%, #5f3dc4 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: clamp(14px, 3.5vw, 16px);
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(108, 92, 231, 0.3);
+            letter-spacing: 0.5px;
+            animation: welcomeFadeIn 0.6s ease-out 0.3s both;
+          "
+          onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 24px rgba(108, 92, 231, 0.4)'"
+          onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 16px rgba(108, 92, 231, 0.3)'"
+          >
+            الدخول الى النظام
+          </button>
+
+          <!-- Credits -->
+          <div style="
+            text-align: center;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #666;
+            font-style: italic;
+            animation: welcomeFadeIn 0.6s ease-out 0.35s both;
+          ">
+            نظام إدارة حضور الموظفين
+          </div>
+        </div>
+      </div>
+
+      
+
+      <!-- المحتوى الرئيسي وجدول الحضور -->
+      <div id="mainContent">
+        <h2>📋 جدول الحضور</h2>
+        <!-- PDF download removed as requested -->
+        <table id="attendanceTable">
+          <thead>
+            <tr>
+              <th
+                id="dateHeaderTh"
+                style="
+                  background: linear-gradient(90deg, #e3f0ff 0%, #cbe6ff 100%);
+                  color: #1976d2;
+                  font-weight: bold;
+                  font-size: 18px;
+                  border-bottom: 2.5px solid #90caf9;
+                  letter-spacing: 0.5px;
+                  display: none;
+                "
+              >
+                التاريخ
+              </th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+        
+        <button onclick="saveData()">💾 حفظ التعديلات</button>
+        <button
+          onclick="logout()"
+          style="background-color: #dc3545; margin-top: 10px"
+        >
+          🚪 تسجيل خروج
+        </button>
+        <h3 style="margin-top: 20px">📊 الإحصائيات</h3>
+        <div id="statsBox" style="min-height: 120px; padding: 15px; margin: 10px 0; background: #f5f5f5; border-radius: 6px; border-left: 4px solid #1976d2; contain: layout style paint;">—</div>
+        <!-- إحصائيات الموظفين أسفل الجدول -->
+        <!-- زر احصائيه الكعده خارج الجدول وقبل كلمة الراتب الكلي -->
+        <div style="display: flex; justify-content: flex-start; margin-top: 30px; margin-bottom: -10px;">
+          <a href="#" class="myButton" id="showKadahStatsBtn">احصائيه الكعده</a>
+          <a href="#" class="myButton closeKadahBtn" id="closeKadahStatsBtn" style="display:none; margin-right:10px;">اغلاق الجدول</a>
+        </div>
+        <!-- جدول احصائيات الكعده مخفي -->
+  <div id="kadahStatsTableWrapper" style="display:none; max-width:520px; margin:22px auto 0 auto;">
+          <div style="overflow-x:auto;">
+            <table id="kadahStatsTable" class="kadah-stats-table">
+              <thead>
+                <tr>
+                  <th class="kadah-head">الموظف</th>
+                  <th class="kadah-head">600</th>
+                  <th class="kadah-head">22</th>
+                  <th class="kadah-head">مشتركة</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="empStatsBelowTable" style="margin: 30px 0 0 0; contain: layout style paint;"></div>
+      </div>
+      
+
+      <!-- مكان ظهور إحصائيات الموظفين أسفل جدول الحضور -->
+      <div id="empStatsBelowTable" style="margin: 30px 0 0 0"></div>
+
+      <!-- Employee Details Modal -->
+      <div id="employeeDetailsModal" style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10001;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      ">
+        <div style="
+          background: white;
+          border-radius: 16px;
+          box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
+          max-width: 500px;
+          width: 100%;
+          max-height: 90vh;
+          overflow-y: auto;
+          padding: 24px;
+          position: relative;
+          animation: slideUp 0.3s ease-out;
+        ">
+          
+          <button onclick="closeEmployeeDetails()" style="
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+          "
+          onmouseover="this.style.background='#ff5252'; this.style.transform='rotate(90deg)'"
+          onmouseout="this.style.background='#ff6b6b'; this.style.transform='rotate(0deg)'"
+          >✖</button>
+
+          <div style="text-align: center; margin-bottom: 24px;">
+            <div style="
+              font-size: 48px;
+              margin-bottom: 12px;
+            ">👤</div>
+            <h2 id="empDetailsName" style="
+              font-size: 26px;
+              color: #1976d2;
+              margin: 0;
+              font-weight: 700;
+            "></h2>
+            <div id="empDetailsRole" style="
+              font-size: 14px;
+              color: #666;
+              margin-top: 6px;
+            "></div>
+          </div>
+
+          <div style="
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+          ">
+            <!-- Shifts Card -->
+            <div style="
+              background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+              color: white;
+              padding: 16px;
+              border-radius: 12px;
+              text-align: center;
+            ">
+              <div style="
+                font-size: 12px;
+                opacity: 0.9;
+                margin-bottom: 8px;
+              ">عدد الشفت</div>
+              <div id="empDetailsShifts" style="
+                font-size: 32px;
+                font-weight: 700;
+              ">0</div>
+            </div>
+
+            <!-- Vacations Card -->
+            <div style="
+              background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+              color: white;
+              padding: 16px;
+              border-radius: 12px;
+              text-align: center;
+            ">
+              <div style="
+                font-size: 12px;
+                opacity: 0.9;
+                margin-bottom: 8px;
+              ">عدد الإجازات</div>
+              <div id="empDetailsVacations" style="
+                font-size: 32px;
+                font-weight: 700;
+              ">0</div>
+            </div>
+
+            <!-- Half Days Card -->
+            <div style="
+              background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+              color: white;
+              padding: 16px;
+              border-radius: 12px;
+              text-align: center;
+            ">
+              <div style="
+                font-size: 12px;
+                opacity: 0.9;
+                margin-bottom: 8px;
+              ">أيام نصف</div>
+              <div id="empDetailsHalves" style="
+                font-size: 32px;
+                font-weight: 700;
+              ">0</div>
+            </div>
+
+            <!-- Total Salary Card -->
+            <div style="
+              background: linear-gradient(135deg, #6c5ce7 0%, #5f3dc4 100%);
+              color: white;
+              padding: 16px;
+              border-radius: 12px;
+              text-align: center;
+            ">
+              <div style="
+                font-size: 12px;
+                opacity: 0.9;
+                margin-bottom: 8px;
+              ">الراتب الكلي</div>
+              <div id="empDetailsSalary" style="
+                font-size: 18px;
+                font-weight: 700;
+              ">0 د.ع</div>
+            </div>
+          </div>
+
+          <!-- Additional Info -->
+          <div style="
+            background: #f5f7fa;
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+          ">
+            <div style="
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 12px;
+              font-size: 14px;
+            ">
+              <div>
+                <div style="color: #666; font-size: 12px; margin-bottom: 4px;">السلف المدفوعة</div>
+                <div id="empDetailsAdvances" style="
+                  color: #1976d2;
+                  font-weight: 600;
+                  font-size: 16px;
+                ">0 د.ع</div>
+              </div>
+              <div>
+                <div style="color: #666; font-size: 12px; margin-bottom: 4px;">صافي الراتب</div>
+                <div id="empDetailsNetSalary" style="
+                  color: #4caf50;
+                  font-weight: 600;
+                  font-size: 16px;
+                ">0 د.ع</div>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="closeEmployeeDetails()" style="
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #1976d2 0%, #0d47a1 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+          "
+          onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(25, 118, 210, 0.3)'"
+          onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'"
+          >إغلاق</button>
+        </div>
+      </div>
+
+      <!-- لوحة تحكم الـ Admin -->
+      <div id="adminPanel" style="display: none; position:relative;">
+        <!-- زر أصفر صغير لتعديل من نحن (يظهر فقط للمدير) -->
+        <button id="aboutPanelEditBtn" title="تعديل من نحن" style="display:none;position:absolute;top:12px;left:12px;width:36px;height:36px;background:#ffc107;border:none;border-radius:50%;padding:0;cursor:pointer;align-items:center;justify-content:center;display:flex;box-shadow:0 6px 14px rgba(0,0,0,0.08);z-index:100;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="#082233"/>
+            <path d="M20.71 7.04a1.003 1.003 0 000-1.42l-2.34-2.34a1.003 1.003 0 00-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z" fill="#082233"/>
+          </svg>
+        </button>
+        
+        <div class="admin-panel-header">
+          <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+            <span>⚙️</span>
+            <span>لوحة تحكم الإدارة</span>
+          </h3>
+          <span class="admin-panel-header-subtitle">إدارة الموظفين والمستخدمين والإعدادات</span>
+        </div>
+
+        <div class="admin-tabs-container">
+          <!-- Tab Headers -->
+          <div class="admin-tabs-header">
+            <button class="admin-tab-btn active" data-tab="employees" onclick="switchAdminTab('employees')">👥 الموظفين</button>
+            <button class="admin-tab-btn" data-tab="users" onclick="switchAdminTab('users')">👤 المستخدمون</button>
+            <button class="admin-tab-btn" data-tab="advances" onclick="switchAdminTab('advances')">💰 السلف</button>
+            <button class="admin-tab-btn" data-tab="salary" onclick="switchAdminTab('salary')">📊 الرواتب</button>
+            <button class="admin-tab-btn" data-tab="settings" onclick="switchAdminTab('settings')">⚙️ الإعدادات</button>
+          </div>
+
+          <!-- Tab Content -->
+          <div class="admin-tabs-content">
+            <!-- Employees Tab -->
+            <div id="employees" class="admin-tab-pane active">
+              <div class="adv-card">
+                <div class="adv-card-header">
+                  <h4 class="adv-title">👥 إدارة الموظفين</h4>
+                  <div class="adv-card-desc" style="margin-top:6px;">أضف موظفين جدد وأدر معلوماتهم بسهولة</div>
+                </div>
+
+                <!-- Add New Employee Form -->
+                <div style="
+                  background: linear-gradient(135deg, #f8fbff 0%, #f0f6ff 100%);
+                  padding: 16px;
+                  border-radius: 12px;
+                  margin-top: 12px;
+                  border: 2px solid #e3f0ff;
+                ">
+                  <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 250px;">
+                      <label style="
+                        display: block;
+                        font-size: 12px;
+                        font-weight: 600;
+                        color: #1976d2;
+                        margin-bottom: 6px;
+                      ">اسم الموظف الجديد</label>
+                      <input
+                        type="text"
+                        id="newEmployeeName"
+                        placeholder="مثال: محمد علي"
+                        style="
+                          width: 100%;
+                          padding: 12px 14px;
+                          border: 2px solid #e0e6f8;
+                          border-radius: 8px;
+                          font-size: 14px;
+                          font-family: inherit;
+                          box-sizing: border-box;
+                          transition: border-color 0.3s ease;
+                        "
+                        onfocus="this.style.borderColor='#2196f3'"
+                        onblur="this.style.borderColor='#e0e6f8'"
+                      />
+                    </div>
+                    <button onclick="addEmployee()" style="
+                      background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+                      color: white;
+                      border: none;
+                      padding: 12px 24px;
+                      border-radius: 8px;
+                      font-weight: 600;
+                      cursor: pointer;
+                      transition: all 0.3s ease;
+                      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+                      white-space: nowrap;
+                      font-size: 14px;
+                    "
+                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(76, 175, 80, 0.3)'"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(76, 175, 80, 0.2)'"
+                    >
+                      ➕ إضافة موظف
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Employees List -->
+                <div class="adv-table-wrap" style="margin-top: 12px;">
+                  <table id="employeesTable" style="width: 100%;">
+                    <thead>
+                      <tr>
+                        <th style="text-align: right; width: 40%;">اسم الموظف</th>
+                        <th style="text-align: center; width: 20%;">التفاصيل</th>
+                        <th style="text-align: center; width: 20%;">تعديل</th>
+                        <th style="text-align: center; width: 20%;">حذف</th>
+                      </tr>
+                    </thead>
+                    <tbody id="employeesBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Users Tab -->
+            <div id="users" class="admin-tab-pane">
+              <div id="usersPanel" class="adv-card">
+                <div class="adv-card-header">
+                  <h4 class="adv-title">👤 إدارة المستخدمين</h4>
+                  <div style="text-align:right; font-size:13px; color:#6b7280">إدارة الحسابات والأذونات</div>
+                </div>
+
+                <div class="panel-row" style="display:flex;gap:10px;align-items:flex-end;margin-top:10px;flex-wrap:wrap;">
+                  <div style="flex:1;min-width:200px;">
+                    <label style="display:block;font-size:12px;color:#1976d2;margin-bottom:4px;font-weight:600;">اسم المستخدم</label>
+                    <input type="text" id="newUserName" class="input-compact" placeholder="اسم المستخدم الجديد" />
+                  </div>
+                  <div style="flex:1;min-width:200px;">
+                    <label style="display:block;font-size:12px;color:#1976d2;margin-bottom:4px;font-weight:600;">كلمة المرور</label>
+                    <input type="password" id="newUserPass" class="input-compact" placeholder="كلمة المرور" />
+                  </div>
+                  <div style="flex:1;min-width:200px;">
+                    <label style="display:block;font-size:12px;color:#1976d2;margin-bottom:4px;font-weight:600;">الموظف المحدد</label>
+                    <select id="newUserEmployee" class="input-compact" style="width:100%;padding:8px;border:2px solid #e0e6f8;border-radius:8px;font-family:inherit;">
+                      <option value="">-- اختر موظف (اختياري) --</option>
+                    </select>
+                  </div>
+                  <label class="checkbox-label" style="display:flex;align-items:center;gap:8px;">
+                    <input type="checkbox" id="newUserCanEdit" checked />
+                    <span class="muted" style="font-size:12px;">تعديل الجدول</span>
+                  </label>
+                  <button class="btn btn-primary" onclick="addUser()">➕ إنشاء</button>
+                </div>
+
+                <div style="margin-top:12px;overflow:auto;">
+                  <table id="usersTable">
+                    <thead>
+                      <tr>
+                        <th>اسم المستخدم</th>
+                        <th>الصلاحية</th>
+                        <th>الموظف المحدد</th>
+                        <th>التعديل</th>
+                        <th>التخصيص</th>
+                        <th>حذف</th>
+                        <th>خروج</th>
+                      </tr>
+                    </thead>
+                    <tbody id="usersBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Advances Tab -->
+            <div id="advances" class="admin-tab-pane">
+              <div id="advancesAdminSection" class="adv-card">
+                <div class="adv-card-header">
+                  <h4 class="adv-title">💰 سجل السلف</h4>
+                  <button id="openAddAdvanceBtn" class="small-button adv-add">➕ إضافة سلفة</button>
+                </div>
+                <div class="adv-card-desc">يمكن للمدير تسجيل سلف للموظفين هنا وسيتم خصمها من الراتب الكلي تلقائياً.</div>
+                <div class="adv-table-wrap">
+                  <table id="advancesTable" class="advances-table">
+                    <thead>
+                      <tr>
+                        <th>الموظف</th>
+                        <th>المبلغ</th>
+                        <th>التاريخ</th>
+                        <th>ملاحظة</th>
+                        <th>حذف</th>
+                      </tr>
+                    </thead>
+                    <tbody id="advancesBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Salary Tab -->
+            <div id="salary" class="admin-tab-pane">
+              <div id="salaryAdminSection" class="adv-card">
+                <div class="adv-card-header">
+                  <div>
+                    <h4 class="adv-title">📊 إدارة الرواتب</h4>
+                    <div class="adv-card-desc" style="margin-top:6px;">تعيين أسعار الشفت والنصف وتطبيقها بسهولة.</div>
+                  </div>
+                  <div style="font-size:13px;color:#6b7280">ضبط الأسعار الافتراضية</div>
+                </div>
+
+                <div class="panel-grid" style="margin-top:12px;">
+                  <div class="panel-col">
+                    <label class="muted">سعر الشفت (دينار)</label>
+                    <input type="text" id="salaryShiftRate" class="input-compact" placeholder="22,000" />
+
+                    <label class="muted" style="margin-top:10px;">سعر النصف (دينار)</label>
+                    <input type="text" id="salaryHalfRate" class="input-compact" placeholder="11,000" />
+                  </div>
+                  <div class="panel-col" style="max-width:320px;">
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+                      <label style="display:flex;align-items:center;gap:10px;"><input type="checkbox" id="applyCurrentMonthSalary" /> تطبيق على الشهر الحالي</label>
+                      <label style="display:flex;align-items:center;gap:10px;"><input type="checkbox" id="applyFutureMonthsSalary" /> تطبيق على الأشهر القادمة</label>
+                      <div class="panel-actions" style="margin-top:8px;">
+                        <button id="saveDefaultSalaryBtn" class="btn btn-primary">💾 حفظ</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                id="toggleEmpStatsBtn"
+                style="
+                  background: #17a2b8;
+                  color: white;
+                  font-size: 13px;
+                  padding: 10px 16px;
+                  margin-top: 16px;
+                  cursor: pointer;
+                  border-radius: 8px;
+                  border: none;
+                  font-weight: 600;
+                  transition: all 0.3s ease;
+                "
+                onmouseover="this.style.background='#138496'"
+                onmouseout="this.style.background='#17a2b8'"
+              >
+                📊 تفاصيل إحصائيات الموظفين
+              </button>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings" class="admin-tab-pane">
+              <!-- Maintenance Control -->
+              <div id="maintenanceControl" style="margin-bottom:14px;padding:16px;border-radius:10px;background:#fff;box-shadow:0 1px 6px #0002;border:1px solid #e6eefc;display:flex;flex-direction:column;gap:10px;align-items:flex-start;">
+                <h4 style="margin:0 0 10px 0;color:#1976d2;font-weight:600">🔧 وضع الصيانة</h4>
+                <div style="display:flex;align-items:center;gap:10px;width:100%;justify-content:space-between;flex-wrap:wrap;">
+                  <div style="display:flex;flex-direction:column;align-items:flex-start;">
+                    <div id="maintenanceStatus"><strong id="maintenanceStatusText">غير مفعل</strong></div>
+                    <div id="maintenanceInfo" style="font-size:12px;color:#666;">لا توجد ملاحظات</div>
+                  </div>
+                  <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;">
+                    <button id="toggleMaintenanceBtn" class="small-button" style="background:#bd2121;">تفعيل وضع الصيانة</button>
+                  </div>
+                </div>
+                <div style="width:100%;display:flex;flex-direction:column;gap:6px;margin-top:8px;">
+                  <label style="font-size:13px;color:#334;">نص رسالة الصيانة الظاهر للمستخدمين</label>
+                  <textarea id="maintenanceCustomMessage" placeholder="أدخل نص رسالة الصيانة هنا" style="width:100%;min-height:52px;padding:8px;border-radius:8px;border:1px solid #e0e6f8;box-sizing:border-box;"> </textarea>
+                  <div style="display:flex;gap:8px;justify-content:flex-end;">
+                    <button id="saveMaintenanceMsgBtn" class="small-button" style="background:#1976d2;color:#fff;">حفظ النص</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Telegram Settings -->
+              <div id="telegramSettings" class="adv-card">
+                <div class="adv-card-header">
+                  <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#e9f6ff,#f3fbff);display:flex;align-items:center;justify-content:center;font-size:20px;">📡</div>
+                    <div>
+                      <h4 class="adv-title">⚙️ إعدادات تيليجرام</h4>
+                      <div class="adv-card-desc">تحكم في إشعارات النسخ الاحتياطي.</div>
+                    </div>
+                  </div>
+                  <div style="text-align:right;">
+                    <div id="telegramNextBackup" class="next-backup">النسخة المجدولة: -</div>
+                    <div id="telegramNextBackupRelative" class="next-backup-rel"></div>
+                  </div>
+                </div>
+
+                <div style="margin-top:12px;" class="panel-grid">
+                  <div class="panel-col">
+                    <label class="muted">Bot Token</label>
+                    <input type="text" id="telegramBotToken" class="input-compact" placeholder="أدخل Bot Token من @BotFather" autocomplete="off" />
+
+                    <label class="muted" style="margin-top:10px;">Chat ID</label>
+                    <input type="text" id="telegramChatId" class="input-compact" placeholder="مثال: 123456789" autocomplete="off" />
+
+                    <div style="display:flex;gap:12px;align-items:center;margin-top:10px;">
+                      <label class="switch"><input type="checkbox" id="telegramAutoBackupToggle" /><span class="slider"></span></label>
+                      <div style="flex:1;">
+                        <div style="font-weight:600;color:#07345a;">النسخ التلقائي</div>
+                        <div style="display:flex;gap:8px;align-items:center;margin-top:6px;">
+                          <input type="number" id="telegramAutoBackupHours" class="input-compact" min="1" value="48" style="width:140px;" />
+                          <div class="muted" style="font-size:12px;">(ساعات)</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="panel-col" style="max-width:320px;">
+                    <div class="panel-note">بعد الحفظ سيُجدول النسخ التالي تلقائياً.</div>
+                    <div class="panel-actions" style="margin-top:12px;">
+                      <button id="testTelegramBtn" class="btn btn-ghost">🧪 اختبار</button>
+                      <button id="saveTelegramSettingsBtn" class="btn btn-primary">💾 حفظ</button>
+                    </div>
+                    <div id="telegramStatus" style="margin-top:12px;font-size:13px;color:#374151;"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Activity Log & Delete Data -->
+              <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+                <button
+                  id="btnFeaturesTab"
+                  onclick="openActivityLogModal()"
+                  style="
+                    background: linear-gradient(135deg, #673ab7 0%, #5e35b1 100%);
+                    color: white;
+                    font-size: 13px;
+                    padding: 10px 16px;
+                    cursor: pointer;
+                    border-radius: 8px;
+                    border: none;
+                    font-weight: 600;
+                    transition: all 0.3s ease;
+                    flex: 1;
+                    min-width: 150px;
+                    box-shadow: 0 4px 12px #673ab744;
+                  "
+                  onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px #673ab766'"
+                  onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px #673ab744'"
+                >
+                  ⭐️ سجل النشاطات
+                </button>
+                <button
+                  id="btnDeleteData"
+                  onclick="advancedDelete()"
+                  style="
+                    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+                    color: white;
+                    font-size: 13px;
+                    padding: 10px 16px;
+                    cursor: pointer;
+                    border-radius: 8px;
+                    border: none;
+                    font-weight: 600;
+                    transition: all 0.3s ease;
+                    flex: 1;
+                    min-width: 150px;
+                    box-shadow: 0 4px 12px #dc354544;
+                  "
+                  onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px #dc354566'"
+                  onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px #dc354544'"
+                >
+                  🗑️ حذف البيانات
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modals for Employee Stats and Activity Log -->
+        <div
+          id="empStatsTab"
+          style="
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+          "
+        >
+          <div
+            style="
+              background: #fff;
+              max-width: 500px;
+              width: 95vw;
+              max-height: 90vh;
+              overflow: auto;
+              border-radius: 12px;
+              box-shadow: 0 8px 32px #0002;
+              padding: 25px 20px 20px 20px;
+              position: relative;
+            "
+          >
+            <button
+              id="closeEmpStatsTab"
+              style="
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                background: #dc3545;
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 32px;
+                height: 32px;
+                font-size: 18px;
+                cursor: pointer;
+              "
+            >
+              ✖
+            </button>
+            <h3 style="text-align: center; margin-bottom: 18px">
+              📊 إحصائيات الموظفين
+            </h3>
+            <div id="empStatsTabContent"></div>
+          </div>
+        </div>
+
+        <div
+          id="featuresTab"
+          style="
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 3000;
+            align-items: center;
+            justify-content: center;
+          "
+        >
+          <div
+            style="
+              background: #fff;
+              max-width: 520px;
+              width: 97vw;
+              max-height: 92vh;
+              overflow: auto;
+              border-radius: 14px;
+              box-shadow: 0 8px 32px #0002;
+              padding: 25px 18px 18px 18px;
+              position: relative;
+            "
+          >
+            <button
+              id="closeFeaturesTab"
+              style="
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                background: #dc3545;
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 32px;
+                height: 32px;
+                font-size: 18px;
+                cursor: pointer;
+              "
+            >
+              ✖
+            </button>
+            <h3 style="text-align: center; margin-bottom: 18px; color: #673ab7">
+              ⭐️ تفاصيل السجلات
+            </h3>
+            <div id="featuresTabContent"></div>
+          </div>
+        </div>
+
+        
+      </div>
+    </div>
+
+    <!-- تم حذف الأنماط المكررة للـ sidebarMenu لتقليل التكرار -->
+  <button id="sidebarToggleBtn" style="display: none; z-index:12001; position:fixed; top:14px; right:14px">☰</button>
+  <button id="sidebarCloseBtn" style="display: none; z-index:12001; position:fixed; top:14px; right:14px">✖</button>
+    <div id="sidebarMenu">
+      <div class="sidebar-header" id="sidebarUserName"></div>
+      <button onclick="saveData()" style="background: #0dc149; color: white; font-size: 13px; padding: 8px 10px; margin: 6px 6%; font-weight: 500;">
+        💾 حفظ التعديلات
+      </button>
+      <button onclick="logout()" style="
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        font-weight: 500;
+        font-size: 13px;
+        padding: 8px 10px;
+        margin: 6px 6%;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 6px #dc354433;
+      " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 3px 8px #dc354444'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 6px #dc354433'">
+        🚪 تسجيل خروج
+      </button>
+      <button
+        id="sidebarAdminBtn"
+        style="
+          background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+          color: white;
+          display: none;
+          font-weight: 500;
+          font-size: 13px;
+          padding: 8px 10px;
+          margin: 6px 6%;
+          border-radius: 6px;
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 6px #00000033;
+        " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 3px 8px #00000044'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 6px #00000033'"
+      >
+        ⚙️ لوحة التحكم
+      </button>
+      <button
+        id="sidebarMonthsManagerBtn"
+        style="
+          background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+          color: white;
+          display: none;
+          font-weight: 500;
+          font-size: 13px;
+          padding: 8px 10px;
+          margin: 6px 6%;
+          border-radius: 6px;
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 6px #1976d233;
+        " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 3px 8px #1976d244'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 6px #1976d233'"
+      >
+        📅 إدارة الأشهر
+      </button>
+      <button
+        id="sidebarEmpStatsBtn"
+        style="
+          background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+          color: white;
+          display: none;
+          font-weight: 500;
+          font-size: 13px;
+          padding: 8px 10px;
+          margin: 6px 6%;
+          border-radius: 6px;
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 6px #17a2b833;
+        " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 3px 8px #17a2b844'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 6px #17a2b833'"
+      >
+        📊 إحصائيات الموظفين
+      </button>
+      <button
+        id="sidebarNotificationsBtn"
+        style="
+          background: linear-gradient(135deg, #ff4081 0%, #f50057 100%);
+          color: white;
+          display: none;
+          font-weight: 500;
+          font-size: 13px;
+          padding: 8px 10px;
+          margin: 6px 6%;
+          border-radius: 6px;
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 6px #ff408133;
+        " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 3px 8px #ff408144'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 6px #ff408133'"
+      >
+        🔔 الإشعارات
+      </button>
+      <!-- Admin-only Announcements button -->
+      <button
+        id="sidebarAnnouncementsBtn"
+        style="
+          background: linear-gradient(135deg, #ff6f00 0%, #e65100 100%);
+          color: white;
+          display: none;
+          font-weight: 500;
+          font-size: 13px;
+          padding: 8px 10px;
+          margin: 6px 6%;
+          border-radius: 6px;
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 6px #ff6f0033;
+        " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 3px 8px #ff6f0044'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 6px #ff6f0033'"
+        title="إعلانات المدير"
+      >
+        📢 الإعلانات
+      </button>
+      <button
+        id="sidebarDeleteDataBtn"
+        style="
+          background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+          color: white;
+          display: none;
+          font-weight: 500;
+          font-size: 13px;
+          padding: 8px 10px;
+          margin: 6px 6%;
+          border-radius: 6px;
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 6px #dc354433;
+        " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 3px 8px #dc354444'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 6px #dc354433'"
+      >
+        🗑️ حذف بيانات متقدمة
+      </button>
+      
+       <button
+        id="sidebarPrintTelegramBtn"
+        style="
+          background: linear-gradient(135deg, #0088cc 0%, #005fcc 100%);
+          color: white;
+          display: none;
+          font-weight: 500;
+          font-size: 13px;
+          padding: 8px 10px;
+          margin: 6px 6%;
+          border-radius: 6px;
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 6px #0088cc33;
+        " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 3px 8px #0088cc44'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 6px #0088cc33'"
+        title="طباعة وإرسال تقرير PDF إلى تيليجرام"
+      >
+        📄 طباعة وإرسال PDF
+      </button>
+      
+      
+      <button
+        id="sidebarFeaturesTabBtn"
+        style="
+          background: linear-gradient(135deg, #673ab7 0%, #5e35b1 100%);
+          color: white;
+          display: none;
+          font-weight: 600;
+          padding: 10px 16px;
+          border-radius: 6px;
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          margin-top: 8px;
+          box-shadow: 0 4px 12px #673ab744;
+        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px #673ab766'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px #673ab744'"
+      >
+        ⭐️ سجل النشاطات
+      </button>
+      <button
+        id="sidebarChangePassBtn"
+        style="
+          background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+          color: white;
+          font-weight: 600;
+          padding: 10px 16px;
+          border-radius: 6px;
+          border: none;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          margin-top: 8px;
+          box-shadow: 0 4px 12px #2196f344;
+        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px #2196f366'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px #2196f344'"
+      >
+        🔑 تغيير كلمة المرور
+      </button>
+      <!-- أضف زر التحكم في صلاحيات سجل النشاطات للمدير في القائمة الجانبية -->
+      <button
+        id="sidebarUserControlBtn"
+        style="background: #009688; color: white; display: none"
+      >
+        👥 صلاحيات سجل النشاطات
+      </button>
+      <!-- زر الملاحظات -->
+      <button
+        id="sidebarNotesBtn"
+        style="background: #ffb300; color: #333; display: none"
+      >
+        📝 الملاحظات
+      </button>
+      <!-- زر إعدادات الملاحظات للمدير فقط -->
+      <button
+        id="sidebarNotesSettingsBtn"
+        style="background: #ff9800; color: #222; display: none"
+      >
+        ⚙️ إعدادات الملاحظات
+      </button>
+      <!-- زر طباعة وإرسال PDF إلى تيليجرام -->
+    
+      <!-- أزرار إدارة قاعدة البيانات -->
+    </div>
+    
+    <!-- Announcement modal -->
+    <div
+      id="announceModal"
+      style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.35);z-index:7000;align-items:center;justify-content:center;">
+      <div style="background:#fff;max-width:420px;width:94vw;border-radius:12px;padding:18px;box-shadow:0 8px 32px #0002;position:relative;">
+        <button id="closeAnnounceModal" style="position:absolute;top:10px;left:10px;background:#dc3545;color:#fff;border:none;border-radius:50%;width:30px;height:30px;">✖</button>
+        <h3 style="text-align:center;color:#ff6f00;margin-bottom:10px;">📢 إنشاء إعلان</h3>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <textarea id="announceText" placeholder="اكتب رسالة موجزة للموظفين" style="width:100%;min-height:80px;padding:8px;border:1px solid #ccc;border-radius:8px;font-size:15px;resize:vertical;"></textarea>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <label style="font-size:14px;margin:0;">حجم الخط:</label>
+            <select id="announceFontSize" style="flex:1;padding:8px;border-radius:8px;border:1px solid #ccc;">
+              <option value="16">صغير (16px)</option>
+              <option value="18" selected>افتراضي (18px)</option>
+              <option value="20">متوسط (20px)</option>
+              <option value="24">كبير (24px)</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <label style="font-size:14px;margin:0;">لون خلفية مؤقت:</label>
+            <input id="announceBgColor" type="color" value="#ff8a00" style="width:56px;height:36px;border-radius:6px;border:1px solid #ccc;padding:2px;" />
+            <span style="font-size:12px;color:#fff;background:#0000;padding:0 6px;">&nbsp;</span>
+          </div>
+          <label style="font-size:14px;">المدة:</label>
+          <select id="announceDuration" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ccc;">
+            <option value="5">5 دقائق</option>
+            <option value="15">15 دقيقة</option>
+            <option value="30">30 دقيقة</option>
+            <option value="60">1 ساعة</option>
+            <option value="180">3 ساعات</option>
+            <option value="720">12 ساعة</option>
+            <option value="1440">24 ساعة</option>
+            <option value="custom">أخرى (دقائق)</option>
+          </select>
+          <div style="display:flex;gap:8px;">
+            <button id="publishAnnounceBtn" style="flex:1;background:#ff6f00;color:white;border:none;padding:10px;border-radius:8px;">نشر</button>
+            <button id="previewAnnounceBtn" style="flex:1;background:#1976d2;color:white;border:none;padding:10px;border-radius:8px;">معاينة</button>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:6px;">
+            <button id="deleteCurrentAnnounceBtn" style="flex:1;background:#e53935;color:white;border:none;padding:8px;border-radius:8px;display:none;">حذف الإعلان الحالي</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Announcement bar (fixed at top) -->
+    <div id="announcementBar" style="display:none;position:fixed;top:0;left:0;right:0;height:auto;background:linear-gradient(90deg,#ff8a00,#ff6f00);color:#fff;z-index:2000;align-items:center;overflow:visible;padding:8px 14px;">
+      <div id="announcementInner" style="white-space:normal;display:block;padding:0 12px;font-weight:700;font-size:18px;line-height:1.2;font-family:'Segoe UI', Tahoma, Arial, sans-serif;letter-spacing:0.2px;text-align:center;">&nbsp;</div>
+      <button id="closeAnnouncementBar" aria-label="إغلاق الإعلان" title="إغلاق" style="position:absolute;right:10px;top:8px;width:36px;height:36px;background:rgba(255,255,255,0.08);border:none;color:#fff;border-radius:8px;font-size:18px;display:none;align-items:center;justify-content:center;cursor:pointer;">✖</button>
+    </div>
+    <!-- نهاية الإضافة -->
+
+    <!-- سجل النشاطات - تحسين التفاصيل -->
+    
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
+
+    <!-- إضافة: نافذة تغيير كلمة المرور -->
+    <div
+      id="changePassModal"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.35);
+        z-index: 6000;
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <div
+        style="
+          background: #fff;
+          max-width: 340px;
+          width: 95vw;
+          border-radius: 12px;
+          box-shadow: 0 8px 32px #0002;
+          padding: 22px 18px 18px 18px;
+          position: relative;
+        "
+      >
+        <button
+          id="closeChangePassModal"
+          style="
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            font-size: 16px;
+            cursor: pointer;
+          "
+        >
+          ✖
+        </button>
+        <h3 style="text-align: center; margin-bottom: 18px; color: #2196f3">
+          🔑 تغيير كلمة المرور
+        </h3>
+        <div id="changePassForm"></div>
+        <div
+          id="changePassStatus"
+          style="margin-top: 10px; font-size: 14px; text-align: center"
+        ></div>
+      </div>
+    </div>
+    
+    <!-- Fixed top sticky header: clones #attendanceTable thead and fixes it to top with smooth animation -->
+    
+
+    
+
+    <!-- من نحن - تصميم احترافي ومُميز (مُحدَّث بالألوان) -->
+    
+
+  <footer id="aboutUs" class="pro" aria-labelledby="aboutTitle" style="display:none;">
+      <div class="inner">
+        <div class="founder-card" role="region" aria-label="معلومات المؤسس">
+          <div class="founder-meta">
+            <div style="text-align:right;">
+              <div style="font-weight:800;font-size:16px;color:#ffdede;" id="founderName">سجاد رشيد</div>
+              <div style="font-size:13px;color:#dfeffb;">مؤسس ومطور النظام</div>
+            </div>
+            <div class="avatar" id="founderAvatar">سج</div>
+          </div>
+          <div class="meta" id="founderBio">مطور ومصمم نظم عربية مبسطة لإدارة الحضور، يركز على حلول خفيفة وسهلة الصيانة للمؤسسات الصغيرة والمتوسطة.</div>
+          <div class="contact" aria-label="وسائل تواصل">
+            <!-- Instagram only per request -->
+            <a class="ig-btn" id="founderInstagram" href="https://instagram.com/example" target="_blank" rel="noopener noreferrer">📸 تابع على إنستغرام</a>
+          </div>
+          <div class="socials" aria-hidden="false">
+          </div>
+        </div>
+
+        <div class="right-col">
+          <h3 id="aboutTitle">من نحن</h3>
+          <p class="lead">نقدم نظام حضور وانصراف خفيف وسريع النشر للمؤسسات الصغيرة والمتوسطة. يوفّر واجهة عربية كاملة، إمكانيات إدارة الموظفين، تقارير الحضور،  .</p>
+          <div class="features" aria-hidden="false">
+            <div class="feature">واجهة عربية كاملة</div>
+            <div class="feature">أداء سريع وخفيف</div>
+            <div class="feature">تحكم بالصلاحيات</div>
+            <div class="feature">تصدير واستعادة البيانات</div>
+            <div class="feature">تقارير حضور مفصّلة</div>
+            <div class="feature">نسخ احتياطية آمنة</div>
+            <div class="feature">تخصيص سريع للواجهات</div>
+          </div>
+
+          <div class="version" aria-live="polite"><span class="ver-label">الإصدار</span>: <span id="footerVersion">v?</span> <span style="opacity:0.9;margin-left:8px;color:#dff8ff;">آخر تحديث:</span> <span id="footerUpdated">—</span></div>
+          <div style="margin-top:12px;color:#dfeffb;font-size:13px;">للدعم الفني والملاحظات استخدم صفحة الإنستغرام الخاصة بالمؤسس.</div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:18px;gap:12px;flex-wrap:wrap;">
+        <small style="color:rgba(223,239,251,0.7);">© جميع الحقوق محفوظة</small>
+        <div id="footerCredit" style="color:rgba(223,239,251,0.7);font-size:13px;">تصميم وتطوير: سجاد رشيد</div>
+      </div>
+
+      
+    </footer>
+
+    <!-- Modal: تحرير محتوى من نحن (مستدعى من لوحة التحكم) -->
+    
+  <div id="aboutPanelEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:15000;align-items:center;justify-content:center;">
+      <div class="modal-box">
+        <h3 style="margin:0 0 8px 0;">تعديل محتوى "من نحن"</h3>
+        <div class="about-edit-inner">
+          <div class="left-column">
+            <label style="display:block;font-size:13px;margin-top:8px;">اسم المؤسس</label>
+            <input id="aboutEditName" type="text" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;" />
+            <label style="display:block;font-size:13px;margin-top:8px;">الوصف / السيرة</label>
+            <textarea id="aboutEditBio" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;min-height:90px;"></textarea>
+            <label style="display:block;font-size:13px;margin-top:8px;">حساب الإنستغرام (مع أو بدون @)</label>
+            <input id="aboutEditIg" type="text" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;" />
+
+            <div style="display:flex;gap:8px;margin-top:12px;align-items:center;">
+              <label style="font-size:13px;">الإصدار</label>
+              <!-- make version input larger for more typing room -->
+              <input id="aboutEditVersion" type="text" placeholder="مثال: 2.8" style="width:180px;padding:8px;border-radius:8px;border:1px solid #ddd;font-weight:800;font-size:15px;" />
+              <label style="font-size:13px;margin-left:8px;">آخر تحديث</label>
+              <input id="aboutEditUpdated" type="date" style="padding:6px;border-radius:6px;border:1px solid #ddd;" />
+            </div>
+
+            <label style="display:block;font-size:13px;margin-top:8px;">نص التذييل (يمين)</label>
+            <input id="aboutEditFooterCredit" type="text" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;" />
+
+            <label style="display:block;font-size:13px;margin-top:10px;">شرائح الميزات (سطر لكل ميزة)</label>
+            <textarea id="aboutEditFeatures" placeholder="اكتب كل ميزة في سطر جديد، مثال:\nواجهة عربية كاملة\nأداء سريع وخفيف" style="width:100%;min-height:90px;padding:8px;border-radius:8px;border:1px solid #ddd;font-size:13px;"></textarea>
+          </div>
+
+          <div class="avatar-column" style="text-align:center;">
+            <div style="font-size:13px;margin-bottom:6px;color:#333;font-weight:700;">صورة المؤسس</div>
+              <div id="avatarPreview" style="width:120px;height:120px;border-radius:50%;background:#f0f0f0;display:inline-flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:8px;border:1px solid #ddd;">
+              <!-- will be filled with <img> or initials -->
+            </div>
+            <input id="aboutEditAvatarFile" type="file" accept="image/*" style="display:block;margin:6px auto 8px auto;" />
+            <input id="aboutEditAvatarUrl" type="text" placeholder="أو ضع رابط الصورة" style="width:100%;padding:6px;border-radius:6px;border:1px solid #ddd;" />
+            <div style="font-size:12px;color:#666;margin-top:8px;">يمكنك رفع صورة أو لصق رابط مباشر. تحفظ الصورة كـ data URL إذا لم تتوفر قاعدة بيانات.</div>
+
+            <!-- Avatar size control -->
+            <label style="display:block;font-size:13px;margin-top:10px;text-align:center;">حجم الصورة: <span id="aboutEditAvatarSizeVal" style="font-weight:800;margin-left:8px;">88px</span></label>
+            <div style="display:flex;align-items:center;gap:10px;justify-content:center;margin-top:6px;">
+              <input id="aboutEditAvatarSize" type="range" min="60" max="160" value="88" style="width:160px;" />
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+          <button id="aboutEditCancel" style="background:#ff0000;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;">إلغاء</button>
+          <button id="aboutEditSave" style="background:#1976d2;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;">حفظ التغييرات</button>
+        </div>
+      </div>
+    </div>
+
+    
+
+    <!-- ============================================ -->
+    <!-- نظام النسخ الاحتياطي عبر تيليجرام -->
+    <!-- ============================================ -->
+    
+
+    <script src="app.js" defer></script>
+  </body>
+</html>
