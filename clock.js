@@ -13,11 +13,16 @@ function updateWelcomeClock() {
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
-        hour12: true,
-        numberingSystem: 'latn' // يخلي الأرقام انجليزية
+        hour12: true
     };
 
-    clockEl.textContent = now.toLocaleDateString('ar-IQ', options);
+    let text = now.toLocaleDateString('ar-IQ', options);
+
+    // تحويل الأرقام العربية الى إنجليزية
+    const arabicNumbers = '٠١٢٣٤٥٦٧٨٩';
+    text = text.replace(/[٠-٩]/g, d => arabicNumbers.indexOf(d));
+
+    clockEl.textContent = text;
 }
 
 setInterval(updateWelcomeClock, 1000);
