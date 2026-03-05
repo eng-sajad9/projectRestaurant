@@ -5,25 +5,29 @@ function updateWelcomeClock() {
 
     const now = new Date();
 
-    const options = {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: true
-    };
+    const days = [
+        "الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"
+    ];
 
-    let text = now.toLocaleString("ar-IQ", options);
+    const months = [
+        "يناير","فبراير","مارس","أبريل","مايو","يونيو",
+        "يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"
+    ];
 
-    // تحويل الأرقام العربية الى إنجليزية
-    text = text.replace(/[٠-٩]/g, function (d) {
-        return d.charCodeAt(0) - 1632;
-    });
+    let dayName = days[now.getDay()];
+    let day = now.getDate();
+    let month = months[now.getMonth()];
+    let year = now.getFullYear();
 
-    clockEl.textContent = text;
+    let hours = now.getHours();
+    let minutes = String(now.getMinutes()).padStart(2,"0");
+    let seconds = String(now.getSeconds()).padStart(2,"0");
+
+    let ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12 || 12;
+
+    clockEl.textContent =
+        `${dayName}، ${day} ${month} ${year}، ${hours}:${minutes}:${seconds} ${ampm}`;
 }
 
 setInterval(updateWelcomeClock, 1000);
