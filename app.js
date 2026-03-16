@@ -24,6 +24,101 @@ window.setAppVersion = function (version, updated, notes) {
 };
 window.getAppVersion = function () { return Object.assign({}, window.APP_VERSION); };
 
+// Modern Toast Notification Function
+// Modern iOS-Style Toast Notification Function
+window.showToast = function(titleOrMessage, description = '', type = 'success', duration = 4500) {
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    document.body.appendChild(container);
+  }
+
+  // Handle legacy single-argument calls intelligently
+  let finalTitle = titleOrMessage;
+  let finalDesc = description;
+  
+  if (!description) {
+    // If only one argument is provided, try to split it or use it as description
+    if (titleOrMessage.length > 25) {
+      finalTitle = "تنبيه النظام";
+      finalDesc = titleOrMessage;
+    } else {
+      finalTitle = titleOrMessage;
+      finalDesc = "تمت العملية بنجاح"; // Default subtitle for short success messages
+      if (type === 'error') finalDesc = "حدث خطأ أثناء المعالجة";
+      if (type === 'warning') finalDesc = "يرجى الانتباه لهذه الملاحظة";
+      if (type === 'info') finalDesc = "معلومات إضافية لك";
+    }
+  }
+
+  const toast = document.createElement('div');
+  toast.className = `toast-card ${type}`;
+  
+  const icons = {
+    success: '✅',
+    error: '❌',
+    warning: '⚠️',
+    info: 'ℹ️'
+  };
+
+  toast.innerHTML = `
+    <div class="toast-icon">${icons[type] || icons.info}</div>
+    <div class="toast-content">
+      <div class="toast-title">${finalTitle}</div>
+      <div class="toast-message">${finalDesc}</div>
+    </div>
+    <button class="toast-close">✕</button>
+  `;
+
+  container.appendChild(toast);
+
+  const closeToast = () => {
+    toast.classList.add('fade-out');
+    toast.addEventListener('animationend', () => {
+      toast.remove();
+      if (container && container.childNodes.length === 0) {
+        container.remove();
+      }
+    });
+  };
+
+  toast.querySelector('.toast-close').onclick = closeToast;
+
+  // iOS-like interaction: click to dismiss
+  toast.onclick = (e) => {
+    if (!e.target.classList.contains('toast-close')) closeToast();
+  };
+
+  if (duration > 0) {
+    setTimeout(closeToast, duration);
+  }
+};
+
+// Fail-safe: Override the native window.alert to always use our premium showToast
+window.alert = function(message) {
+  let type = 'success';
+  let title = "تنبيه النظام";
+  
+  if (typeof message === 'string') {
+    if (message.includes('❌') || message.includes('error') || message.includes('فشل') || message.includes('خطأ')) {
+      type = 'error';
+      title = "خطأ في النظام";
+    } else if (message.includes('⚠️') || message.includes('warning') || message.includes('تنبيه')) {
+      type = 'warning';
+      title = "تنبيه هام";
+    } else if (message.includes('ℹ️') || message.includes('info') || message.includes('معلومات') || message.includes('لا يوجد')) {
+      type = 'info';
+      title = "إفادة";
+    }
+  }
+  
+  window.showToast(title, String(message), type);
+};
+
+
+
+
 // Global Variables
 let salaryRates = {};
 
@@ -107,7 +202,7 @@ else initVersionUI();
 (function () {
   async function setMaintenanceState(enabled, reason, message) {
     if (typeof db === 'undefined' || !db || typeof db.ref !== 'function') {
-      alert('خطأ: قاعدة البيانات غير متاحة');
+      showToast('خطأ: قاعدة البيانات غير متاحة', 'error');
       return;
     }
     try {
@@ -179,7 +274,7 @@ else initVersionUI();
   // Ask for confirmation and optionally a reason before toggling maintenance
   window.toggleMaintenanceRequest = function () {
     if (!currentUserRole || currentUserRole !== 'admin') { alert('غير مسموح: هذه الخاصية خاصة بالمدير فقط'); return; }
-    if (typeof db === 'undefined' || !db || typeof db.ref !== 'function') { alert('خطأ: قاعدة البيانات غير متاحة'); return; }
+    if (typeof db === 'undefined' || !db || typeof db.ref !== 'function') { showToast('خطأ: قاعدة البيانات غير متاحة', 'error'); return; }
     db.ref('system/maintenance').once('value').then((snap) => {
       const state = snap.val() || { enabled: false };
       if (!state.enabled) {
@@ -236,7 +331,7 @@ else initVersionUI();
         const txtArea = document.getElementById('maintenanceCustomMessage'); if (!txtArea) return;
         const val = txtArea.value.trim();
         if (typeof db === 'undefined' || !db || typeof db.ref !== 'function') {
-          try { localStorage.setItem('maintenanceMessage', val); alert('✅ تم حفظ رسالة الصيانة محلياً'); } catch (e) { alert('❌ حدث خطأ أثناء الحفظ'); }
+          try { localStorage.setItem('maintenanceMessage', val); showToast('✅ تم حفظ رسالة الصيانة محلياً', 'success'); } catch (e) { showToast('❌ حدث خطأ أثناء الحفظ', 'error'); }
           return;
         }
         try {
@@ -247,9 +342,9 @@ else initVersionUI();
           try { await db.ref('system/maintenance/signal').set(Date.now()); } catch (e) { }
           try { localStorage.setItem('maintenanceSignal', JSON.stringify({ ts: Date.now(), enabled: !!state.enabled })); } catch (e) { }
           applyMaintenanceState(state);
-          alert('✅ تم حفظ رسالة الصيانة');
+          showToast('✅ تم حفظ رسالة الصيانة');
           logActivity('تحديث رسالة الصيانة', `تم تحديث رسالة الصيانة إلى: ${val}`);
-        } catch (err) { console.error(err); alert('❌ حدث خطأ أثناء حفظ رسالة الصيانة'); }
+        } catch (err) { console.error(err); showToast('❌ حدث خطأ أثناء حفظ رسالة الصيانة', 'error'); }
       });
     } catch (e) { }
     // Listen for localStorage broadcasts for cross-tab instant updates
@@ -542,8 +637,8 @@ function isCurrentMonthSelected() {
 // دالة منع التعديل على الأشهر السابقة
 function preventEditIfNotCurrentMonth() {
   if (!isCurrentMonthSelected()) {
-    alert(
-      "❌ لا يمكن التعديل أو الحذف أو الإضافة على بيانات الأشهر السابقة."
+    showToast(
+      "❌ لا يمكن التعديل أو الحذف أو الإضافة على بيانات الأشهر السابقة.", "warning"
     );
     return false;
   }
@@ -1380,7 +1475,7 @@ function updateSidebarVisibility() {
         .set(newName)
         .then(() => {
           logActivity("تغيير اسم الشهر", `تم تغيير اسم الشهر من ${label} إلى ${newName}`);
-          alert("✅ تم تحديث اسم الشهر");
+          showToast("✅ تم تحديث اسم الشهر");
           advModal.remove();
           loadMonthsManagerContent();
         })
@@ -1398,7 +1493,7 @@ function updateSidebarVisibility() {
           .set(msg)
           .then(() => {
             logActivity("تحديث رسالة الإغلاق", `تم تحديث رسالة الإغلاق للشهر: ${label}`);
-            alert("✅ تم حفظ الرسالة");
+            showToast("✅ تم حفظ الرسالة");
           })
           .catch(err => {
             console.error('خطأ في حفظ الرسالة:', err);
@@ -1410,14 +1505,14 @@ function updateSidebarVisibility() {
     // تعيين كافتراضي
     document.getElementById("setDefaultMonthBtn").onclick = function () {
       if (isDefault) {
-        alert("⚠️ هذا الشهر افتراضي بالفعل");
+        showToast("⚠️ هذا الشهر افتراضي بالفعل", "warning");
         return;
       }
       db.ref("monthsSettings/defaultMonth")
         .set(m)
         .then(() => {
           logActivity("تعيين الشهر الافتراضي", `تم تعيين الشهر: ${label} كافتراضي`);
-          alert("✅ تم تعيين الشهر كافتراضي");
+          showToast("✅ تم تعيين الشهر كافتراضي");
           advModal.remove();
           loadMonthsManagerContent();
         })
@@ -2236,7 +2331,7 @@ function formatDateTimeNoSeconds(d) {
 // حفظ التعديلات فقط عند وجود تغيير فعلي
 async function saveData() {
   if (!currentUserCanEdit) {
-    alert("❌ ليس لديك صلاحية تعديل الجدول.");
+    showToast("❌ ليس لديك صلاحية تعديل الجدول.", "error");
     return;
   }
   const days = getDays();
@@ -2285,11 +2380,11 @@ async function saveData() {
       }
     });
     if (!anyChange) {
-      alert("لا يوجد أي تعديل لحفظه.");
+      showToast("لا يوجد أي تعديل لحفظه.", "info");
       return;
     }
     await db.ref(attendancePath).set(updatedData);
-    alert("✅ تم حفظ التعديلات بنجاح");
+    showToast("✅ تم حفظ التعديلات بنجاح");
     generateTable();
     changes.forEach((change) => {
       logActivity(
@@ -2313,7 +2408,7 @@ async function saveData() {
     });
   } catch (error) {
     console.error("خطأ في حفظ البيانات:", error);
-    alert("❌ خطأ في حفظ البيانات");
+    showToast("❌ خطأ في حفظ البيانات", "error");
   }
 }
 
@@ -3517,11 +3612,11 @@ function generateTable() {
 // Unified permission check for editing current month
 function canEditCurrentMonth() {
   if (!isCurrentMonthSelected()) {
-    alert("❌ لا يمكن تعديل جدول الحضور لشهر سابق.");
+    showToast("❌ لا يمكن تعديل جدول الحضور لشهر سابق.", "error");
     return false;
   }
   if (!currentUserCanEdit) {
-    alert("❌ ليس لديك صلاحية تعديل الجدول.");
+    showToast("❌ ليس لديك صلاحية تعديل الجدول.", "error");
     return false;
   }
   return true;
@@ -3574,11 +3669,11 @@ async function saveAttendanceData() {
       }
     });
     if (!anyChange) {
-      alert("لا يوجد أي تعديل لحفظه.");
+      showToast("لا يوجد أي تعديل لحفظه.", "info");
       return;
     }
     await db.ref(attendancePath).set(updatedData);
-    alert("✅ تم حفظ التعديلات بنجاح");
+    showToast("✅ تم حفظ التعديلات بنجاح");
     generateTable();
     changes.forEach((change) => {
       logActivity(
@@ -3602,7 +3697,7 @@ async function saveAttendanceData() {
     });
   } catch (error) {
     console.error("خطأ في حفظ البيانات:", error);
-    alert("❌ خطأ في حفظ البيانات");
+    showToast("❌ خطأ في حفظ البيانات", "error");
   }
 }
 
@@ -3640,7 +3735,7 @@ async function saveEmployees(newEmployees) {
     window.monthEmployees = employees.slice();
     loadEmployeesTable();
     generateTable();
-    alert("✅ تم تحديث الموظفين لهذا الشهر فقط");
+    showToast("✅ تم تحديث الموظفين لهذا الشهر فقط");
     logActivity(
       "تحديث الموظفين",
       `تم تحديث قائمة الموظفين لهذا الشهر: ${employees.join(", ")}`
@@ -3748,7 +3843,7 @@ async function saveEmployeeAssignment(username, employee, modal) {
       updateData.assignedEmployee = null;
     }
     await db.ref("users/" + username).update(updateData);
-    alert("✅ تم تحديث الموظف المحدد بنجاح");
+    showToast("✅ تم تحديث الموظف المحدد بنجاح");
     modal.remove();
     loadUsers();
   } catch (err) {
