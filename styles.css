@@ -1069,35 +1069,35 @@ table#usersTable tbody tr:hover td {
 #sidebarToggleBtn,
 #sidebarCloseBtn {
   position: fixed;
-  top: 14px;
-  right: 14px;
-  width: 34px;
-  height: 34px;
+  top: 16px;
+  right: 16px;
+  width: 44px;
+  height: 44px;
   background: #007bff;
   color: #fff;
   border: none;
   border-radius: 50%;
-  font-size: 20px;
+  font-size: 24px;
   cursor: pointer;
-  z-index: 12001;
-  box-shadow: 0 2px 8px #0002;
+  z-index: 15000;
+  box-shadow: 0 4px 12px #0004;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s;
+  transition: all 0.2s;
 }
 
 #sidebarCloseBtn {
-  background: rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.08); /* Transparent dark */
   color: #333;
-  font-size: 18px;
+  font-size: 20px;
   border: none;
   box-shadow: none;
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
   right: 18px;
   top: 18px;
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
 #sidebarCloseBtn:hover {
@@ -1124,8 +1124,8 @@ table#usersTable tbody tr:hover td {
 
   #sidebarToggleBtn,
   #sidebarCloseBtn {
-    right: 8px;
-    top: 8px;
+    right: 14px;
+    top: 14px;
   }
 }
 
