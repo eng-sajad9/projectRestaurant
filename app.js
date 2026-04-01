@@ -1284,16 +1284,25 @@ function updateSidebarVisibility() {
 
     // زر إضافة شهر جديد
     document.getElementById("addNewMonthBtn").onclick = function () {
-      let now = new Date();
-      let y = now.getFullYear(),
-        m = now.getMonth();
-      let nextM = m + 1,
-        nextY = y;
-      if (nextM > 11) {
-        nextM = 0;
-        nextY++;
+      const targetStr = prompt("أدخل السنة والشهر الذي تريد إضافته\nمثال: 2026-5 (مايو 2026)\n\n(استخدم 1-12 للأشهر: 1=يناير، 2=فبراير، ... 12=ديسمبر)");
+      if (!targetStr) return;
+
+      if (!/^\d{4}-\d{1,2}$/.test(targetStr)) {
+        alert("❌ صيغة غير صحيحة\nالرجاء إدخال السنة ثم شرطة ثم رقم الشهر، مثال: 2026-5");
+        return;
       }
-      const key = `${nextY}-${nextM}`;
+
+      const [tgtY, tgtMo] = targetStr.split("-");
+      const tgtMoNum = parseInt(tgtMo);
+
+      if (tgtMoNum < 1 || tgtMoNum > 12) {
+        alert("❌ رقم الشهر يجب أن يكون بين 1 و 12");
+        return;
+      }
+
+      // تحويل لصيغة المفتاح القديم (السنة-الشهر بدءاً من 0)
+      const key = `${tgtY}-${tgtMoNum - 1}`;
+      
       db.ref("monthsSettings/manual")
         .once("value")
         .then((snap) => {
@@ -1304,7 +1313,7 @@ function updateSidebarVisibility() {
             db.ref("monthsSettings/manual")
               .set(arr)
               .then(() => {
-                logActivity("إضافة شهر", `تم إضافة شهر جديد: ${arMonths[nextM]} ${nextY}`);
+                logActivity("إضافة شهر", `تم إضافة شهر يدوي: ${arMonths[tgtMoNum - 1]} ${tgtY}`);
                 loadMonthsManagerContent();
               })
               .catch(err => {
@@ -1312,7 +1321,7 @@ function updateSidebarVisibility() {
                 alert('❌ فشل إضافة الشهر');
               });
           } else {
-            alert('⚠️ الشهر موجود بالفعل');
+            alert('⚠️ الشهر موجود بالفعل في النظام');
           }
         });
     };
@@ -1398,35 +1407,43 @@ function updateSidebarVisibility() {
               <div style="font-size:22px;color:#1976d2;margin-bottom:4px;font-weight:700;text-align:center;">⚙️ إدارة: ${label}</div>
               <div style="font-size:13px;color:#888;margin-bottom:16px;text-align:center;">👥 ${empCount} موظف | 📅 ${daysCount} يوم</div>
               
-              <!-- اسم الشهر -->
-              <div style="margin-bottom:14px;padding:10px;background:#f5f5f5;border-radius:8px;">
-                <label style="font-size:14px;font-weight:600;color:#333;">📝 اسم الشهر:</label>
-                <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;">
-                  <input id="renameMonthInput" type="text" value="${label}" style="flex:1;min-width:120px;padding:8px;border-radius:6px;border:1px solid #ddd;font-size:14px;box-sizing:border-box;">
-                  <button id="renameMonthBtn" style="background:#1976d2;color:white;padding:8px 14px;border:none;border-radius:6px;cursor:pointer;font-weight:500;white-space:nowrap;">تحديث</button>
+              <!-- إعدادات أساسية -->
+              <div style="background:#f5f7fa;border:1px solid #e0e6ed;border-radius:10px;padding:14px;margin-bottom:14px;">
+                <div style="font-size:14px;color:#1976d2;font-weight:bold;margin-bottom:10px;">📌 إعدادات أساسية</div>
+                <div style="margin-bottom:10px;">
+                  <label style="font-size:12px;font-weight:600;color:#555;">اسم الشهر:</label>
+                  <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;">
+                    <input id="renameMonthInput" type="text" value="${label}" style="flex:1;min-width:120px;padding:8px;border-radius:6px;border:1px solid #cdd4e0;font-size:14px;box-sizing:border-box;">
+                    <button id="renameMonthBtn" style="background:#1976d2;color:white;padding:8px 14px;border:none;border-radius:6px;cursor:pointer;font-weight:500;white-space:nowrap;">تحديث</button>
+                  </div>
+                </div>
+                <button id="setDefaultMonthBtn" style="width:100%;background:${isDefault ? '#4caf50' : '#e0e6ed'};color:${isDefault ? '#fff' : '#333'};padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;transition:0.2s;">
+                  ${isDefault ? '✅ هذا هو الشهر الافتراضي حالياً' : '⭐ تعيين كشهر افتراضي'}
+                </button>
+              </div>
+              
+              <!-- إدارة البيانات -->
+              <div style="background:#fff3e0;border:1px solid #ffe0b2;border-radius:10px;padding:14px;margin-bottom:14px;">
+                <div style="font-size:14px;color:#f57c00;font-weight:bold;margin-bottom:10px;">🔄 إدارة البيانات</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                  <button id="exportMonthBtn" style="background:#fb8c00;color:white;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:500;font-size:13px;white-space:nowrap;">📥 تصدير ملف</button>
+                  <button id="importMonthBtn" style="background:#f57c00;color:white;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:500;font-size:13px;white-space:nowrap;">📤 استيراد ملف</button>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+                  <button id="copyMonthBtn" style="background:#ff9800;color:white;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:500;font-size:13px;">📋 نسخ كل شيء</button>
+                  <button id="copyEmployeesOnlyBtn" style="background:#ffb74d;color:white;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:500;font-size:13px;">👥 استنساخ الموظفين فقط</button>
                 </div>
               </div>
               
-              <!-- الأزرار الرئيسية -->
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-                <button id="setDefaultMonthBtn" style="background:${isDefault ? '#1976d2' : '#eee'};color:${isDefault ? '#fff' : '#333'};padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:500;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                  ${isDefault ? '✅ افتراضي حالياً' : '⭐ جعل افتراضياً'}
-                </button>
-                <button id="copyMonthBtn" style="background:#2196f3;color:white;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:500;font-size:13px;white-space:nowrap;">📋 نسخ البيانات</button>
+              <!-- منطقة الخطر -->
+              <div style="background:#ffebee;border:1px solid #ffcdd2;border-radius:10px;padding:14px;margin-bottom:14px;">
+                <div style="font-size:14px;color:#d32f2f;font-weight:bold;margin-bottom:10px;">⚠️ منطقة الخطر</div>
+                <button id="deleteMonthBtn" style="width:100%;background:#d32f2f;color:white;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;">🗑️ حذف هذا الشهر نهائياً</button>
+                ${isHidden ? '<button id="restoreMonthBtn" style="width:100%;margin-top:8px;background:#388e3c;color:white;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;">🔄 استعادة الشهر المخفي</button>' : ''}
               </div>
               
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-                <button id="exportMonthBtn" style="background:#4caf50;color:white;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:500;font-size:13px;white-space:nowrap;">📥 تصدير</button>
-                <button id="importMonthBtn" style="background:#ff9800;color:white;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:500;font-size:13px;white-space:nowrap;">📤 استيراد</button>
-              </div>
-              
-              <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:12px;">
-                <button id="deleteMonthBtn" style="background:#dc3545;color:white;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:500;font-size:13px;">🗑️ حذف</button>
-              </div>
-              
-              ${isHidden ? '<button id="restoreMonthBtn" style="background:#388e3c;color:white;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:500;width:100%;font-size:13px;margin-bottom:12px;">🔄 استعادة الشهر</button>' : ''}
-              
-              <!-- سجل النشاطات (كلاسيكي متقدم) -->
+              <!-- سجل النشاطات -->
+              <div style="font-size:14px;color:#555;font-weight:bold;margin-bottom:8px;padding-right:4px;">📋 آخر النشاطات</div>
               
               <div class="activity-table-wrapper">
                 <table class="activity-table">
@@ -1708,20 +1725,105 @@ function updateSidebarVisibility() {
       }
     };
 
+    // نسخ الموظفين فقط
+    document.getElementById("copyEmployeesOnlyBtn").onclick = async function () {
+      const targetStr = prompt("أدخل السنة والشهر الهدف لنقل الموظفين إليه\nمثال: 2026-2 (فبراير 2026)");
+      if (!targetStr) return;
+
+      if (!/^\d{4}-\d{1,2}$/.test(targetStr)) {
+        alert("❌ صيغة غير صحيحة\nالصيغة الصحيحة: 2026-2");
+        return;
+      }
+
+      const [tgtY, tgtMo] = targetStr.split("-");
+      const tgtMoNum = parseInt(tgtMo);
+      if (tgtMoNum < 1 || tgtMoNum > 12) {
+        alert("❌ رقم الشهر يجب أن يكون بين 1 و 12");
+        return;
+      }
+
+      const tgtMoFormatted = tgtMoNum.toString().padStart(2, "0");
+      const targetMonth = `${tgtY}-${tgtMoFormatted}`;
+      const sourceMoFormatted = (moNum + 1).toString().padStart(2, "0");
+
+      if (targetMonth === `${y}-${sourceMoFormatted}`) {
+        alert("⚠️ الشهر الهدف هو نفس الشهر المصدر");
+        return;
+      }
+
+      if (!confirm(`هل تريد استنساخ أسماء وهيكلية الموظفين فقط من ${label} إلى ${arMonths[tgtMoNum - 1]} ${tgtY}؟\n(لن يتم نسخ الحضور والغياب أو السلف)`)) {
+        return;
+      }
+
+      try {
+        console.log('📥 جاري نسخ الموظفين فقط...');
+        const sourceEmpPath = `months/${y}/${sourceMoFormatted}/employees`;
+        const targetEmpPath = `months/${tgtY}/${tgtMoFormatted}/employees`;
+        const legacyEmpKey = `employees_${tgtY}_${tgtMoFormatted}`;
+
+        let sourceEmpData = {};
+        const newEmpSnap = await db.ref(sourceEmpPath).once("value");
+        if (newEmpSnap.exists()) {
+          sourceEmpData = newEmpSnap.val() || {};
+        } else {
+          const legacyEmpSnap = await db.ref(`employees_${y}_${sourceMoFormatted}`).once("value");
+          if (legacyEmpSnap.exists()) {
+            sourceEmpData = legacyEmpSnap.val() || {};
+          }
+        }
+
+        if (Object.keys(sourceEmpData).length > 0) {
+          await db.ref(targetEmpPath).set(sourceEmpData);
+          await db.ref(legacyEmpKey).set(sourceEmpData);
+          console.log(`✅ تم استنساخ ${Object.keys(sourceEmpData).length} موظف بنجاح`);
+        } else {
+          alert('⚠️ لا توجد موظفين في هذا الشهر لنسخهم');
+          return;
+        }
+
+        // إضافة الشهر الهدف إلى إدارة الأشهر
+        const targetMonthEntry = `${tgtY}-${tgtMoFormatted}`;
+        const manualMonthsSnap = await db.ref("monthsSettings/manual").once("value");
+        let monthsList = manualMonthsSnap.val() || [];
+        if (!Array.isArray(monthsList)) monthsList = [];
+        if (!monthsList.includes(targetMonthEntry)) {
+          monthsList.push(targetMonthEntry);
+          await db.ref("monthsSettings/manual").set(monthsList);
+        }
+
+        logActivity("استنساخ موظفين", `تم نقل الموظفين من ${label} إلى ${arMonths[tgtMoNum - 1]} ${tgtY}`);
+        alert(`✅ تم استنساخ الموظفين بنجاح!\nالأسماء جاهزة في ${arMonths[tgtMoNum - 1]} ${tgtY}`);
+
+        advModal.remove();
+        setTimeout(() => loadMonthsManagerContent(), 500);
+
+      } catch (error) {
+        console.error('❌ خطأ في نقل الموظفين:', error);
+        alert('❌ حدث خطأ في النظام:\n' + error.message);
+      }
+    };
+
     // تصدير البيانات
     document.getElementById("exportMonthBtn").onclick = async function () {
       try {
         // قراءة بيانات الموظفين من المسار الجديد
-        const empPath = `months/${y}/${(moNum + 1).toString().padStart(2, "0")}/employees`;
+        const monthFormatted = (moNum + 1).toString().padStart(2, "0");
+        const empPath = `months/${y}/${monthFormatted}/employees`;
         const empSnap = await db.ref(empPath).once("value");
         const employeesData = empSnap.val() || {};
 
+        // قراءة بيانات السلف
+        const advPath = `advances/${y}/${monthFormatted}`;
+        const advSnap = await db.ref(advPath).once("value");
+        const advancesData = advSnap.val() || {};
+
         const monthData = {
           month: label,
-          employees: empCount,
-          days: daysCount,
+          employees: Object.keys(employeesData).length || empCount,
+          days: Object.keys(monthObj.attendance || {}).length || daysCount,
           employeesData: employeesData,
           attendanceData: monthObj.attendance || {},
+          advancesData: advancesData,
           notes: note,
           exported: new Date().toISOString()
         };
@@ -1823,6 +1925,13 @@ function updateSidebarVisibility() {
             console.log('📝 جاري استيراد الملاحظات...');
             await db.ref("monthsNotes/" + importMonthKey).set(importedData.notes);
             console.log('✅ تم استيراد الملاحظات');
+          }
+
+          // 4️⃣ استيراد السلف
+          if (importedData.advancesData) {
+            console.log('💰 جاري استيراد السلف...');
+            await db.ref(`advances/${importYear}/${importMonthFormatted}`).set(importedData.advancesData);
+            console.log('✅ تم استيراد السلف');
           }
 
           // 4️⃣ إضافة الشهر المستورد إلى قائمة الأشهر
@@ -4948,13 +5057,19 @@ function loadAvailableMonths() {
     db.ref("monthsSettings/manual").once("value"),
     db.ref("monthsSettings/hidden").once("value"),
     db.ref("users/" + (currentUser || "")).once("value"),
-  ]).then(([attSnap, manualSnap, hiddenSnap, userSnap]) => {
+    db.ref("months").once("value"),
+    db.ref("monthsSettings/auto").once("value"),
+  ]).then(([attSnap, manualSnap, hiddenSnap, userSnap, monthsTreeSnap, autoSnap]) => {
     const data = attSnap.val() || {};
     const manual = manualSnap.val() || [];
     const hidden = hiddenSnap.val() || {};
     const user = userSnap.val() || {};
+    const monthsTree = monthsTreeSnap ? monthsTreeSnap.val() || {} : {};
+    const autoEnabled = autoSnap.exists() ? autoSnap.val() : true;
     const isAdmin = user.role === "admin";
     const monthsSet = new Set();
+    
+    // من الهيكل القديم
     Object.keys(data).forEach((key) => {
       const parts = key.split("-");
       if (parts.length === 3) {
@@ -4963,11 +5078,26 @@ function loadAvailableMonths() {
         monthsSet.add(`${y}-${m}`);
       }
     });
+
+    // من الهيكل الجديد
+    Object.entries(monthsTree).forEach(([y, monthsObj]) => {
+      Object.entries(monthsObj).forEach(([mm, monthObj]) => {
+        const mmNum = parseInt(mm);
+        if (!isNaN(mmNum)) {
+          monthsSet.add(`${y}-${mmNum - 1}`); // convert 1..12 to 0..11
+        }
+      });
+    });
+
     manual.forEach((m) => monthsSet.add(m));
-    // أضف الشهر الحالي دائماً
-    const now = new Date();
-    const currentMonthKey = `${now.getFullYear()}-${now.getMonth()}`;
-    monthsSet.add(currentMonthKey);
+    
+    // أضف الشهر الحالي استناداً لميزة الشهر التلقائي
+    if (autoEnabled !== false) {
+      const now = new Date();
+      const currentMonthKey = `${now.getFullYear()}-${now.getMonth()}`;
+      monthsSet.add(currentMonthKey);
+    }
+
     let monthsArr = Array.from(monthsSet).sort((a, b) => {
       const [ya, ma] = a.split("-").map(Number),
         [yb, mb] = b.split("-").map(Number);
