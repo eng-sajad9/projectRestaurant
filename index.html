@@ -10,7 +10,7 @@
   <meta name="keywords"
     content="نظام حضور, نظام حضور وانصراف, برنامج حضور, برنامج حضور وانصراف, حضور الموظفين, نظام حضور هي هي, سجل حضور, attendance system, employee attendance, حضور الكتروني, برنامج دوام, نظام دوام, حضور وانصراف مجاني, حضور وانصراف عربي" />
   <meta name="robots" content="index, follow" />
-  <script src="crypto-utils.js"></script>
+  <script src="js/crypto-utils.js"></script>
   <!-- 📄 jsPDF و html2canvas سيتم تحميلهما بـ Lazy Load عند الحاجة -->
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
 
@@ -34,18 +34,20 @@
     </div>
   </div>
   <!-- PDF progress overlay -->
-  <div id="pdfProgressOverlay"
-    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:2147483650;align-items:center;justify-content:center;">
-    <div
-      style="background:#fff;border-radius:12px;padding:18px 20px;max-width:420px;width:90%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.4);">
-      <div id="pdfProgressIcon" style="font-size:32px;margin-bottom:8px;">🔄</div>
-      <div id="pdfProgressText" style="font-weight:700;color:#0b66c3;margin-bottom:8px">جاري إنشاء PDF وإرساله...</div>
-      <div style="height:10px;background:#eef3fb;border-radius:8px;overflow:hidden;margin-bottom:12px;">
-        <div id="pdfProgressBar" style="width:0%;height:100%;background:#1976d2;transition:width 300ms ease;"></div>
+  <div id="pdfProgressOverlay" class="glass-overlay" style="display:none;">
+    <div class="glass-modal">
+      <div id="pdfProgressIcon" class="glass-icon"></div>
+      <div id="pdfProgressText" class="glass-text">جاري التحضير...</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:0 4px;">
+        <span style="font-size:12px;color:#888;">التقدم</span>
+        <div id="pdfProgressPercent" class="glass-percent">0%</div>
       </div>
-      <div style="display:flex;gap:8px;justify-content:center;">
-        <button id="pdfProgressCloseBtn"
-          style="display:none;background:#1976d2;color:#fff;border:none;padding:8px 12px;border-radius:8px;cursor:pointer">إغلاق</button>
+      <div class="glass-progress-track">
+        <div id="pdfProgressBar" class="glass-progress-fill" style="width: 0%;"></div>
+      </div>
+      <div id="pdfProgressDetails" class="glass-details-text">يرجى الانتظار، يتم جلب البيانات...</div>
+      <div class="glass-actions">
+        <button id="pdfProgressCloseBtn" class="glass-btn-close" style="display:none;">إغلاق</button>
       </div>
     </div>
   </div>
@@ -384,24 +386,26 @@
     <div id="mainContent">
       <h2>📋 جدول الحضور</h2>
       <!-- PDF download removed as requested -->
-      <table id="attendanceTable">
-        <thead>
-          <tr>
-            <th id="dateHeaderTh" style="
-                  background: var(--primary-light);
-                  color: var(--primary);
-                  font-weight: bold;
-                  font-size: 18px;
-                  border-bottom: 2.5px solid var(--primary-hover);
-                  letter-spacing: 0.5px;
-                  display: none;
-                ">
-              التاريخ
-            </th>
-          </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-      </table>
+      <div class="table-responsive-wrapper" style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+        <table id="attendanceTable">
+          <thead>
+            <tr>
+              <th id="dateHeaderTh" style="
+                    background: var(--primary-light);
+                    color: var(--primary);
+                    font-weight: bold;
+                    font-size: 18px;
+                    border-bottom: 2.5px solid var(--primary-hover);
+                    letter-spacing: 0.5px;
+                    display: none;
+                  ">
+                التاريخ
+              </th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
 
       <button onclick="saveData()">💾 حفظ التعديلات</button>
       <button onclick="logout()" style="background-color: var(--danger); margin-top: 10px">
@@ -680,56 +684,19 @@
               </div>
 
               <!-- Add New Employee Form -->
-              <div style="
-                  background: linear-gradient(135deg, #f8fbff 0%, #f0f6ff 100%);
-                  padding: 16px;
-                  border-radius: 12px;
-                  margin-top: 12px;
-                  border: 2px solid #e3f0ff;
-                ">
-                <div style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
-                  <div style="flex: 1; min-width: 250px;">
-                    <label style="
-                        display: block;
-                        font-size: 12px;
-                        font-weight: 600;
-                        color: var(--primary);
-                        margin-bottom: 6px;
-                      ">اسم الموظف الجديد</label>
-                    <input type="text" id="newEmployeeName" placeholder="مثال:سجاد" style="
-                          width: 100%;
-                          padding: 12px 14px;
-                          border: 2px solid #e0e6f8;
-                          border-radius: 8px;
-                          font-size: 14px;
-                          font-family: inherit;
-                          box-sizing: border-box;
-                          transition: border-color 0.3s ease;
-                        " onfocus="this.style.borderColor='#2196f3'" onblur="this.style.borderColor='#e0e6f8'" />
-                  </div>
-                  <button onclick="addEmployee()" style="
-                      background: var(--success);
-                      color: white;
-                      border: none;
-                      padding: 10px 18px;
-                      border-radius: 8px;
-                      font-weight: 600;
-                      cursor: pointer;
-                      transition: all 0.3s ease;
-                      box-shadow: var(--shadow-sm);
-                      white-space: nowrap;
-                      font-size: 13px;
-                    "
-                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(76, 175, 80, 0.3)'"
-                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(76, 175, 80, 0.2)'">
-                    ➕ إضافة موظف
-                  </button>
+              <div class="modern-input-grid" style="background: rgba(240, 244, 255, 0.5); padding: 16px; border-radius: 16px; margin-top: 12px; border: 1px solid rgba(0,0,0,0.04);">
+                <div>
+                  <label>اسم الموظف الجديد</label>
+                  <input type="text" id="newEmployeeName" class="input-ios" placeholder="مثال: سجاد" />
                 </div>
+                <button onclick="addEmployee()" class="btn-ios btn-ios-primary">
+                  ➕ إضافة موظف
+                </button>
               </div>
 
               <!-- Employees List -->
-              <div class="adv-table-wrap" style="margin-top: 12px;">
-                <table id="employeesTable" style="width: 100%;">
+              <div style="margin-top: 16px; overflow: auto;">
+                <table id="employeesTable" class="mobile-cards-table" style="width: 100%;">
                   <thead>
                     <tr>
                       <th style="text-align: right; width: 40%;">اسم الموظف</th>
@@ -752,40 +719,44 @@
                 <div style="text-align:right; font-size:13px; color:#6b7280">إدارة الحسابات والأذونات</div>
               </div>
 
-              <div class="panel-row" style="display:flex;gap:10px;align-items:flex-end;margin-top:10px;flex-wrap:wrap;">
-                <div style="flex:1;min-width:200px;">
-                  <label style="display:block;font-size:12px;color:#1976d2;margin-bottom:4px;font-weight:600;">اسم
-                    المستخدم</label>
-                  <input type="text" id="newUserName" class="input-compact" placeholder="اسم المستخدم الجديد" />
+              <div class="modern-input-grid">
+                <div>
+                  <label>اسم المستخدم</label>
+                  <input type="text" id="newUserName" class="input-ios" placeholder="اسم المستخدم الجديد" />
                 </div>
-                <div style="flex:1;min-width:200px;">
-                  <label style="display:block;font-size:12px;color:#1976d2;margin-bottom:4px;font-weight:600;">كلمة
-                    المرور</label>
-                  <input type="password" id="newUserPass" class="input-compact" placeholder="كلمة المرور" />
+                <div>
+                  <label>كلمة المرور</label>
+                  <input type="password" id="newUserPass" class="input-ios" placeholder="كلمة المرور" />
                 </div>
-                <div style="flex:1;min-width:200px;">
-                  <label style="display:block;font-size:12px;color:#1976d2;margin-bottom:4px;font-weight:600;">الموظف
-                    المحدد</label>
-                  <select id="newUserEmployee" class="input-compact"
-                    style="width:100%;padding:8px;border:2px solid #e0e6f8;border-radius:8px;font-family:inherit;">
+                <div>
+                  <label>الموظف المحدد</label>
+                  <select id="newUserEmployee" class="input-ios">
                     <option value="">-- اختر موظف (اختياري) --</option>
                   </select>
                 </div>
-                <label class="checkbox-label" style="display:flex;align-items:center;gap:8px;">
-                  <input type="checkbox" id="newUserCanEdit" checked />
-                  <span class="muted" style="font-size:12px;">تعديل الجدول</span>
-                </label>
-                <button class="btn btn-primary" onclick="addUser()">➕ إنشاء</button>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  <div class="toggle-row">
+                    <input type="checkbox" id="newUserCanEdit" class="ios-toggle" checked />
+                    <span class="toggle-label">تعديل الجدول</span>
+                  </div>
+                  <div class="toggle-row">
+                    <input type="checkbox" id="newUserCanBackup" class="ios-toggle" />
+                    <span class="toggle-label" title="إعطاء الموظف صلاحية لإرسال النسخة الاحتياطية لتليجرام نيابة عنك">نسخ تلقائي</span>
+                  </div>
+                </div>
+                <button class="btn-ios btn-ios-primary" onclick="addUser()">➕ إنشاء</button>
               </div>
 
-              <div style="margin-top:12px;overflow:auto;">
-                <table id="usersTable">
+              <div style="margin-top:16px; overflow:auto;">
+                <table id="usersTable" class="mobile-cards-table">
                   <thead>
                     <tr>
                       <th>اسم المستخدم</th>
                       <th>الصلاحية</th>
                       <th>الموظف المحدد</th>
                       <th>التعديل</th>
+                      <th>النسخ</th>
+                      <th>الإدارة</th>
                       <th>التخصيص</th>
                       <th>حذف</th>
                       <th>خروج</th>
@@ -802,11 +773,11 @@
             <div id="advancesAdminSection" class="adv-card">
               <div class="adv-card-header">
                 <h4 class="adv-title">💰 سجل السلف</h4>
-                <button id="openAddAdvanceBtn" class="small-button adv-add">➕ إضافة سلفة</button>
+                <button id="openAddAdvanceBtn" class="btn-ios btn-ios-primary" style="min-height:36px;font-size:14px;padding:0 14px;">➕ إضافة سلفة</button>
               </div>
-              <div class="adv-card-desc">يمكن للمدير تسجيل سلف للموظفين هنا وسيتم خصمها من الراتب الكلي تلقائياً.</div>
-              <div class="adv-table-wrap">
-                <table id="advancesTable" class="advances-table">
+              <div class="adv-card-desc" style="margin-bottom:12px;">يمكن للمدير تسجيل سلف للموظفين هنا وسيتم خصمها من الراتب الكلي تلقائياً.</div>
+              <div style="overflow:auto;">
+                <table id="advancesTable" class="mobile-cards-table" style="width:100%;">
                   <thead>
                     <tr>
                       <th>الموظف</th>
@@ -833,24 +804,27 @@
                 <div style="font-size:13px;color:#6b7280">ضبط الأسعار الافتراضية</div>
               </div>
 
-              <div class="panel-grid" style="margin-top:12px;">
-                <div class="panel-col">
-                  <label class="muted">سعر الشفت (دينار)</label>
-                  <input type="text" id="salaryShiftRate" class="input-compact" placeholder="22,000" />
-
-                  <label class="muted" style="margin-top:10px;">سعر النصف (دينار)</label>
-                  <input type="text" id="salaryHalfRate" class="input-compact" placeholder="11,000" />
+              <div class="modern-input-grid" style="margin-top:12px;">
+                <div>
+                  <label>سعر الشفت (دينار)</label>
+                  <input type="text" id="salaryShiftRate" class="input-ios" placeholder="22,000" />
                 </div>
-                <div class="panel-col" style="max-width:320px;">
-                  <div style="display:flex;flex-direction:column;gap:10px;">
-                    <label style="display:flex;align-items:center;gap:10px;"><input type="checkbox"
-                        id="applyCurrentMonthSalary" /> تطبيق على الشهر الحالي</label>
-                    <label style="display:flex;align-items:center;gap:10px;"><input type="checkbox"
-                        id="applyFutureMonthsSalary" /> تطبيق على الأشهر القادمة</label>
-                    <div class="panel-actions" style="margin-top:8px;">
-                      <button id="saveDefaultSalaryBtn" class="btn btn-primary">💾 حفظ</button>
-                    </div>
+                <div>
+                  <label>سعر النصف (دينار)</label>
+                  <input type="text" id="salaryHalfRate" class="input-ios" placeholder="11,000" />
+                </div>
+                <div style="display:flex;flex-direction:column;gap:12px;">
+                  <div class="toggle-row">
+                    <input type="checkbox" id="applyCurrentMonthSalary" class="ios-toggle" />
+                    <span class="toggle-label">تطبيق على الشهر الحالي</span>
                   </div>
+                  <div class="toggle-row">
+                    <input type="checkbox" id="applyFutureMonthsSalary" class="ios-toggle" />
+                    <span class="toggle-label">تطبيق على الأشهر القادمة</span>
+                  </div>
+                </div>
+                <div>
+                  <button id="saveDefaultSalaryBtn" class="btn-ios btn-ios-primary" style="width:100%">💾 حفظ</button>
                 </div>
               </div>
             </div>
@@ -874,27 +848,24 @@
           <!-- Settings Tab -->
           <div id="settings" class="admin-tab-pane">
             <!-- Maintenance Control -->
-            <div id="maintenanceControl"
-              style="margin-bottom:14px;padding:16px;border-radius:10px;background:#fff;box-shadow:0 1px 6px #0002;border:1px solid #e6eefc;display:flex;flex-direction:column;gap:10px;align-items:flex-start;">
-              <h4 style="margin:0 0 10px 0;color:#1976d2;font-weight:600">🔧 وضع الصيانة</h4>
-              <div
-                style="display:flex;align-items:center;gap:10px;width:100%;justify-content:space-between;flex-wrap:wrap;">
-                <div style="display:flex;flex-direction:column;align-items:flex-start;">
-                  <div id="maintenanceStatus"><strong id="maintenanceStatusText">غير مفعل</strong></div>
-                  <div id="maintenanceInfo" style="font-size:12px;color:#666;">لا توجد ملاحظات</div>
-                </div>
-                <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;">
-                  <button id="toggleMaintenanceBtn" class="small-button" style="background:#bd2121;">تفعيل وضع
-                    الصيانة</button>
-                </div>
+            <div id="maintenanceControl" class="adv-card">
+              <div class="adv-card-header">
+                <h4 style="margin:0;color:#1976d2;font-weight:600">🔧 وضع الصيانة</h4>
               </div>
-              <div style="width:100%;display:flex;flex-direction:column;gap:6px;margin-top:8px;">
-                <label style="font-size:13px;color:#334;">نص رسالة الصيانة الظاهر للمستخدمين</label>
-                <textarea id="maintenanceCustomMessage" placeholder="أدخل نص رسالة الصيانة هنا"
-                  style="width:100%;min-height:52px;padding:8px;border-radius:8px;border:1px solid #e0e6f8;box-sizing:border-box;"> </textarea>
-                <div style="display:flex;gap:8px;justify-content:flex-end;">
-                  <button id="saveMaintenanceMsgBtn" class="small-button" style="background:#1976d2;color:#fff;">حفظ
-                    النص</button>
+              <div class="modern-input-grid" style="margin-top:12px;">
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  <span id="maintenanceStatus" style="font-size:15px;"><strong id="maintenanceStatusText">غير مفعل</strong></span>
+                  <span id="maintenanceInfo" style="font-size:13px;color:#8e8e93;">لا توجد ملاحظات</span>
+                </div>
+                <div>
+                  <button id="toggleMaintenanceBtn" class="btn-ios" style="background:#ff3b30;color:white;width:100%;">تفعيل وضع الصيانة</button>
+                </div>
+                <div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px;">
+                  <label>نص رسالة الصيانة الظاهر للمستخدمين</label>
+                  <textarea id="maintenanceCustomMessage" class="input-ios" placeholder="أدخل نص رسالة الصيانة هنا" style="min-height: 80px; resize: vertical;"></textarea>
+                </div>
+                <div style="grid-column: 1 / -1;">
+                  <button id="saveMaintenanceMsgBtn" class="btn-ios btn-ios-primary" style="width: 100%;">حفظ النص</button>
                 </div>
               </div>
             </div>
@@ -1289,6 +1260,51 @@
     <!-- أزرار إدارة قاعدة البيانات -->
   </div>
 
+  <!-- Supervisor Modal -->
+  <div id="supervisorModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.35);z-index:7500;align-items:center;justify-content:center;">
+    <div style="background:#fff;max-width:400px;width:94vw;border-radius:12px;padding:20px;box-shadow:0 8px 32px #0002;position:relative;">
+      <button id="closeSupervisorModal" style="position:absolute;top:12px;left:12px;background:#dc3545;color:#fff;border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;">✖</button>
+      <h3 style="text-align:center;color:#1976d2;margin-top:0;margin-bottom:15px;">👑 إعدادات المشرف</h3>
+      <p style="text-align:center;font-size:13px;color:#666;margin-bottom:15px;">تحديد الصلاحيات الإضافية المسموحة للمستخدم: <strong id="supervisorTargetUser"></strong></p>
+      
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <label class="checkbox-label" style="display:flex;align-items:center;gap:10px;padding:8px;background:#f8fbff;border-radius:6px;border:1px solid #e0e6f8;">
+          <input type="checkbox" id="permAdvances" style="width:18px;height:18px;margin:0;" />
+          <div style="flex:1;">
+             <div style="font-weight:600;font-size:14px;color:#07345a;">السلف</div>
+             <div style="font-size:12px;color:#6b7280;">إضافة وحذف سلف الموظفين</div>
+          </div>
+        </label>
+
+        <label class="checkbox-label" style="display:flex;align-items:center;gap:10px;padding:8px;background:#f8fbff;border-radius:6px;border:1px solid #e0e6f8;">
+          <input type="checkbox" id="permAnnouncements" style="width:18px;height:18px;margin:0;" />
+          <div style="flex:1;">
+             <div style="font-weight:600;font-size:14px;color:#07345a;">الإعلانات</div>
+             <div style="font-size:12px;color:#6b7280;">إرسال رسائل لجميع المستخدمين</div>
+          </div>
+        </label>
+
+        <label class="checkbox-label" style="display:flex;align-items:center;gap:10px;padding:8px;background:#f8fbff;border-radius:6px;border:1px solid #e0e6f8;">
+          <input type="checkbox" id="permStaff" style="width:18px;height:18px;margin:0;" />
+          <div style="flex:1;">
+             <div style="font-weight:600;font-size:14px;color:#07345a;">الموظفين والأشهر</div>
+             <div style="font-size:12px;color:#6b7280;">إضافة وتعديل الموظفين وإدارة الأشهر</div>
+          </div>
+        </label>
+        
+        <label class="checkbox-label" style="display:flex;align-items:center;gap:10px;padding:8px;background:#f8fbff;border-radius:6px;border:1px solid #e0e6f8;">
+          <input type="checkbox" id="permSalary" style="width:18px;height:18px;margin:0;" />
+          <div style="flex:1;">
+             <div style="font-weight:600;font-size:14px;color:#07345a;">إعدادات الرواتب</div>
+             <div style="font-size:12px;color:#6b7280;">رؤية وإدارة أسعار الشفت والنص</div>
+          </div>
+        </label>
+      </div>
+
+      <button id="saveSupervisorBtn" style="width:100%;background:#1976d2;color:white;border:none;padding:12px;border-radius:8px;margin-top:20px;font-weight:bold;cursor:pointer;">💾 حفظ التعديلات</button>
+    </div>
+  </div>
+
   <!-- Announcement modal -->
   <div id="announceModal"
     style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.35);z-index:7000;align-items:center;justify-content:center;">
@@ -1547,7 +1563,7 @@
   <!-- ============================================ -->
 
 
-  <script src="app.js" defer></script>
+  <script src="js/app.js" defer></script>
 </body>
 
 </html>

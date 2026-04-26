@@ -884,14 +884,14 @@ function updateSidebarVisibility() {
   const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
   const isAdmin = currentUserRole === "admin";
   try { const maintenanceSection = document.getElementById('maintenanceControl'); if (maintenanceSection) maintenanceSection.style.display = isAdmin ? 'block' : 'none'; } catch (e) { }
-  try { const salarySection = document.getElementById('salaryAdminSection'); if (salarySection) salarySection.style.display = isAdmin ? 'block' : 'none'; } catch (e) { }
+  try { const salarySection = document.getElementById('salaryAdminSection'); if (salarySection) salarySection.style.display = hasPermission('salary') ? 'block' : 'none'; } catch (e) { }
   // Show/hide advances admin section and bind add-button safely
   try {
     const advancesSection = document.getElementById('advancesAdminSection');
     const addBtn = document.getElementById('openAddAdvanceBtn');
-    if (advancesSection) advancesSection.style.display = isAdmin ? 'block' : 'none';
+    if (advancesSection) advancesSection.style.display = hasPermission('advances') ? 'block' : 'none';
     if (addBtn) {
-      addBtn.style.display = isAdmin ? 'inline-block' : 'none';
+      addBtn.style.display = hasPermission('advances') ? 'inline-block' : 'none';
       addBtn.onclick = function () {
         if (typeof openAddAdvanceForm === 'function') return openAddAdvanceForm();
         // if function not defined yet (load order), try shortly after
@@ -901,9 +901,8 @@ function updateSidebarVisibility() {
   } catch (e) {
     console.warn('Advances visibility update failed', e);
   }
-  // أزرار المدير فقط
+  // أزرار المدير فقط المتبقية
   [
-    "sidebarAdminBtn",
     "sidebarMonthsManagerBtn",
     "sidebarEmpStatsBtn",
     "sidebarDeleteDataBtn",
@@ -919,6 +918,12 @@ function updateSidebarVisibility() {
       if (el) el.style.display = isAdmin ? "block" : "none";
     } catch (e) { }
   });
+
+  try {
+    const sidebarAdminBtn = document.getElementById("sidebarAdminBtn");
+    const canAdmin = hasPermission('staff') || hasPermission('advances') || hasPermission('salary') || isAdmin;
+    if (sidebarAdminBtn) sidebarAdminBtn.style.display = canAdmin ? "block" : "none";
+  } catch (e) { }
   // إخفاء قسم إعدادات تيليجرام للمستخدمين العاديين
   try {
     const telegramSection = document.getElementById('telegramSettings');
@@ -3314,6 +3319,88 @@ function closeWelcomeScreen() {
   document.getElementById("mainContent").style.display = "block";
 }
 
+// ====== Supervisor Permissions System ======
+window.hasPermission = function(permission) {
+  if (typeof currentUserRole !== 'undefined' && currentUserRole === 'admin') return true;
+  if (typeof window.currentUserData !== 'undefined' && window.currentUserData.supervisorPermissions) {
+    if (window.currentUserData.supervisorPermissions[permission] === true) return true;
+  }
+  return false;
+};
+
+let _userListenerRef = null;
+function startUserPermissionListener(username) {
+  if (!username) return;
+  if (_userListenerRef) db.ref('users/' + currentUser).off('value', _userListenerRef);
+  
+  _userListenerRef = db.ref('users/' + username).on('value', (snap) => {
+    const data = snap.val();
+    if (!data) return;
+    window.currentUserData = data;
+    // Real-time visibility update if permissions are revoked/granted while using the app
+    if (typeof updateAdminTabsVisibility === 'function') updateAdminTabsVisibility();
+    if (typeof updateSidebarVisibility === 'function') updateSidebarVisibility();
+    if (typeof updateAnnouncementsVisibility === 'function') updateAnnouncementsVisibility();
+    if (typeof checkForcedLogoutOnLogin === 'function') checkForcedLogoutOnLogin(username);
+  });
+}
+
+function openSupervisorModal(username, btn) {
+  if (currentUserRole !== 'admin') {
+    alert("❌ عذراً، الإدارة الرئيسية فقط لها هذه الصلاحية");
+    return;
+  }
+  db.ref('users/' + username).once('value').then(snap => {
+    const data = snap.val() || {};
+    const perms = data.supervisorPermissions || {};
+    
+    document.getElementById('supervisorTargetUser').textContent = username;
+    document.getElementById('supervisorTargetUser').setAttribute('data-target', username);
+    
+    document.getElementById('permAdvances').checked = !!perms.advances;
+    document.getElementById('permAnnouncements').checked = !!perms.announcements;
+    document.getElementById('permStaff').checked = !!perms.staff;
+    document.getElementById('permSalary').checked = !!perms.salary;
+    
+    document.getElementById('supervisorModal').style.display = 'flex';
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const closeSupervisorModal = document.getElementById('closeSupervisorModal');
+  if (closeSupervisorModal) closeSupervisorModal.onclick = () => document.getElementById('supervisorModal').style.display = 'none';
+
+  const saveBtn = document.getElementById('saveSupervisorBtn');
+  if (saveBtn) {
+    saveBtn.onclick = () => {
+      const username = document.getElementById('supervisorTargetUser').getAttribute('data-target');
+      if (!username) return;
+      
+      const perms = {
+        advances: document.getElementById('permAdvances').checked,
+        announcements: document.getElementById('permAnnouncements').checked,
+        staff: document.getElementById('permStaff').checked,
+        salary: document.getElementById('permSalary').checked
+      };
+
+      saveBtn.textContent = "جاري الحفظ...";
+      saveBtn.disabled = true;
+
+      db.ref('users/' + username + '/supervisorPermissions').set(perms).then(() => {
+        showToast("✅ تم تحديث صلاحيات المشرف بنجاح");
+        logActivity("تعديل صلاحيات المشرف", "تم تعديل صلاحيات المستخدم: " + username);
+        document.getElementById('supervisorModal').style.display = 'none';
+      }).catch(err => {
+        console.error(err);
+        showToast("❌ حدث خطأ أثناء حفظ الصلاحيات", "error");
+      }).finally(() => {
+        saveBtn.textContent = "💾 حفظ التعديلات";
+        saveBtn.disabled = false;
+      });
+    };
+  }
+});
+
 function login() {
   const username = document
     .getElementById("username")
@@ -3345,13 +3432,14 @@ function login() {
         const hashObj = await hashPassword(password);
         await db.ref("users/" + username + "/password").set(hashObj);
       }
+      // Store userData globally first so permissions check works inside setSession
+      window.currentUserData = userData;
       setSession({
         user: username,
         role: userData.role || "user",
         canEdit: userData.canEdit !== undefined ? userData.canEdit : true,
       });
-      // Store userData globally for access in other functions
-      window.currentUserData = userData;
+      startUserPermissionListener(username);
       showMessage("");
       document.getElementById("loginBox").style.display = "none";
 
@@ -3373,19 +3461,22 @@ function login() {
           updateWelcomeScreenData(username);
         }, 100);
       });
+      document.getElementById("adminPanel").style.display = "none";
       if (currentUserRole === "admin") {
-        document.getElementById("adminPanel").style.display = "none";
         loadUsers();
+      }
+      if (hasPermission('staff') || hasPermission('advances') || hasPermission('salary') || currentUserRole === 'admin') {
         loadEmployeesTable();
         updateEmployeeDropdown();
-        // تحميل إعدادات تيليجرام بعد تسجيل الدخول
+      }
+
+      // تحميل إعدادات تيليجرام لتفعيل النسخ التلقائي (للمدير والمشرفين الموثوقين)
+      if (currentUserRole === "admin" || (window.currentUserData && window.currentUserData.canBackup)) {
         setTimeout(() => {
           if (typeof loadTelegramSettings === 'function') {
             loadTelegramSettings();
           }
         }, 500);
-      } else {
-        document.getElementById("adminPanel").style.display = "none";
       }
       // update announcements visibility immediately after login UI changes
       if (typeof updateAnnouncementsVisibility === "function")
@@ -3966,37 +4057,67 @@ async function loadUsers() {
   const users = snapshot.val() || {};
   const tbody = document.getElementById("usersBody");
   tbody.innerHTML = "";
+
   Object.entries(users).forEach(([username, data]) => {
-    const tr = document.createElement("tr");
     const assignedEmp = data.assignedEmployee || "—";
+    const isMe = username === currentUser;
+    const isAdmin = username === 'admin';
+    const roleLabel = isAdmin ? "مدير" : (data.role === "supervisor" ? "مشرف" : "مستخدم");
+    const roleColor = isAdmin ? "#ff9500" : (data.role === "supervisor" ? "#673ab7" : "#007aff");
+
+    // Build a card row instead of a plain <tr>
+    const tr = document.createElement("tr");
+    tr.className = "user-card-row";
     tr.innerHTML = `
-      <td>${username}</td>
-      <td>${data.canEdit ? "نعم" : "لا"}</td>
-      <td style="color:#666;font-weight:600;">${assignedEmp}</td>
-      <td>
-        <button class="small-button btn-toggle" onclick="toggleUserEdit('${username}', ${data.canEdit
-      })">
-          ${data.canEdit ? "قفل" : "فتح"}
-        </button>
-      </td>
-      <td>
-        <button class="small-button" style="background:#17a2b8;color:white;" onclick="assignEmployeeToUser('${username}')">👤 تحديد</button>
-      </td>
-      <td>
-        ${username === currentUser
-        ? "—"
-        : `<button class="small-button btn-delete" onclick="deleteUser('${username}')">حذف</button>`
-      }
-      </td>
-      <td>
-        ${username === currentUser
-        ? "—"
-        : `<button class="small-button btn-delete" style="background:#ff9800;" onclick="forceLogoutUser('${username}')">خروج</button>`
-      }
+      <td colspan="9" style="padding:0;border:none;">
+        <div class="user-card">
+          <!-- Avatar + Name -->
+          <div class="user-card-header">
+            <div class="user-avatar">${username.charAt(0).toUpperCase()}</div>
+            <div class="user-card-info">
+              <div class="user-card-name">${username} ${isMe ? '<span class="user-badge-me">أنت</span>' : ''}</div>
+              <div class="user-card-role" style="color:${roleColor};">${roleLabel} · ${assignedEmp}</div>
+            </div>
+            <div class="user-card-status">
+              <span class="user-status-dot ${data.canEdit ? 'active' : 'inactive'}"></span>
+              <span style="font-size:12px;color:#8e8e93;">${data.canEdit ? 'تعديل مفعّل' : 'للقراءة فقط'}</span>
+            </div>
+          </div>
+          <!-- Actions Row -->
+          <div class="user-card-actions">
+            <button class="user-action-btn ${data.canEdit ? 'btn-lock' : 'btn-unlock'}"
+              onclick="toggleUserEdit('${username}', ${data.canEdit})">
+              ${data.canEdit ? '🔒 قفل' : '🔓 فتح'}
+            </button>
+            <button class="user-action-btn ${data.canBackup ? 'btn-stop' : 'btn-allow'}"
+              onclick="toggleUserBackup('${username}', ${!!data.canBackup})">
+              ${data.canBackup ? '⏹ إيقاف النسخ' : '☁️ سماح النسخ'}
+            </button>
+            <button class="user-action-btn btn-assign"
+              onclick="assignEmployeeToUser('${username}')">
+              👤 تحديد موظف
+            </button>
+            ${!isMe && !isAdmin ? `
+            <button class="user-action-btn btn-supervisor"
+              onclick="openSupervisorModal('${username}', this)">
+              👑 صلاحيات
+            </button>` : ''}
+            ${!isMe ? `
+            <button class="user-action-btn btn-force-logout"
+              onclick="forceLogoutUser('${username}')">
+              🚪 إخراج
+            </button>
+            <button class="user-action-btn btn-danger"
+              onclick="deleteUser('${username}')">
+              🗑 حذف
+            </button>` : ''}
+          </div>
+        </div>
       </td>
     `;
     tbody.appendChild(tr);
   });
+
   updateEmployeeDropdown();
 }
 
@@ -4028,6 +4149,16 @@ async function toggleUserEdit(username, currentCanEdit) {
     return;
   }
   await db.ref("users/" + username + "/canEdit").set(!currentCanEdit);
+  loadUsers();
+}
+
+// تبديل صلاحية النسخ التلقائي للمستخدم
+async function toggleUserBackup(username, currentCanBackup) {
+  if (username === currentUser) {
+    alert("❌ لا يمكنك تغيير صلاحيتك الخاصة.");
+    return;
+  }
+  await db.ref("users/" + username + "/canBackup").set(!currentCanBackup);
   loadUsers();
 }
 
@@ -4153,6 +4284,7 @@ async function addUser() {
   const password = document.getElementById("newUserPass").value.trim();
   const assignedEmployee = document.getElementById("newUserEmployee").value.trim();
   const canEdit = document.getElementById("newUserCanEdit").checked;
+  const canBackup = document.getElementById("newUserCanBackup").checked;
   if (!username || !password) {
     alert("❌ يرجى إدخال اسم المستخدم وكلمة المرور");
     return;
@@ -4164,7 +4296,7 @@ async function addUser() {
   }
   try {
     const hashObj = await hashPassword(password);
-    const userData = { password: hashObj, role: "user", canEdit };
+    const userData = { password: hashObj, role: "user", canEdit, canBackup };
     if (assignedEmployee) {
       userData.assignedEmployee = assignedEmployee;
     }
@@ -4176,6 +4308,7 @@ async function addUser() {
     document.getElementById("newUserPass").value = "";
     document.getElementById("newUserEmployee").value = "";
     document.getElementById("newUserCanEdit").checked = true;
+    document.getElementById("newUserCanBackup").checked = false;
     loadUsers();
   } catch (err) {
     console.error(err);
@@ -4297,7 +4430,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 function addEmployee() {
-  if (!canEditCurrentMonth()) return;
+  if (!hasPermission('staff')) return;
   const name = document.getElementById("newEmployeeName").value.trim();
   if (!name) {
     alert("❌ يرجى إدخال اسم الموظف");
@@ -4317,13 +4450,16 @@ function loadEmployeesTable() {
   tbody.innerHTML = "";
   employees.forEach((emp, idx) => {
     const tr = document.createElement("tr");
+    
     const nameTd = document.createElement("td");
     nameTd.textContent = emp;
     nameTd.id = `employeeName_${idx}`;
     nameTd.style.textAlign = "right";
+    nameTd.setAttribute("data-label", "اسم الموظف");
 
     const detailsTd = document.createElement("td");
     detailsTd.style.textAlign = "center";
+    detailsTd.setAttribute("data-label", "التفاصيل");
     const detailsBtn = document.createElement("button");
     detailsBtn.innerHTML = "📋";
     detailsBtn.title = "التفاصيل";
@@ -4336,6 +4472,7 @@ function loadEmployeesTable() {
 
     const editTd = document.createElement("td");
     editTd.style.textAlign = "center";
+    editTd.setAttribute("data-label", "تعديل");
     const editBtn = document.createElement("button");
     editBtn.innerHTML = "✏️";
     editBtn.title = "تعديل";
@@ -4348,6 +4485,7 @@ function loadEmployeesTable() {
 
     const actionsTd = document.createElement("td");
     actionsTd.style.textAlign = "center";
+    actionsTd.setAttribute("data-label", "حذف");
     // زر الحذف يظهر فقط في الشهر الحالي
     if (typeof isCurrentMonthSelected === "function" && isCurrentMonthSelected()) {
       const deleteBtn = document.createElement("button");
@@ -4443,12 +4581,12 @@ function renderAdvancesTable() {
   }
   arr.slice().reverse().forEach((a) => {
     const tr = document.createElement("tr");
-    const tdEmp = document.createElement('td'); tdEmp.textContent = a.employee;
-    const tdAmount = document.createElement('td'); tdAmount.textContent = (a.amount || 0).toLocaleString() + ' د.ع';
-    const tdDate = document.createElement('td'); tdDate.textContent = a.date || '';
-    const tdNote = document.createElement('td'); tdNote.textContent = a.note || '';
-    const tdActions = document.createElement('td');
-    const wrap = document.createElement('div'); wrap.style.display = 'flex'; wrap.style.gap = '6px'; wrap.style.justifyContent = 'center';
+    const tdEmp = document.createElement('td'); tdEmp.textContent = a.employee; tdEmp.setAttribute("data-label", "الموظف");
+    const tdAmount = document.createElement('td'); tdAmount.textContent = (a.amount || 0).toLocaleString() + ' د.ع'; tdAmount.setAttribute("data-label", "المبلغ");
+    const tdDate = document.createElement('td'); tdDate.textContent = a.date || ''; tdDate.setAttribute("data-label", "التاريخ");
+    const tdNote = document.createElement('td'); tdNote.textContent = a.note || ''; tdNote.setAttribute("data-label", "ملاحظة");
+    const tdActions = document.createElement('td'); tdActions.setAttribute("data-label", "حذف");
+    const wrap = document.createElement('div'); wrap.style.display = 'flex'; wrap.style.gap = '6px'; wrap.style.justifyContent = 'flex-end';
     const editBtn = document.createElement('button'); editBtn.className = 'small-button btn-edit'; editBtn.textContent = 'تعديل';
     editBtn.onclick = () => { try { openAddAdvanceForm(encodeURIComponent(JSON.stringify(a))); } catch (e) { console.error(e); } };
     const delBtn = document.createElement('button'); delBtn.className = 'small-button btn-delete'; delBtn.textContent = 'حذف';
@@ -4544,14 +4682,22 @@ function openAddAdvanceForm(existingAdvEncoded) {
     if (!emp) { alert('❌ يرجى اختيار موظف'); return; }
     if (!amount || amount <= 0) { alert('❌ يرجى إدخال مبلغ صالح'); return; }
     const arr = window._advancesRaw ? window._advancesRaw.slice() : [];
+    const meta = {
+      updatedBy: currentUser,
+      updatedAt: new Date().toISOString()
+    };
     if (editingId) {
       const idx = arr.findIndex(a => a.id === editingId);
       if (idx !== -1) {
-        arr[idx] = Object.assign({}, arr[idx], { employee: emp, amount: amount, date: date, note: note });
+        arr[idx] = Object.assign({}, arr[idx], { employee: emp, amount: amount, date: date, note: note }, meta);
       }
     } else {
       const id = 'adv_' + Date.now();
-      const newAdv = { id: id, employee: emp, amount: amount, date: date, note: note };
+      const newAdv = { 
+        id: id, employee: emp, amount: amount, date: date, note: note, 
+        createdBy: currentUser, 
+        createdAt: new Date().toISOString() 
+      };
       arr.push(newAdv);
     }
     saveAdvancesToStorage(arr);
@@ -4559,7 +4705,8 @@ function openAddAdvanceForm(existingAdvEncoded) {
     modal.remove();
     // update employee stats live (no reload)
     if (typeof db !== 'undefined' && db && db.ref) {
-      db.ref('attendance').once('value').then((snap) => calculateStats(snap.val() || {})).catch(() => { });
+      const monthFormatted = String(month + 1).padStart(2, '0');
+      db.ref(`months/${year}/${monthFormatted}/attendance`).once('value').then((snap) => calculateStats(snap.val() || {})).catch(() => { });
     } else {
       // try calling calculateStats with last known attendance if available
       if (window._lastAttendanceSnapshot) calculateStats(window._lastAttendanceSnapshot);
@@ -4581,7 +4728,8 @@ function deleteAdvance(id) {
   } catch (e) { }
   // update stats live
   if (typeof db !== 'undefined' && db && db.ref) {
-    db.ref('attendance').once('value').then((snap) => calculateStats(snap.val() || {})).catch(() => { });
+    const monthFormatted = String(month + 1).padStart(2, '0');
+    db.ref(`months/${year}/${monthFormatted}/attendance`).once('value').then((snap) => calculateStats(snap.val() || {})).catch(() => { });
   } else if (window._lastAttendanceSnapshot) {
     calculateStats(window._lastAttendanceSnapshot);
   }
@@ -4591,11 +4739,11 @@ function deleteAdvance(id) {
 (function initAdvancesUI() {
   const section = document.getElementById('advancesAdminSection');
   const openBtn = document.getElementById('openAddAdvanceBtn');
-  const isAdmin = (typeof currentUserRole !== 'undefined' && currentUserRole === 'admin') || (typeof currentUser !== 'undefined' && currentUser === 'admin');
+  const allowed = hasPermission('advances');
   // load then render
   Promise.resolve(loadAdvancesFromStorage()).then(() => {
     renderAdvancesTable();
-    if (!isAdmin) {
+    if (!allowed) {
       if (section) section.style.display = 'none';
     } else {
       if (section) section.style.display = 'block';
@@ -4759,7 +4907,7 @@ async function initSalaryAdmin() {
 }
 
 // تهيئة حقل الراتب عند تحميل المستخدم
-try { document.getElementById('sidebarUserControlBtn').onclick = function () { setTimeout(() => { try { const section = document.getElementById('salaryAdminSection'); if (section) { section.style.display = (window.currentUserRole === 'admin') ? 'block' : 'none'; } } catch (e) { } }, 60); }; } catch (e) { }
+try { document.getElementById('sidebarUserControlBtn').onclick = function () { setTimeout(() => { try { const section = document.getElementById('salaryAdminSection'); if (section) { section.style.display = hasPermission('salary') ? 'block' : 'none'; } } catch (e) { } }, 60); }; } catch (e) { }
 // call initSalaryAdmin in the normal init path; if function exists the load will call it
 try { initSalaryAdmin(); } catch (e) { }
 
@@ -5287,6 +5435,35 @@ function toggleAdminPanel() {
     adminPanel.style.display = "none";
   }
 }
+
+window.updateAdminTabsVisibility = function() {
+  const isAdmin = currentUserRole === 'admin';
+  
+  const btnEmployees = document.querySelector('.admin-tab-btn[data-tab="employees"]');
+  const btnAdvances = document.querySelector('.admin-tab-btn[data-tab="advances"]');
+  const btnSalary = document.querySelector('.admin-tab-btn[data-tab="salary"]');
+  const btnUsers = document.querySelector('.admin-tab-btn[data-tab="users"]');
+  const btnSettings = document.querySelector('.admin-tab-btn[data-tab="settings"]');
+  
+  if (btnEmployees) btnEmployees.style.display = hasPermission('staff') ? '' : 'none';
+  if (btnAdvances) btnAdvances.style.display = hasPermission('advances') ? '' : 'none';
+  if (btnSalary) btnSalary.style.display = hasPermission('salary') ? '' : 'none';
+  if (btnUsers) btnUsers.style.display = isAdmin ? '' : 'none';
+  if (btnSettings) btnSettings.style.display = isAdmin ? '' : 'none';
+  
+  const canAdmin = hasPermission('staff') || hasPermission('advances') || hasPermission('salary') || isAdmin;
+  const sidebarAdminBtn = document.getElementById('sidebarAdminBtn');
+  if (sidebarAdminBtn) sidebarAdminBtn.style.display = canAdmin ? 'block' : 'none';
+
+  // If panel is open but active tab is hidden, switch to the first available
+  const activeTab = document.querySelector('.admin-tab-btn.active');
+  if (activeTab && activeTab.style.display === 'none') {
+    if (hasPermission('staff')) switchAdminTab('employees');
+    else if (hasPermission('advances')) switchAdminTab('advances');
+    else if (hasPermission('salary')) switchAdminTab('salary');
+    else if (isAdmin) switchAdminTab('settings');
+  }
+};
 
 // Function to switch admin tabs
 function switchAdminTab(tabName) {
@@ -6469,8 +6646,8 @@ function changeAdminPassword() {
 // تعديل: السماح فقط للمدير بالحذف والتحقق من وجود الموظف
 function deleteEmployee(index) {
   if (!canEditCurrentMonth()) return;
-  if (currentUserRole !== "admin") {
-    alert("❌ فقط المدير يمكنه حذف الموظفين.");
+  if (!hasPermission('staff')) {
+    alert("❌ عذراً، لا تمتلك صلاحية لحذف الموظفين.");
     return;
   }
   const empName = employees[index];
@@ -6748,11 +6925,11 @@ document.getElementById("sidebarCloseBtn").onclick = () => {
 function updateAnnouncementsVisibility() {
   const btn = document.getElementById("sidebarAnnouncementsBtn");
   if (!btn) return;
-  btn.style.display = currentUserRole === "admin" ? "block" : "none";
+  btn.style.display = hasPermission('announcements') ? "block" : "none";
   // Only show the local close button for admin users. Regular users cannot close the announcement.
   const closeBtn = document.getElementById('closeAnnouncementBar');
   if (closeBtn) {
-    if (currentUserRole === 'admin') {
+    if (hasPermission('announcements')) {
       closeBtn.style.display = 'flex';
       // delegate precise positioning to a dedicated helper so it can
       // be re-used on resize and other layout changes.
@@ -6843,7 +7020,7 @@ document.getElementById("sidebarAnnouncementsBtn").onclick = function () {
   // show delete button only to admin
   try {
     const delBtn = document.getElementById('deleteCurrentAnnounceBtn');
-    if (delBtn) delBtn.style.display = currentUserRole === 'admin' ? 'block' : 'none';
+    if (delBtn) delBtn.style.display = hasPermission('announcements') ? 'block' : 'none';
   } catch (e) { }
 };
 document.getElementById("closeAnnounceModal").onclick = function () {
@@ -6954,7 +7131,7 @@ document.getElementById('closeAnnouncementBar').onclick = function () {
   // If admin closed the bar, remove the persisted announcement so it
   // disappears for everyone.
   try {
-    if (currentUserRole === 'admin') {
+    if (hasPermission('announcements')) {
       db.ref('announcements/current').remove().catch(() => { });
     }
   } catch (e) { }
@@ -8082,7 +8259,7 @@ try {
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       // تحديث واجهة التقدم
-      try { updatePdfProgress(45, '🔄 تحويل المحتوى إلى صورة...'); } catch (e) { }
+      try { updatePdfProgress(45, '🔄 معالجة البيانات', 'يتم التقاط شكل الجدول والرسومات وتحويلها لصيغة صورة...'); } catch (e) { }
 
       // تحويل المحتوى إلى صورة باستخدام html2canvas
       const canvas = await html2canvas(printContainer, {
@@ -8141,7 +8318,7 @@ try {
       const imgData = canvas.toDataURL('image/png', 0.95);
 
       // إنشاء PDF وإضافة الصورة
-      try { updatePdfProgress(75, '🔁 تجهيز ملف PDF...'); } catch (e) { }
+      try { updatePdfProgress(75, '🔁 تجهيز المقاسات', 'يتم ضبط وتجميع المستند بصيغة PDF، يرجى الانتظار قليلاً...'); } catch (e) { }
       const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -8214,14 +8391,14 @@ try {
       startPdfProgress();
 
       // إنشاء PDF
-      updatePdfProgress(30, '🔄 إنشاء PDF...');
+      updatePdfProgress(20, '🔄 تحضير الهيكل...', 'جاري إعداد قالب التقرير وتجهيز البيانات اللازمة من الواجهة...');
       const pdfBlob = await generateAttendancePDF();
       if (!pdfBlob) {
         completePdfProgress(false, '❌ فشل إنشاء PDF');
         return;
       }
 
-      updatePdfProgress(60, '🔁 جاري إرسال PDF...');
+      updatePdfProgress(85, '🔁 جاري الإرسال...', 'يتم الآن الاتصال بخوادم تيليجرام ورفع التقرير النهائي...');
 
       // إرسال إلى تيليجرام
       const filename = `تقرير_حضور_${year}_${month + 1}_${new Date().getTime()}.pdf`;
@@ -8296,15 +8473,38 @@ try {
 
     autoBackupInterval = setTimeout(async function autoBackupRunner() {
       try {
-        console.log('🔁 تنفيذ النسخ التلقائي الآن');
-        await printAndSendPDF();
+        console.log('🔁 فحص قفل النسخ التلقائي قبل التنفيذ...');
+        let canProceed = true;
+        
+        // التحقق من أن لا أحد غيرنا يقوم بالنسخ حالياً (قفل في قاعدة البيانات)
+        if (typeof db !== 'undefined' && db && db.ref) {
+          const lockRef = db.ref('settings/telegram/backupLock');
+          const lockSnap = await lockRef.once('value');
+          const lastLockTime = parseInt(lockSnap.val() || 0, 10);
+          
+          // إذا كان هنالك عملية نسخ حدثت خلال آخر 3 دقائق، يتم إلغاء التنفيذ الحالي لمنع التكرار
+          if (Date.now() - lastLockTime < 180000) {
+            console.log('⛔ النسخ قيد التنفيذ حالياً من قبل متصفح آخر أو تم تواً. سيتم المتابعة لاحقاً.');
+            canProceed = false;
+          } else {
+            // تسجيل وقتنا كقفل جديد للآخرين
+            await lockRef.set(Date.now());
+          }
+        }
+        
+        if (canProceed) {
+          console.log('🔁 تنفيذ النسخ التلقائي الآن');
+          await printAndSendPDF();
+        }
       } catch (err) { console.error('خطأ في النسخ التلقائي:', err); }
+      
       try {
         // after running (or attempt), schedule next based on updated lastBackup
         const after = Date.now();
         telegramSettings.lastBackup = after;
         await persistTelegramSettings();
       } catch (e) { console.warn('Could not persist lastBackup after auto run', e); }
+      
       // schedule next
       startAutoBackup();
     }, waitMs);
@@ -8369,10 +8569,11 @@ try {
 
   // ربط الأحداث
   document.addEventListener('DOMContentLoaded', function () {
-    // تحميل الإعدادات عند تحميل الصفحة (للمدير فقط)
+    // تحميل الإعدادات عند تحميل الصفحة (للمدير والموثوقين)
     setTimeout(() => {
-      if (typeof currentUserRole !== 'undefined' && currentUserRole === 'admin') {
-        loadTelegramSettings();
+      const isTrusted = (typeof currentUserRole !== 'undefined' && currentUserRole === 'admin') || (window.currentUserData && window.currentUserData.canBackup);
+      if (isTrusted) {
+        if (typeof loadTelegramSettings === 'function') loadTelegramSettings();
       }
     }, 1000);
 
@@ -8443,30 +8644,58 @@ try {
     const overlay = document.getElementById('pdfProgressOverlay');
     if (!overlay) return;
     document.getElementById('pdfProgressBar').style.width = '6%';
-    document.getElementById('pdfProgressText').textContent = '🔄 جاري إنشاء PDF وإرساله...';
-    document.getElementById('pdfProgressIcon').textContent = '🔄';
+    document.getElementById('pdfProgressText').textContent = 'جاري التحضير...';
+    try {
+      const pEl = document.getElementById('pdfProgressPercent');
+      if (pEl) pEl.textContent = '6%';
+      const icon = document.getElementById('pdfProgressIcon');
+      icon.textContent = '';
+      icon.classList.add('spin');
+      document.getElementById('pdfProgressDetails').textContent = 'يرجى الانتظار، يتم تجميع البيانات الأولية...';
+    } catch (e) { }
     document.getElementById('pdfProgressCloseBtn').style.display = 'none';
     overlay.style.display = 'flex';
     try { const printBtn = document.getElementById('sidebarPrintTelegramBtn'); if (printBtn) { printBtn.disabled = true; printBtn.style.opacity = '0.6'; } } catch (e) { }
   }
-  function updatePdfProgress(percent, text) {
+  function updatePdfProgress(percent, text, detail) {
     const overlay = document.getElementById('pdfProgressOverlay');
     if (!overlay || overlay.style.display === 'none') return;
-    document.getElementById('pdfProgressBar').style.width = Math.min(100, Math.max(0, percent)) + '%';
+    const p = Math.min(100, Math.max(0, percent));
+    document.getElementById('pdfProgressBar').style.width = p + '%';
+    const pEl = document.getElementById('pdfProgressPercent');
+    if (pEl) pEl.textContent = Math.round(p) + '%';
     if (text) document.getElementById('pdfProgressText').textContent = text;
+    if (detail !== undefined) {
+      const detEl = document.getElementById('pdfProgressDetails');
+      if (detEl) detEl.textContent = detail;
+    }
   }
-  function completePdfProgress(success, text) {
+  function completePdfProgress(success, text, detail) {
     const overlay = document.getElementById('pdfProgressOverlay');
     if (!overlay) return;
     document.getElementById('pdfProgressBar').style.width = success ? '100%' : '100%';
-    document.getElementById('pdfProgressIcon').textContent = success ? '✅' : '❌';
-    document.getElementById('pdfProgressText').textContent = text || (success ? '✅ اكتمل الإرسال' : '❌ فشل الإرسال');
+    try {
+      const pEl = document.getElementById('pdfProgressPercent');
+      if (pEl) pEl.textContent = success ? '100%' : '100%';
+      const icon = document.getElementById('pdfProgressIcon');
+      icon.classList.remove('spin');
+      icon.textContent = success ? '✅' : '❌';
+      document.getElementById('pdfProgressText').textContent = text || (success ? 'اكتمل الإرسال' : 'فشل التصدير');
+      const detEl = document.getElementById('pdfProgressDetails');
+      if (detEl) {
+        if (detail !== undefined) {
+          detEl.textContent = detail;
+        } else {
+          detEl.textContent = success ? 'تم رفع التقرير إلى تيليجرام بنجاح.' : 'حدث خطأ أثناء رفع التقرير.';
+        }
+      }
+    } catch (e) { }
     const closeBtn = document.getElementById('pdfProgressCloseBtn');
     closeBtn.style.display = 'inline-block';
     closeBtn.onclick = function () { overlay.style.display = 'none'; };
     try { const printBtn = document.getElementById('sidebarPrintTelegramBtn'); if (printBtn) { printBtn.disabled = false; printBtn.style.opacity = ''; } } catch (e) { }
     // auto-hide after short delay on success
-    if (success) { setTimeout(() => { try { overlay.style.display = 'none'; } catch (e) { } }, 2200); }
+    if (success) { setTimeout(() => { try { overlay.style.display = 'none'; } catch (e) { } }, 2600); }
   }
 
   // Allow closing overlay with Escape when close button visible
