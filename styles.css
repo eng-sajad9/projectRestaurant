@@ -423,7 +423,7 @@
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(0,0,0,0.05);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   padding: 14px 16px;
   margin: 0;
   scroll-behavior: smooth;
@@ -440,7 +440,7 @@
   padding: 0 20px;
   min-height: 48px;
   background: #f0f0f5;
-  border: 1px solid rgba(0,0,0,0.03);
+  border: 1px solid rgba(0, 0, 0, 0.03);
   border-radius: 24px;
   color: #8e8e93;
   font-weight: 600;
@@ -1158,7 +1158,8 @@ table#usersTable tbody tr:hover td {
 }
 
 #sidebarCloseBtn {
-  background: rgba(0, 0, 0, 0.08); /* Transparent dark */
+  background: rgba(0, 0, 0, 0.08);
+  /* Transparent dark */
   color: #333;
   font-size: 20px;
   border: none;
@@ -1489,15 +1490,14 @@ table#usersTable tbody tr:hover td {
 .advances-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 620px;
 }
 
 .advances-table th,
 .advances-table td {
-  padding: 10px 8px;
+  padding: 8px 6px;
   border-bottom: 1px solid #eef2ff;
   text-align: center;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .advances-table thead th {
@@ -3328,12 +3328,13 @@ input:checked+.slider:before {
   min-width: 280px;
   max-width: 90%;
   padding: 14px 18px;
-  border-radius: 24px; /* Smooth iOS corner */
+  border-radius: 24px;
+  /* Smooth iOS corner */
   background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(30px) saturate(200%);
   -webkit-backdrop-filter: blur(30px) saturate(200%);
   border: 0.5px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 
+  box-shadow:
     0 4px 12px rgba(0, 0, 0, 0.05),
     0 15px 35px -5px rgba(0, 0, 0, 0.1);
   display: flex;
@@ -3369,8 +3370,8 @@ input:checked+.slider:before {
   justify-content: center;
   font-size: 22px;
   flex-shrink: 0;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-  border: 0.5px solid rgba(0,0,0,0.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  border: 0.5px solid rgba(0, 0, 0, 0.05);
 }
 
 .toast-content {
@@ -3425,6 +3426,7 @@ input:checked+.slider:before {
     opacity: 0;
     transform: translateY(-50px) scale(0.85);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -3436,6 +3438,7 @@ input:checked+.slider:before {
     opacity: 1;
     transform: scale(1);
   }
+
   100% {
     opacity: 0;
     transform: scale(0.9) translateY(-10px);
@@ -3447,10 +3450,25 @@ input:checked+.slider:before {
 }
 
 /* Light Mode specific refinements */
-.toast-card.success .toast-icon { background: #e3fff3; color: #10b981; }
-.toast-card.error .toast-icon { background: #fff1f0; color: #ff3b30; }
-.toast-card.warning .toast-icon { background: #fff9e6; color: #ff9500; }
-.toast-card.info .toast-icon { background: #f0f7ff; color: #007aff; }
+.toast-card.success .toast-icon {
+  background: #e3fff3;
+  color: #10b981;
+}
+
+.toast-card.error .toast-icon {
+  background: #fff1f0;
+  color: #ff3b30;
+}
+
+.toast-card.warning .toast-icon {
+  background: #fff9e6;
+  color: #ff9500;
+}
+
+.toast-card.info .toast-icon {
+  background: #f0f7ff;
+  color: #007aff;
+}
 
 /* ============================================ */
 /* Telegram PDF Progress Glassmorphism Overlay */
@@ -3505,7 +3523,8 @@ body.dark-mode .glass-modal,
   border-top-color: #0b66c3;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  font-size: 0; /* hide text if any */
+  font-size: 0;
+  /* hide text if any */
 }
 
 .dark-mode .glass-icon.spin {
@@ -3514,7 +3533,9 @@ body.dark-mode .glass-modal,
 }
 
 @keyframes spin {
-  100% { transform: rotate(360deg); }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .glass-percent {
@@ -3558,7 +3579,7 @@ body.dark-mode .glass-modal,
   border-radius: 10px;
   overflow: hidden;
   margin-bottom: 12px;
-  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .dark-mode .glass-progress-track {
@@ -3612,178 +3633,214 @@ body.dark-mode .glass-modal,
 #usersTable {
   border-collapse: collapse;
   width: 100%;
+  table-layout: fixed;
 }
 
 #usersTable thead {
-  display: none; /* always hidden — cards have their own layout */
+  display: none;
 }
 
-#usersTable .user-card-row > td {
-  padding: 0 0 12px 0;
+#usersTable .user-card-row>td {
+  padding: 0 0 8px 0;
   border: none;
   background: transparent;
 }
 
-.user-card {
-  background: #ffffff;
-  border-radius: 18px;
-  padding: 16px 18px;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  transition: box-shadow 0.25s ease, transform 0.2s ease;
+#usersTable .user-card-row {
+  display: block;
 }
 
-.user-card:hover {
-  box-shadow: 0 6px 24px rgba(0, 122, 255, 0.1);
-  transform: translateY(-2px);
+/* ===== Professional User Cards (uc = user card) ===== */
+
+.uc {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
 }
 
-/* Header row: Avatar + Info + Status */
-.user-card-header {
+.uc:hover {
+  box-shadow: 0 4px 16px rgba(0, 122, 255, 0.10);
+}
+
+/* ── Top zone: avatar + name + meta ── */
+.uc-top {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 14px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.055);
+  gap: 12px;
+  padding: 12px 14px 10px;
 }
 
-.user-avatar {
-  width: 46px;
-  height: 46px;
+.uc-avatar {
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #007aff 0%, #0052cc 100%);
-  color: #fff;
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 700;
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  letter-spacing: 0;
 }
 
-.user-card-info {
+/* Avatar color per role */
+.uc-avatar.role-admin {
+  background: linear-gradient(135deg, #ff9500, #ff6b00);
+}
+
+.uc-avatar.role-supervisor {
+  background: linear-gradient(135deg, #673ab7, #9c27b0);
+}
+
+.uc-avatar.role-user {
+  background: linear-gradient(135deg, #007aff, #0052cc);
+}
+
+.uc-info {
   flex: 1;
   min-width: 0;
 }
 
-.user-card-name {
-  font-size: 16px;
+.uc-name {
+  font-size: 14px;
   font-weight: 700;
   color: #1c1c1e;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
+  line-height: 1.3;
 }
 
-.user-card-role {
-  font-size: 13px;
-  font-weight: 500;
-  margin-top: 2px;
+.uc-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
 }
 
-.user-badge-me {
-  background: #e8f4ff;
-  color: #007aff;
+/* Badges */
+.uc-badge {
   font-size: 11px;
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 20px;
-  border: 1px solid rgba(0, 122, 255, 0.2);
-}
-
-.user-card-status {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.user-status-dot {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  align-self: flex-end;
-}
-
-.user-status-dot.active {
-  background: #34c759;
-  box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.2);
-}
-
-.user-status-dot.inactive {
-  background: #aeaeb2;
-}
-
-/* Actions row: pill buttons */
-.user-card-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.user-action-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 7px 14px;
-  border-radius: 20px;
-  border: none;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
   white-space: nowrap;
 }
 
-.user-action-btn:hover {
-  opacity: 0.85;
+.uc-badge-me {
+  background: #e8f4ff;
+  color: #007aff;
+  border: 1px solid rgba(0, 122, 255, .2);
+}
+
+.uc-badge.role-admin {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.uc-badge.role-supervisor {
+  background: #f3e5f5;
+  color: #6a1b9a;
+}
+
+.uc-badge.role-user {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.uc-emp {
+  font-size: 11px;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.uc-status {
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.uc-status.on {
+  color: #34c759;
+}
+
+.uc-status.off {
+  color: #aeaeb2;
+}
+
+/* ── Divider ── */
+.uc-divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.05);
+  margin: 0 14px;
+}
+
+/* ── Bottom zone: actions ── */
+.uc-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 14px 10px;
+}
+
+.uc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity .15s, transform .1s;
+  font-family: inherit;
+}
+
+.uc-btn:hover {
+  opacity: .85;
   transform: translateY(-1px);
 }
 
-.user-action-btn.btn-lock {
-  background: rgba(255, 59, 48, 0.1);
-  color: #ff3b30;
+/* Button variants */
+.uc-btn-ok {
+  background: rgba(52, 199, 89, .12);
+  color: #1a7a3c;
 }
 
-.user-action-btn.btn-unlock {
-  background: rgba(52, 199, 89, 0.1);
-  color: #28a745;
+.uc-btn-warn {
+  background: rgba(255, 59, 48, .10);
+  color: #c0392b;
 }
 
-.user-action-btn.btn-stop {
-  background: rgba(255, 149, 0, 0.1);
-  color: #ff9500;
+.uc-btn-teal {
+  background: rgba(0, 196, 181, .12);
+  color: #0d8a7e;
 }
 
-.user-action-btn.btn-allow {
-  background: rgba(0, 122, 255, 0.08);
-  color: #007aff;
+.uc-btn-purple {
+  background: rgba(103, 58, 183, .10);
+  color: #5e35b1;
 }
 
-.user-action-btn.btn-assign {
-  background: rgba(0, 196, 181, 0.1);
-  color: #17a2b8;
+.uc-btn-ghost {
+  background: rgba(255, 149, 0, .10);
+  color: #b06000;
 }
 
-.user-action-btn.btn-supervisor {
-  background: rgba(103, 58, 183, 0.1);
-  color: #673ab7;
+.uc-btn-danger {
+  background: rgba(255, 59, 48, .08);
+  color: #c0392b;
+  padding: 5px 9px;
 }
 
-.user-action-btn.btn-force-logout {
-  background: rgba(255, 149, 0, 0.1);
-  color: #c0762a;
-}
-
-.user-action-btn.btn-danger {
-  background: rgba(255, 59, 48, 0.08);
-  color: #ff3b30;
-}
 
 
 /* ===== iOS Admin Panel UI ===== */
@@ -3810,7 +3867,7 @@ body.dark-mode .glass-modal,
   min-height: 48px;
   font-size: 16px;
   padding: 12px 16px;
-  border: 1px solid rgba(0,0,0,0.1);
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(10px);
@@ -3879,7 +3936,7 @@ body.dark-mode .glass-modal,
   height: 28px;
   background: #ffffff;
   border-radius: 50%;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
@@ -3904,46 +3961,46 @@ body.dark-mode .glass-modal,
   color: #1c1c1e;
 }
 
-/* Card-Based Tables for Mobile (< 768px) */
+/* Card-Based Tables for Mobile (< 768px) - Advances & Employees */
 @media (max-width: 768px) {
   .mobile-cards-table thead {
     display: none;
   }
-  
-  .mobile-cards-table, 
-  .mobile-cards-table tbody, 
-  .mobile-cards-table tr, 
+
+  .mobile-cards-table,
+  .mobile-cards-table tbody,
+  .mobile-cards-table tr,
   .mobile-cards-table td {
     display: block;
     width: 100%;
   }
 
   .mobile-cards-table tr {
-    margin-bottom: 16px;
+    margin-bottom: 10px;
     background: #ffffff;
-    border-radius: 16px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-    border: 1px solid rgba(0,0,0,0.05);
-    padding: 12px 16px;
+    border-radius: 12px;
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 8px 12px;
   }
 
   .mobile-cards-table td {
     text-align: right !important;
-    padding: 8px 0 !important;
+    padding: 6px 0 !important;
     border: none !important;
     position: relative;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid rgba(0,0,0,0.04) !important;
-    font-size: 14px !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
+    font-size: 13px !important;
   }
-  
+
   .mobile-cards-table tr td:last-child {
     border-bottom: none !important;
     padding-bottom: 0 !important;
   }
-  
+
   .mobile-cards-table tr td:first-child {
     padding-top: 0 !important;
   }
@@ -3952,8 +4009,8 @@ body.dark-mode .glass-modal,
     content: attr(data-label);
     font-weight: 600;
     color: #8e8e93;
-    font-size: 13px;
-    padding-left: 12px;
+    font-size: 12px;
+    padding-left: 8px;
+    flex-shrink: 0;
   }
 }
-

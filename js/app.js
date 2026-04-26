@@ -3470,8 +3470,8 @@ function login() {
         updateEmployeeDropdown();
       }
 
-      // تحميل إعدادات تيليجرام لتفعيل النسخ التلقائي (للمدير والمشرفين الموثوقين)
-      if (currentUserRole === "admin" || (window.currentUserData && window.currentUserData.canBackup)) {
+      // تحميل إعدادات تيليجرام لتفعيل النسخ التلقائي (للمدير فقط)
+      if (currentUserRole === "admin") {
         setTimeout(() => {
           if (typeof loadTelegramSettings === 'function') {
             loadTelegramSettings();
@@ -3713,15 +3713,25 @@ function generateTable() {
           }
           if (select.value === "شفت") {
             cell.style.background = "#d4edda";
+            cell.style.boxShadow = "none";
+            cell.style.color = "";
+            select.style.color = "";
           } else if (select.value === "نص") {
             cell.style.background = "#fff9db";
-          } else if (select.value === "❌") {
+            cell.style.boxShadow = "none";
+            cell.style.color = "";
+            select.style.color = "";
+          } else if (select.value === "\u274c") {
             cell.style.background = "#ffe3e3";
+            cell.style.boxShadow = "none";
             cell.style.color = "#d32f2f";
             select.style.color = "#d32f2f";
           } else {
+            /* Empty — inset shadow acts as a subtle dashed-style indicator */
+            cell.style.background = "#f5f7fa";
+            cell.style.boxShadow = "inset 0 0 0 1px #c8d0dc";
             cell.style.color = "";
-            select.style.color = "";
+            select.style.color = "#bbb";
           }
           if (!currentUserCanEdit || !isCurrentMonthSelected()) {
             select.setAttribute("disabled", "disabled");
@@ -3734,20 +3744,24 @@ function generateTable() {
           select.addEventListener("change", function () {
             if (this.value === "شفت") {
               cell.style.background = "#d4edda";
+              cell.style.boxShadow = "none";
               cell.style.color = "";
               select.style.color = "";
             } else if (this.value === "نص") {
               cell.style.background = "#fff9db";
+              cell.style.boxShadow = "none";
               cell.style.color = "";
               select.style.color = "";
-            } else if (this.value === "❌") {
+            } else if (this.value === "\u274c") {
               cell.style.background = "#ffe3e3";
+              cell.style.boxShadow = "none";
               cell.style.color = "#d32f2f";
               select.style.color = "#d32f2f";
             } else {
-              cell.style.background = "";
+              cell.style.background = "#f5f7fa";
+              cell.style.boxShadow = "inset 0 0 0 1px #c8d0dc";
               cell.style.color = "";
-              select.style.color = "";
+              select.style.color = "#bbb";
             }
           });
           cell.appendChild(select);
@@ -4059,57 +4073,70 @@ async function loadUsers() {
   tbody.innerHTML = "";
 
   Object.entries(users).forEach(([username, data]) => {
-    const assignedEmp = data.assignedEmployee || "—";
+    const assignedEmp = data.assignedEmployee || null;
     const isMe = username === currentUser;
     const isAdmin = username === 'admin';
     const roleLabel = isAdmin ? "مدير" : (data.role === "supervisor" ? "مشرف" : "مستخدم");
-    const roleColor = isAdmin ? "#ff9500" : (data.role === "supervisor" ? "#673ab7" : "#007aff");
+    const roleClass = isAdmin ? "role-admin" : (data.role === "supervisor" ? "role-supervisor" : "role-user");
 
-    // Build a card row instead of a plain <tr>
     const tr = document.createElement("tr");
     tr.className = "user-card-row";
     tr.innerHTML = `
-      <td colspan="9" style="padding:0;border:none;">
-        <div class="user-card">
-          <!-- Avatar + Name -->
-          <div class="user-card-header">
-            <div class="user-avatar">${username.charAt(0).toUpperCase()}</div>
-            <div class="user-card-info">
-              <div class="user-card-name">${username} ${isMe ? '<span class="user-badge-me">أنت</span>' : ''}</div>
-              <div class="user-card-role" style="color:${roleColor};">${roleLabel} · ${assignedEmp}</div>
-            </div>
-            <div class="user-card-status">
-              <span class="user-status-dot ${data.canEdit ? 'active' : 'inactive'}"></span>
-              <span style="font-size:12px;color:#8e8e93;">${data.canEdit ? 'تعديل مفعّل' : 'للقراءة فقط'}</span>
+      <td colspan="9" style="padding:0 0 10px 0;border:none;background:transparent;">
+        <div class="uc">
+          <!-- Top: identity row -->
+          <div class="uc-top">
+            <div class="uc-avatar ${roleClass}">${username.charAt(0).toUpperCase()}</div>
+            <div class="uc-info">
+              <div class="uc-name">
+                ${username}
+                ${isMe ? '<span class="uc-badge uc-badge-me">أنت</span>' : ''}
+              </div>
+              <div class="uc-meta">
+                <span class="uc-badge ${roleClass}">${roleLabel}</span>
+                ${assignedEmp ? `<span class="uc-emp">👤 ${assignedEmp}</span>` : ''}
+                <span class="uc-status ${data.canEdit ? 'on' : 'off'}">${data.canEdit ? '● مفعّل' : '● للقراءة'}</span>
+              </div>
             </div>
           </div>
-          <!-- Actions Row -->
-          <div class="user-card-actions">
-            <button class="user-action-btn ${data.canEdit ? 'btn-lock' : 'btn-unlock'}"
-              onclick="toggleUserEdit('${username}', ${data.canEdit})">
+
+          <!-- Divider -->
+          <div class="uc-divider"></div>
+
+          <!-- Bottom: actions -->
+          <div class="uc-actions">
+            <!-- Primary actions -->
+            <button class="uc-btn ${data.canEdit ? 'uc-btn-warn' : 'uc-btn-ok'}"
+              onclick="toggleUserEdit('${username}', ${data.canEdit})"
+              title="${data.canEdit ? 'قفل صلاحية التعديل' : 'فتح صلاحية التعديل'}">
               ${data.canEdit ? '🔒 قفل' : '🔓 فتح'}
             </button>
-            <button class="user-action-btn ${data.canBackup ? 'btn-stop' : 'btn-allow'}"
-              onclick="toggleUserBackup('${username}', ${!!data.canBackup})">
-              ${data.canBackup ? '⏹ إيقاف النسخ' : '☁️ سماح النسخ'}
-            </button>
-            <button class="user-action-btn btn-assign"
-              onclick="assignEmployeeToUser('${username}')">
-              👤 تحديد موظف
+            <button class="uc-btn uc-btn-teal"
+              onclick="assignEmployeeToUser('${username}')"
+              title="ربط بموظف">
+              👤 موظف
             </button>
             ${!isMe && !isAdmin ? `
-            <button class="user-action-btn btn-supervisor"
-              onclick="openSupervisorModal('${username}', this)">
+            <button class="uc-btn uc-btn-purple"
+              onclick="openSupervisorModal('${username}', this)"
+              title="إدارة الصلاحيات">
               👑 صلاحيات
             </button>` : ''}
+
+            <!-- Spacer -->
+            <span style="flex:1;"></span>
+
+            <!-- Destructive actions -->
             ${!isMe ? `
-            <button class="user-action-btn btn-force-logout"
-              onclick="forceLogoutUser('${username}')">
+            <button class="uc-btn uc-btn-ghost"
+              onclick="forceLogoutUser('${username}')"
+              title="إخراج المستخدم قسراً">
               🚪 إخراج
             </button>
-            <button class="user-action-btn btn-danger"
-              onclick="deleteUser('${username}')">
-              🗑 حذف
+            <button class="uc-btn uc-btn-danger"
+              onclick="deleteUser('${username}')"
+              title="حذف المستخدم">
+              🗑
             </button>` : ''}
           </div>
         </div>
@@ -4152,15 +4179,7 @@ async function toggleUserEdit(username, currentCanEdit) {
   loadUsers();
 }
 
-// تبديل صلاحية النسخ التلقائي للمستخدم
-async function toggleUserBackup(username, currentCanBackup) {
-  if (username === currentUser) {
-    alert("❌ لا يمكنك تغيير صلاحيتك الخاصة.");
-    return;
-  }
-  await db.ref("users/" + username + "/canBackup").set(!currentCanBackup);
-  loadUsers();
-}
+
 
 // حذف مستخدم مع نافذة منبثقة أنيقة وإخراج المستخدم فوراً
 async function deleteUser(username) {
@@ -4284,7 +4303,6 @@ async function addUser() {
   const password = document.getElementById("newUserPass").value.trim();
   const assignedEmployee = document.getElementById("newUserEmployee").value.trim();
   const canEdit = document.getElementById("newUserCanEdit").checked;
-  const canBackup = document.getElementById("newUserCanBackup").checked;
   if (!username || !password) {
     alert("❌ يرجى إدخال اسم المستخدم وكلمة المرور");
     return;
@@ -4296,7 +4314,7 @@ async function addUser() {
   }
   try {
     const hashObj = await hashPassword(password);
-    const userData = { password: hashObj, role: "user", canEdit, canBackup };
+    const userData = { password: hashObj, role: "user", canEdit };
     if (assignedEmployee) {
       userData.assignedEmployee = assignedEmployee;
     }
@@ -4308,7 +4326,6 @@ async function addUser() {
     document.getElementById("newUserPass").value = "";
     document.getElementById("newUserEmployee").value = "";
     document.getElementById("newUserCanEdit").checked = true;
-    document.getElementById("newUserCanBackup").checked = false;
     loadUsers();
   } catch (err) {
     console.error(err);
@@ -8569,10 +8586,9 @@ try {
 
   // ربط الأحداث
   document.addEventListener('DOMContentLoaded', function () {
-    // تحميل الإعدادات عند تحميل الصفحة (للمدير والموثوقين)
+    // تحميل الإعدادات عند تحميل الصفحة (للمدير فقط)
     setTimeout(() => {
-      const isTrusted = (typeof currentUserRole !== 'undefined' && currentUserRole === 'admin') || (window.currentUserData && window.currentUserData.canBackup);
-      if (isTrusted) {
+      if (typeof currentUserRole !== 'undefined' && currentUserRole === 'admin') {
         if (typeof loadTelegramSettings === 'function') loadTelegramSettings();
       }
     }, 1000);
