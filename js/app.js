@@ -8263,7 +8263,7 @@ try {
       printContainer.style.backgroundColor = '#fff';
       printContainer.style.padding = '20px';
       printContainer.style.direction = 'rtl';
-      printContainer.style.fontFamily = 'inherit';
+      printContainer.style.fontFamily = "'Tajawal', sans-serif";
       printContainer.style.fontSize = '14px';
       document.body.appendChild(printContainer);
 
@@ -8273,6 +8273,7 @@ try {
         const titleClone = title.cloneNode(true);
         titleClone.style.marginTop = '0';
         titleClone.style.marginBottom = '20px';
+        titleClone.style.fontFamily = "'Tajawal', sans-serif";
         printContainer.appendChild(titleClone);
       }
 
@@ -8281,40 +8282,41 @@ try {
       tableClone.style.width = '100%';
       tableClone.style.marginBottom = '30px';
       tableClone.style.borderCollapse = 'collapse';
+      tableClone.style.fontFamily = "'Tajawal', sans-serif";
 
       // إظهار رأس التاريخ إذا كان مخفياً
       const dateHeader = tableClone.querySelector('#dateHeaderTh');
       if (dateHeader) {
-        dateHeader.style.display = '';
         dateHeader.style.display = 'table-cell';
       }
 
       // تحويل جميع select elements إلى نص قبل النسخ
       const allSelects = tableClone.querySelectorAll('select');
       allSelects.forEach(select => {
-        const selectedValue = select.value || '';
+        // مهم جداً: استخراج القيمة من الجدول الأصلي لأن cloneNode لا ينسخ قيمة الـ select الحالية
+        const originalSelect = attendanceTable.querySelector(`#${select.id}`);
+        const selectedValue = originalSelect ? originalSelect.value : '';
+        
         const parent = select.parentElement;
         if (parent) {
-          // الحصول على لون الخلفية من الخلية الأصلية
-          const originalCell = attendanceTable.querySelector(`select[id="${select.id}"]`)?.parentElement;
+          // الحصول على لون الخلفية والخط من الخلية الأصلية
+          const originalCell = originalSelect ? originalSelect.parentElement : null;
           const bgColor = originalCell ? window.getComputedStyle(originalCell).backgroundColor : '';
           const textColor = originalCell ? window.getComputedStyle(originalCell).color : '';
 
-          // إنشاء span بدلاً من select
+          // إنشاء span يحتوي على القيمة
           const span = document.createElement('span');
           span.textContent = selectedValue;
           span.style.display = 'block';
           span.style.width = '100%';
           span.style.height = '100%';
           span.style.textAlign = 'center';
-          span.style.verticalAlign = 'middle';
           span.style.padding = '8px 4px';
-          span.style.fontSize = '15px';
-          span.style.fontWeight = 'bold';
-          span.style.minHeight = '30px';
-          span.style.lineHeight = '1.4';
+          span.style.fontSize = '14px';
+          span.style.fontWeight = '700';
+          span.style.fontFamily = "'Tajawal', sans-serif";
 
-          // تطبيق نفس الألوان حسب القيمة
+          // تطبيق الألوان التعريفية
           if (selectedValue === 'شفت') {
             span.style.background = '#d4edda';
             span.style.color = '#155724';
@@ -8325,11 +8327,10 @@ try {
             span.style.background = '#ffe3e3';
             span.style.color = '#d32f2f';
           } else {
-            span.style.background = bgColor || '#fff';
-            span.style.color = textColor || '#000';
+            span.style.background = bgColor || '#fdfdfd';
+            span.style.color = textColor || '#333';
           }
 
-          // استبدال select بـ span
           parent.replaceChild(span, select);
         }
       });
@@ -8340,16 +8341,14 @@ try {
         th.style.display = 'table-cell';
         th.style.visibility = 'visible';
         th.style.opacity = '1';
-        th.style.position = 'relative';
-        th.style.zIndex = '1';
-        // التأكد من أن النص مرئي
         th.style.textAlign = 'center';
         th.style.verticalAlign = 'middle';
         th.style.padding = '10px 5px';
-        th.style.whiteSpace = 'normal';
-        th.style.wordWrap = 'break-word';
-        th.style.fontSize = '17px';
+        th.style.whiteSpace = 'nowrap';
+        th.style.fontSize = '12px';
         th.style.fontWeight = 'bold';
+        th.style.fontFamily = "'Tajawal', sans-serif";
+        th.style.letterSpacing = 'normal'; // هام جداً للنصوص العربية
       });
 
       // التأكد من أن جميع td elements مرئية
@@ -8358,12 +8357,12 @@ try {
         td.style.display = 'table-cell';
         td.style.visibility = 'visible';
         td.style.opacity = '1';
-        td.style.position = 'relative';
-        // إزالة أي border-radius قد يسبب مشاكل
         td.style.borderRadius = '0';
         td.style.padding = '5px';
         td.style.textAlign = 'center';
         td.style.verticalAlign = 'middle';
+        td.style.fontFamily = "'Tajawal', sans-serif";
+        td.style.letterSpacing = 'normal';
 
         // التأكد من أن المحتوى مرئي
         const span = td.querySelector('span');
@@ -8371,6 +8370,8 @@ try {
           span.style.display = 'block';
           span.style.visibility = 'visible';
           span.style.opacity = '1';
+          span.style.fontFamily = "'Tajawal', sans-serif";
+          span.style.letterSpacing = 'normal';
         }
       });
 
@@ -8395,113 +8396,148 @@ try {
         printContainer.appendChild(empStatsClone);
       }
 
-      // إضافة معلومات إضافية
+      // إضافة معلومات إضافية (فوتر احترافي)
       const footer = document.createElement('div');
-      footer.style.marginTop = '30px';
-      footer.style.paddingTop = '20px';
-      footer.style.borderTop = '1px solid #ccc';
+      footer.style.marginTop = '40px';
+      footer.style.paddingTop = '15px';
+      footer.style.borderTop = '1px dashed #bbb';
       footer.style.textAlign = 'center';
-      footer.style.fontSize = '10px';
-      footer.style.color = '#666';
+      footer.style.fontSize = '12px';
+      footer.style.color = '#444';
+      footer.style.fontFamily = "'Tajawal', sans-serif";
       footer.innerHTML = `
-              <p>تم إنشاء التقرير بواسطة: ${currentUser || 'غير معروف'}</p>
-              <p>وقت الإنشاء: ${new Date().toLocaleString('ar-EG')}</p>
-            `;
+          <div style="margin-bottom: 8px; font-weight: 700; color: #1a73e8;">
+            تم إنشاء التقرير بواسطة: ${currentUser || 'admin'} | وقت الإنشاء: ${formatDateTimeNoSeconds(new Date())}
+          </div>
+          <div style="font-size: 11px; color: #777; font-weight: 500;">
+            تم إنشاء النظام بواسطة المهندس سجاد 🛠️
+          </div>
+      `;
       printContainer.appendChild(footer);
 
       // انتظار قليل لضمان تحميل جميع العناصر والخطوط
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       // تحديث واجهة التقدم
-      try { updatePdfProgress(45, '🔄 معالجة البيانات', 'يتم التقاط شكل الجدول والرسومات وتحويلها لصيغة صورة...'); } catch (e) { }
+      try { updatePdfProgress(35, ' معالجة الصفحات', 'جاري تنظيم الهوامش والبيانات...'); } catch (e) { }
 
-      // تحويل المحتوى إلى صورة باستخدام html2canvas
-      const canvas = await html2canvas(printContainer, {
-        scale: 2.5, // زيادة الدقة
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        width: printContainer.scrollWidth,
-        height: printContainer.scrollHeight,
-        windowWidth: printContainer.scrollWidth,
-        windowHeight: printContainer.scrollHeight,
-        allowTaint: false,
-        removeContainer: false,
-        imageTimeout: 15000,
-        onclone: function (clonedDoc) {
-          // التأكد من أن جميع العناصر مرئية في النسخة المستنسخة
-          const clonedContainer = clonedDoc.querySelector('div');
-          if (clonedContainer) {
-            // إظهار جميع العناصر
-            const allElements = clonedContainer.querySelectorAll('*');
-            allElements.forEach(el => {
-              if (el.style) {
-                el.style.visibility = 'visible';
-                el.style.opacity = '1';
-                if (el.tagName === 'TD' || el.tagName === 'TH') {
-                  el.style.display = 'table-cell';
-                } else if (el.tagName === 'TR') {
-                  el.style.display = 'table-row';
-                } else if (el.tagName === 'TABLE') {
-                  el.style.display = 'table';
-                } else if (el.tagName === 'SPAN') {
-                  el.style.display = 'block';
-                }
-              }
-            });
+      // إعدادات مقاسات A4 بالبكسل (تقريبي لـ 96dpi)
+      const a4HeightPx = 1050; // زيادة الهوامش
+      const rows = Array.from(tableClone.querySelectorAll('tbody tr'));
+      const theadClone = tableClone.querySelector('thead').cloneNode(true);
+      
+      const pages = [];
+      let currentRows = [];
+      let currentHeight = 200; 
 
-            // التأكد من أن الجدول مرئي بالكامل
-            const clonedTable = clonedContainer.querySelector('table');
-            if (clonedTable) {
-              clonedTable.style.display = 'table';
-              clonedTable.style.visibility = 'visible';
-              clonedTable.style.width = '100%';
-              clonedTable.style.borderCollapse = 'collapse';
-            }
-
-            // التأكد من أن جميع النصوص مرئية
-            const allTexts = clonedContainer.querySelectorAll('th, td, span');
-            allTexts.forEach(textEl => {
-              textEl.style.color = window.getComputedStyle(textEl).color || '#000';
-              textEl.style.textShadow = 'none';
-            });
-          }
+      rows.forEach((row, index) => {
+        const rowHeight = 42; 
+        if (currentHeight + rowHeight > a4HeightPx) {
+          pages.push(currentRows);
+          currentRows = [row];
+          currentHeight = 150 + rowHeight;
+        } else {
+          currentRows.push(row);
+          currentHeight += rowHeight;
         }
+        if (index === rows.length - 1) pages.push(currentRows);
       });
 
-      const imgData = canvas.toDataURL('image/png', 0.95);
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+      const imgWidth = 210;
 
-      // إنشاء PDF وإضافة الصورة
-      try { updatePdfProgress(75, '🔁 تجهيز المقاسات', 'يتم ضبط وتجميع المستند بصيغة PDF، يرجى الانتظار قليلاً...'); } catch (e) { }
-      const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-        compress: true
-      });
+      for (let i = 0; i < pages.length; i++) {
+        if (i > 0) doc.addPage();
+        
+        const pageContainer = document.createElement('div');
+        pageContainer.style.width = '210mm';
+        pageContainer.style.minHeight = '297mm';
+        pageContainer.style.padding = '25mm 15mm'; // هوامش احترافية
+        pageContainer.style.backgroundColor = '#fff';
+        pageContainer.style.direction = 'rtl';
+        pageContainer.style.fontFamily = "'Tajawal', sans-serif";
+        pageContainer.style.boxSizing = 'border-box';
+        
+        const pageHeader = document.createElement('div');
+        pageHeader.style.marginBottom = '20px';
+        pageHeader.style.borderBottom = '1px solid #eee';
+        pageHeader.style.paddingBottom = '10px';
+        pageHeader.innerHTML = `<h2 style="margin:0;font-size:16px;">${title ? title.textContent : 'تقرير الحضور'}</h2>
+                                 <p style="margin:5px 0 0 0;font-size:11px;color:#888;">صفحة ${i + 1} من ${pages.length}</p>`;
+        pageContainer.appendChild(pageHeader);
 
-      const imgWidth = 210; // عرض A4 بالمليمتر
-      const pageHeight = 297; // ارتفاع A4 بالمليمتر
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        const pageTable = document.createElement('table');
+        pageTable.style.width = '100%';
+        pageTable.style.borderCollapse = 'collapse';
+        pageTable.appendChild(theadClone.cloneNode(true));
+        
+        const pageTbody = document.createElement('tbody');
+        pages[i].forEach(r => pageTbody.appendChild(r.cloneNode(true)));
+        pageTable.appendChild(pageTbody);
+        pageContainer.appendChild(pageTable);
 
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      // إضافة الصورة الأولى
-      doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
-      heightLeft -= pageHeight;
-
-      // إضافة صفحات إضافية إذا لزم الأمر
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        doc.addPage();
-        doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
-        heightLeft -= pageHeight;
+        document.body.appendChild(pageContainer);
+        const canvas = await html2canvas(pageContainer, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+        const imgData = canvas.toDataURL('image/png', 0.95);
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        doc.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight, undefined, 'FAST');
+        document.body.removeChild(pageContainer);
       }
 
-      // تنظيف العنصر المؤقت
-      document.body.removeChild(printContainer);
+      // --- صفحة إضافية مخصصة للإحصائيات والرواتب لضمان عدم القص ---
+      if ((statsBox && statsBox.innerHTML && statsBox.innerHTML !== '—') || (empStatsDiv && empStatsDiv.innerHTML.trim())) {
+        doc.addPage();
+        const finalPage = document.createElement('div');
+        finalPage.style.width = '210mm';
+        finalPage.style.padding = '25mm 15mm';
+        finalPage.style.backgroundColor = '#fff';
+        finalPage.style.direction = 'rtl';
+        finalPage.style.fontFamily = "'Tajawal', sans-serif";
 
+        const finalHeader = document.createElement('div');
+        finalHeader.style.marginBottom = '20px';
+        finalHeader.style.borderBottom = '2px solid #1a73e8';
+        finalHeader.style.paddingBottom = '10px';
+        finalHeader.innerHTML = `<h2 style="margin:0;font-size:18px;color:#1a73e8;">💰 التقرير المالي والإحصائي</h2>
+                                 <p style="margin:5px 0 0 0;font-size:11px;color:#666;">تفاصيل الرواتب والسلف المستحقة لهذا الشهر</p>`;
+        finalPage.appendChild(finalHeader);
+
+        if (statsBox) {
+          const sTitle = document.createElement('h3');
+          sTitle.textContent = '📊 ملخص الشهر';
+          sTitle.style.fontSize = '15px';
+          sTitle.style.marginTop = '10px';
+          finalPage.appendChild(sTitle);
+          finalPage.appendChild(statsBox.cloneNode(true));
+        }
+
+        if (empStatsDiv) {
+          const eTitle = document.createElement('h3');
+          eTitle.textContent = '👥 تفاصيل الموظفين والرواتب';
+          eTitle.style.fontSize = '15px';
+          eTitle.style.marginTop = '25px';
+          finalPage.appendChild(eTitle);
+          
+          const eClone = empStatsDiv.cloneNode(true);
+          eClone.querySelectorAll('table').forEach(t => {
+            t.style.width = '100%';
+            t.style.borderCollapse = 'collapse';
+            t.style.fontSize = '10px';
+          });
+          finalPage.appendChild(eClone);
+        }
+
+        if (footer) finalPage.appendChild(footer.cloneNode(true));
+
+        document.body.appendChild(finalPage);
+        const canvasFinal = await html2canvas(finalPage, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+        const imgDataFinal = canvasFinal.toDataURL('image/png', 0.95);
+        const imgHeightFinal = (canvasFinal.height * imgWidth) / canvasFinal.width;
+        doc.addImage(imgDataFinal, 'PNG', 0, 0, imgWidth, imgHeightFinal, undefined, 'FAST');
+        document.body.removeChild(finalPage);
+      }
+
+      if (printContainer && printContainer.parentNode) document.body.removeChild(printContainer);
       return doc.output('blob');
     } catch (error) {
       console.error('خطأ في إنشاء PDF:', error);
@@ -8545,14 +8581,14 @@ try {
       startPdfProgress();
 
       // إنشاء PDF
-      updatePdfProgress(20, '🔄 تحضير الهيكل...', 'جاري إعداد قالب التقرير وتجهيز البيانات اللازمة من الواجهة...');
+      updatePdfProgress(20, ' تحضير الهيكل...', 'جاري إعداد قالب التقرير وتجهيز البيانات اللازمة من الواجهة...');
       const pdfBlob = await generateAttendancePDF();
       if (!pdfBlob) {
         completePdfProgress(false, '❌ فشل إنشاء PDF');
         return;
       }
 
-      updatePdfProgress(85, '🔁 جاري الإرسال...', 'يتم الآن الاتصال بخوادم تيليجرام ورفع التقرير النهائي...');
+      updatePdfProgress(85, ' جاري الإرسال...', 'يتم الآن الاتصال بخوادم تيليجرام ورفع التقرير النهائي...');
 
       // إرسال إلى تيليجرام
       const filename = `تقرير_حضور_${year}_${month + 1}_${new Date().getTime()}.pdf`;
