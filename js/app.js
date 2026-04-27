@@ -219,22 +219,96 @@ else initVersionUI();
     } catch (e) { console.error('setMaintenanceState error', e); alert('حدث خطأ أثناء ضبط وضع الصيانة'); }
   }
 
+  var _maintenanceCountdownInterval = null;
   function applyMaintenanceState(state) {
     try {
       const overlay = document.getElementById('maintenanceOverlay');
       const statusText = document.getElementById('maintenanceStatusText');
       const infoEl = document.getElementById('maintenanceInfo');
       const toggleBtn = document.getElementById('toggleMaintenanceBtn');
+      const countdownContainer = document.getElementById('maintenanceCountdownContainer');
+      const countdownTimer = document.getElementById('maintenanceCountdownTimer');
+      const autoToggle = document.getElementById('autoUnlockToggle');
+      const autoTimeInput = document.getElementById('autoUnlockTime');
+      const autoContainer = document.getElementById('autoUnlockTimeContainer');
+      
       const isAdmin = (typeof currentUserRole !== 'undefined' && currentUserRole === 'admin');
-      const enabled = state && state.enabled;
+      let enabled = state && state.enabled;
+
+      // Check for auto-unlock expiration
+      if (enabled && state.autoUnlockEnabled && state.autoUnlockTime) {
+        if (Date.now() >= state.autoUnlockTime) {
+          enabled = false;
+          // Clean up DB if admin is online
+          if (isAdmin && typeof db !== 'undefined') {
+            db.ref('system/maintenance').update({ enabled: false, autoUnlockEnabled: false });
+          }
+        }
+      }
+
       if (statusText) statusText.textContent = enabled ? 'مفعل' : 'غير مفعل';
       if (infoEl) infoEl.textContent = enabled ? `تم التفعيل بواسطة ${state.setBy || '—'} في ${state.at || '—'}${state.reason ? (' — ' + state.reason) : ''}` : 'لا توجد ملاحظات';
+      
+      try {
+        const startTimeEl = document.getElementById('maintenanceStartTime');
+        if (startTimeEl) startTimeEl.textContent = (state && state.at) ? state.at : 'غير محدد';
+      } catch (e) { }
 
-      // set the message text in overlay and update textarea
+      // Update Admin UI fields
+      if (isAdmin) {
+        const activateBtn = document.getElementById('activateAutoUnlockBtn');
+        const deactivateBtn = document.getElementById('deactivateAutoUnlockBtn');
+        const activeNotice = document.getElementById('activeTimerNotice');
+
+        const isAutoEnabled = !!(state && state.autoUnlockEnabled);
+        if (activateBtn) activateBtn.style.display = isAutoEnabled ? 'none' : 'block';
+        if (deactivateBtn) deactivateBtn.style.display = isAutoEnabled ? 'block' : 'none';
+        if (activeNotice) activeNotice.style.display = isAutoEnabled ? 'flex' : 'none';
+
+        if (autoTimeInput && state && state.autoUnlockTime) {
+          const d = new Date(state.autoUnlockTime);
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          const dd = String(d.getDate()).padStart(2, '0');
+          const hh = String(d.getHours()).padStart(2, '0');
+          const min = String(d.getMinutes()).padStart(2, '0');
+          autoTimeInput.value = `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+        }
+      }
+
+      // Countdown logic for users (Professional Multi-day support)
+      if (_maintenanceCountdownInterval) clearInterval(_maintenanceCountdownInterval);
+      if (enabled && state.autoUnlockEnabled && state.autoUnlockTime && !isAdmin) {
+        if (countdownContainer) countdownContainer.style.display = 'block';
+        const updateTimer = () => {
+          const diff = state.autoUnlockTime - Date.now();
+          if (diff <= 0) {
+            clearInterval(_maintenanceCountdownInterval);
+            location.reload();
+            return;
+          }
+          const days = Math.floor(diff / 86400000);
+          const hours = Math.floor((diff % 86400000) / 3600000);
+          const minutes = Math.floor((diff % 3600000) / 60000);
+          const seconds = Math.floor((diff % 60000) / 1000);
+
+          let timeStr = "";
+          if (days > 0) timeStr += `${days} يوم و `;
+          timeStr += `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+          
+          if (countdownTimer) countdownTimer.textContent = timeStr;
+        };
+        updateTimer();
+        _maintenanceCountdownInterval = setInterval(updateTimer, 1000);
+      } else {
+        if (countdownContainer) countdownContainer.style.display = 'none';
+      }
+
+      // Message handling
       try {
         const overlayMsg = document.getElementById('maintenanceMessageText');
         const txtArea = document.getElementById('maintenanceCustomMessage');
-        const message = (state && state.message) ? state.message : 'نعتذر، النظام يواجه مشكلة تقنية مفاجئة تمنع الوصول للبيانات حالياً. تجري محاولة المعالجة تلقائياً، يرجى الانتظار قليلاً ثم تحديث الصفحة.';
+        const message = (state && state.message) ? state.message : 'نحن نقوم حالياً بإجراء تحديثات وتحسينات دورية على النظام لضمان أفضل تجربة مستخدم. سيتم إعادة فتح النظام قريباً فور اكتمال المهام. شكراً لصبركم.';
         if (overlayMsg) overlayMsg.textContent = message;
         if (txtArea && document.activeElement !== txtArea) txtArea.value = message;
       } catch (e) { }
@@ -249,25 +323,31 @@ else initVersionUI();
         }
       }
 
-      // Show overlay for everyone except admins
+      // Visibility handling
       if (overlay) {
         if (enabled && !isAdmin) {
-          // show with animation-friendly approach
+          localStorage.setItem('maintenanceEnabled', 'true');
+          document.documentElement.classList.add('maintenance-strict');
           overlay.style.display = 'flex';
           overlay.classList.remove('hide');
-          requestAnimationFrame(() => { overlay.classList.add('show'); try { overlay.focus(); } catch (e) { } });
-          try { document.documentElement.style.overflow = 'hidden'; } catch (e) { }
+          requestAnimationFrame(() => { overlay.classList.add('show'); });
+          document.documentElement.style.overflow = 'hidden';
         } else {
-          // hide with class removal then hide after animation
+          localStorage.removeItem('maintenanceEnabled');
+          document.documentElement.classList.add('maintenance-transitioning');
           overlay.classList.remove('show');
           overlay.classList.add('hide');
-          try { overlay.blur(); } catch (e) { }
-          // after animation settle, hide the element
-          setTimeout(() => { try { if (!overlay.classList.contains('show')) overlay.style.display = 'none'; overlay.classList.remove('hide'); } catch (e) { } }, 420);
-          try { document.documentElement.style.overflow = ''; } catch (e) { }
+          setTimeout(() => {
+            if (!overlay.classList.contains('show')) {
+              overlay.style.display = 'none';
+              document.documentElement.classList.remove('maintenance-strict');
+              document.documentElement.classList.remove('maintenance-transitioning');
+            }
+            overlay.classList.remove('hide');
+          }, 420);
+          document.documentElement.style.overflow = '';
         }
       }
-      try { if (typeof updateSidebarVisibility === 'function') updateSidebarVisibility(); } catch (e) { }
     } catch (e) { console.error('applyMaintenanceState error', e); }
   }
 
@@ -326,29 +406,86 @@ else initVersionUI();
     // Wire button now we are sure the DOM is ready
     try { const btn = document.getElementById('toggleMaintenanceBtn'); if (btn) btn.addEventListener('click', toggleMaintenanceRequest); } catch (e) { }
     try {
+      const activateBtn = document.getElementById('activateAutoUnlockBtn');
+      const deactivateBtn = document.getElementById('deactivateAutoUnlockBtn');
+      const timeInput = document.getElementById('autoUnlockTime');
+
+      if (activateBtn && deactivateBtn) {
+        activateBtn.addEventListener('click', async function () {
+          if (typeof db === 'undefined' || !db || typeof db.ref !== 'function') return;
+          const timeVal = timeInput.value;
+
+          if (!timeVal) return alert('يرجى تحديد التاريخ والوقت أولاً');
+          
+          const scheduledDate = new Date(timeVal);
+          const timestamp = scheduledDate.getTime();
+          
+          if (timestamp <= Date.now()) {
+            return alert('خطأ: لا يمكن اختيار موعد في الماضي. يرجى التأكد من الوقت والتاريخ.');
+          }
+
+          try {
+            await db.ref('system/maintenance').update({
+              autoUnlockEnabled: true,
+              autoUnlockTime: timestamp
+            });
+            showToast('✅ تم تفعيل مؤقت الفتح التلقائي', 'success');
+            try { await db.ref('system/maintenance/signal').set(Date.now()); } catch (e) { }
+          } catch (err) {
+            showToast('❌ فشل في تفعيل المؤقت', 'error');
+          }
+        });
+
+        deactivateBtn.addEventListener('click', async function () {
+          if (typeof db === 'undefined' || !db || typeof db.ref !== 'function') return;
+          try {
+            await db.ref('system/maintenance').update({
+              autoUnlockEnabled: false,
+              autoUnlockTime: null
+            });
+            showToast('⚪ تم إلغاء مؤقت الفتح', 'info');
+            try { await db.ref('system/maintenance/signal').set(Date.now()); } catch (e) { }
+          } catch (err) {
+            showToast('❌ فشل في إلغاء المؤقت', 'error');
+          }
+        });
+      }
+    } catch (e) { }
+
+    try {
       const saveBtn = document.getElementById('saveMaintenanceMsgBtn'); if (saveBtn) saveBtn.addEventListener('click', async function () {
-        if (!currentUserRole || currentUserRole !== 'admin') return alert('غير مسموح: هذه الخاصية خاصة بالمدير فقط');
+        if (!currentUserRole || currentUserRole !== 'admin') return alert('غير مسموح: هذه الخاصية للمدير فقط');
         const txtArea = document.getElementById('maintenanceCustomMessage'); if (!txtArea) return;
         const val = txtArea.value.trim();
+
         if (typeof db === 'undefined' || !db || typeof db.ref !== 'function') {
-          try { localStorage.setItem('maintenanceMessage', val); showToast('✅ تم حفظ رسالة الصيانة محلياً', 'success'); } catch (e) { showToast('❌ حدث خطأ أثناء الحفظ', 'error'); }
+          showToast('الجهاز غير متصل بقاعدة البيانات حالياً', 'warning');
           return;
         }
+
         try {
-          await db.ref('system/maintenance').update({ message: val, messageUpdatedBy: currentUser || 'unknown', messageUpdatedAt: formatDateTimeNoSeconds(new Date()) });
-          // fetch updated state
-          const snap = await db.ref('system/maintenance').once('value');
-          const state = snap.val() || {};
+          await db.ref('system/maintenance').update({
+            message: val,
+            messageUpdatedBy: currentUser || 'unknown',
+            messageUpdatedAt: formatDateTimeNoSeconds(new Date())
+          });
+          showToast('✅ تم حفظ نص رسالة الصيانة', 'success');
           try { await db.ref('system/maintenance/signal').set(Date.now()); } catch (e) { }
-          try { localStorage.setItem('maintenanceSignal', JSON.stringify({ ts: Date.now(), enabled: !!state.enabled })); } catch (e) { }
-          applyMaintenanceState(state);
-          showToast('✅ تم حفظ رسالة الصيانة');
-          logActivity('تحديث رسالة الصيانة', `تم تحديث رسالة الصيانة إلى: ${val}`);
-        } catch (err) { console.error(err); showToast('❌ حدث خطأ أثناء حفظ رسالة الصيانة', 'error'); }
+        } catch (e) {
+          showToast('❌ فشل في حفظ النص', 'error');
+        }
       });
     } catch (e) { }
     // Listen for localStorage broadcasts for cross-tab instant updates
-    try { window.addEventListener('storage', function (e) { if (e.key === 'maintenanceSignal') { try { db.ref('system/maintenance').once('value').then((snap) => applyMaintenanceState(snap.val())).catch(() => { }); } catch (err) { } } }); } catch (e) { }
+    try {
+      window.addEventListener('storage', function (e) {
+        if (e.key === 'maintenanceSignal') {
+          try {
+            db.ref('system/maintenance').once('value').then((snap) => applyMaintenanceState(snap.val())).catch(() => { });
+          } catch (err) { }
+        }
+      });
+    } catch (e) { }
   });
 })();
 // Ensure login box is visible immediately if there's no saved session.

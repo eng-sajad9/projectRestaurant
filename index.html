@@ -14,7 +14,16 @@
   <!-- 📄 jsPDF و html2canvas سيتم تحميلهما بـ Lazy Load عند الحاجة -->
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
 
-
+  <script>
+    (function () {
+      // Early check for maintenance mode to prevent UI flickering on refresh
+      try {
+        if (localStorage.getItem('maintenanceEnabled') === 'true') {
+          document.documentElement.classList.add('maintenance-strict');
+        }
+      } catch (e) { }
+    })();
+  </script>
   <link rel="stylesheet" href="styles.css" />
 </head>
 
@@ -27,11 +36,16 @@
       </div>
     </div>
     <div class="box">
-      <h2 class="shimmer">❗ System Error <span class="maintenancePulse" aria-hidden="true"></span></h2>
-      <p id="maintenanceMessageText"> نعتذر، النظام يواجه مشكلة تقنية مفاجئة تمنع الوصول للبيانات حالياً. تجري محاولة
-        المعالجة تلقائياً، يرجى الانتظار قليلاً ثم تحديث الصفحة. </p>
-      <div class="sub">Error Reference: #500-xc9 | Request ID: 1f4a-7b22</div>
-    </div>
+      <h2 class="shimmer">🚧 صيانة النظام <span class="maintenancePulse" aria-hidden="true"></span></h2>
+      <p id="maintenanceMessageText">
+        نحن نقوم حالياً بإجراء تحديثات وتحسينات دورية على النظام لضمان أفضل تجربة مستخدم.
+        سيتم إعادة فتح النظام قريباً فور اكتمال المهام. شكراً لصبركم.
+      </p>
+      <div class="sub">رقم التحديث: v3.6 | وقت البدء: <span id="maintenanceStartTime">جاري التحديد...</span></div>
+      <div id="maintenanceCountdownContainer" style="display: none; margin-top: 25px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);">
+        <div style="font-size: 14px; color: #aeb3bd; margin-bottom: 8px; font-weight: 500;">سيفتح النظام تلقائياً خلال:</div>
+        <div id="maintenanceCountdownTimer" style="font-size: 32px; font-weight: 800; font-family: monospace; letter-spacing: 2px; color: #818cf8; text-shadow: 0 0 20px rgba(129, 140, 248, 0.4);">00:00:00</div>
+      </div>    </div>
   </div>
   <!-- PDF progress overlay -->
   <div id="pdfProgressOverlay" class="glass-overlay" style="display:none;">
@@ -857,11 +871,43 @@
                   <button id="toggleMaintenanceBtn" class="btn-ios" style="background:#ff3b30;color:white;width:100%;">تفعيل وضع الصيانة</button>
                 </div>
                 <div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px;">
-                  <label>نص رسالة الصيانة الظاهر للمستخدمين</label>
+                  <label>نص رسالة الصيانة للمستخدمين</label>
                   <textarea id="maintenanceCustomMessage" class="input-ios" placeholder="أدخل نص رسالة الصيانة هنا" style="min-height: 80px; resize: vertical;"></textarea>
                 </div>
-                <div style="grid-column: 1 / -1;">
-                  <button id="saveMaintenanceMsgBtn" class="btn-ios btn-ios-primary" style="width: 100%;">حفظ النص</button>
+                <!-- Manual Control Auto Unlock Feature -->
+                <div style="grid-column: 1 / -1; margin-top: 10px; padding: 16px; background: #f8f9fa; border-radius: 16px; border: 1px solid rgba(0,0,0,0.05); box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                    <div style="width: 36px; height: 36px; background: rgba(0,122,255,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #007aff; font-size: 18px;">🕙</div>
+                    <div>
+                      <div style="font-weight: 700; font-size: 14px; color: #1c1c1e;">جدولة الفتح التلقائي</div>
+                      <div style="font-size: 11px; color: #8e8e93;">حدد موعد انتهاء الصيانة بدقة</div>
+                    </div>
+                  </div>
+                  
+                  <div id="autoUnlockTimeContainer" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                      <label style="font-size: 12px; font-weight: 600; color: #3a3a3c;">📅 حدد التاريخ والوقت:</label>
+                      <input type="datetime-local" id="autoUnlockTime" class="input-ios" style="background: #ffffff; border: 1px solid rgba(0,0,0,0.1); font-weight: 500;" />
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: 5px;">
+                      <button id="activateAutoUnlockBtn" class="btn-ios" style="flex: 1; background: #34c759; color: white; border-radius: 14px; box-shadow: 0 4px 12px rgba(52, 199, 89, 0.25); gap: 8px;">
+                        <span>🔔</span> تفعيل المؤقت
+                      </button>
+                      <button id="deactivateAutoUnlockBtn" class="btn-ios" style="flex: 1; background: #ff3b30; color: white; border-radius: 14px; box-shadow: 0 4px 12px rgba(255, 59, 48, 0.25); gap: 8px; display: none;">
+                        <span>🚫</span> إلغاء المؤقت
+                      </button>
+                    </div>
+
+                    <div id="activeTimerNotice" style="display: none; font-size: 11px; background: rgba(52, 199, 89, 0.08); padding: 12px; border-radius: 12px; border: 1px solid rgba(52, 199, 89, 0.2); color: #1e7e34; align-items: center; gap: 10px; animation: slideDown 0.3s ease;">
+                      <div style="width: 8px; height: 8px; background: #34c759; border-radius: 50%; box-shadow: 0 0 8px #34c759;"></div>
+                      <span style="font-weight: 600;">المؤقت مفعل حالياً: سيفتح النظام تلقائياً.</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div style="grid-column: 1 / -1; display: flex; gap: 8px; margin-top: 10px;">
+                  <button id="saveMaintenanceMsgBtn" class="btn-ios" style="flex: 1; height: 52px; background: #007aff; color: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0, 122, 255, 0.25); font-size: 16px;">💾 حفظ نص رسالة الصيانة</button>
                 </div>
               </div>
             </div>
