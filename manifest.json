@@ -1,0 +1,17 @@
+{
+  "name": "نظام إدارة حضور الموظفين",
+  "short_name": "نظام الحضور",
+  "description": "نظام احترافي لإدارة حضور وانصراف الموظفين",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0d47a1",
+  "theme_color": "#0d47a1",
+  "icons": [
+    {
+      "src": "boss.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    }
+  ]
+}

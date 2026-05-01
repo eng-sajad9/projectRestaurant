@@ -789,6 +789,10 @@ document.getElementById("sidebarNotesSettingsBtn").onclick = function () {
 
 // نافذة إعدادات الملاحظات
 function showNotesSettingsTab() {
+  if (currentUserRole !== "admin") {
+    alert("غير مصرح لك بإدارة إعدادات الملاحظات.");
+    return;
+  }
   let modal = document.getElementById("notesSettingsModal");
   if (!modal) {
     modal = document.createElement("div");
@@ -818,7 +822,7 @@ function showNotesSettingsTab() {
       let html = `<table style='width:100%;border-collapse:collapse;margin-bottom:10px;'>
         <tr><th style='background:#f6f6f6;'>المستخدم</th><th style='background:#f6f6f6;'>صلاحية الملاحظات</th></tr>`;
       Object.entries(users).forEach(([username, data]) => {
-        if (username === "admin") return;
+        if (data.role === "admin" || username === "admin") return;
         const perm = data.notesPermission || "edit";
         html += `<tr>
           <td style='padding:7px 4px;'>${username}</td>
@@ -937,25 +941,55 @@ function renderNotesTabContent() {
     });
     let html = "";
     employees.forEach((emp) => {
-      let noteVal = notes[emp] ? notes[emp] : "";
-      let isEmpty = noteVal.trim() === "";
+      let noteData = notes[emp];
+      let noteText = "";
+      let lastUser = "—";
+      let lastTime = "—";
+      let lastRole = "user";
+
+      if (noteData && typeof noteData === 'object') {
+        noteText = noteData.text || "";
+        lastUser = noteData.user || "—";
+        lastTime = noteData.time || "—";
+        lastRole = noteData.role || "user";
+      } else {
+        noteText = noteData ? noteData : "";
+      }
+
+      let isEmpty = noteText.trim() === "";
+      let userColor = lastRole === "admin" ? "#1fa745" : "#dc3545";
+
       html += `<div class="note-box" style="border:1.5px solid #e3eafc; margin:18px 0 22px 0; border-radius:13px; background:linear-gradient(135deg,#f8fafc 70%,#e3eafc 100%); box-shadow:0 2px 12px #3f51b511; transition:box-shadow 0.2s;">`;
       // اسم الموظف
       html += `<div style=\"font-weight:700; color:var(--primary); font-size:18px; padding:13px 16px 0 16px; letter-spacing:0.2px;\">👤 ${emp}</div>`;
       // خانة الملاحظة وزر الحفظ
       if (perm === "edit") {
-        html += `<textarea id='noteInput_${emp}' style='width:94%;min-height:60px;margin:13px 3%;border-radius:8px;border:1.2px solid #bfc7e3;padding:9px;font-size:15.5px;resize:vertical;background:#fff;transition:border 0.2s;'>${noteVal}</textarea>`;
-        html += `<div style='display:flex;align-items:center;justify-content:space-between;margin:0 3% 13px 3%;'>`;
+        html += `<textarea id='noteInput_${emp}' style='width:94%;min-height:60px;margin:13px 3%;border-radius:8px;border:1.2px solid #bfc7e3;padding:9px;font-size:15.5px;resize:vertical;background:#fff;transition:border 0.2s;'>${noteText}</textarea>`;
+        html += `<div style='display:flex;align-items:center;justify-content:space-between;margin:0 3% 13px 3%;gap:10px;'>`;
         html += isEmpty
           ? `<span style='color:#b0b0b0;font-size:13px;display:flex;align-items:center;gap:3px;'><span style='font-size:17px;'>🛈</span>لا توجد ملاحظة بعد</span>`
-          : `<span style='color:#607d8b;font-size:13px;display:flex;align-items:center;gap:3px;'><span style='font-size:17px;'>📝</span>تمت آخر مراجعة</span>`;
-        html += `<button class='saveNoteBtn' data-emp='${emp}' style='background:var(--primary);color:white;padding:7px 22px;border:none;border-radius:7px;font-size:15.5px;cursor:pointer;box-shadow:0 2px 8px #3f51b522;font-weight:600;transition:background 0.2s;'>💾 حفظ</button>`;
+          : `<div style='display:flex;flex-direction:column;gap:1px;flex:1;'>
+               <span style='color:${userColor};font-size:12px;font-weight:700;display:flex;align-items:center;gap:4px;'>
+                 <span style='font-size:14px;'>👤</span>${lastUser}
+               </span>
+               <span style='color:#607d8b;font-size:10px;display:flex;align-items:center;gap:4px;opacity:0.8;'>
+                 <span style='font-size:14px;'>🕒</span>${lastTime}
+               </span>
+             </div>`;
+        html += `<button class='saveNoteBtn' data-emp='${emp}' style='background:var(--primary);color:white;padding:6px 14px;border:none;border-radius:8px;font-size:13px;cursor:pointer;box-shadow:0 2px 6px #3f51b522;font-weight:600;min-width:70px;flex-shrink:0;'>💾 حفظ</button>`;
         html += `</div>`;
       } else if (perm === "read") {
-        html += `<textarea id='noteInput_${emp}' style='width:94%;min-height:60px;margin:13px 3%;border-radius:8px;border:1.2px solid #bfc7e3;padding:9px;font-size:15.5px;background:#f5f7fa;resize:vertical;' readonly>${noteVal}</textarea>`;
+        html += `<textarea id='noteInput_${emp}' style='width:94%;min-height:60px;margin:13px 3%;border-radius:8px;border:1.2px solid #bfc7e3;padding:9px;font-size:15.5px;background:#f5f7fa;resize:vertical;' readonly>${noteText}</textarea>`;
         html += isEmpty
           ? `<div style='color:#b0b0b0;font-size:13px;padding:0 3% 13px 3%;display:flex;align-items:center;gap:3px;'><span style='font-size:17px;'>🛈</span>لا توجد ملاحظة بعد</div>`
-          : `<div style='color:#607d8b;font-size:13px;padding:0 3% 13px 3%;display:flex;align-items:center;gap:3px;'><span style='font-size:17px;'>📝</span>تمت آخر مراجعة</div>`;
+          : `<div style='padding:0 3% 13px 3%;display:flex;flex-direction:column;gap:1px;'>
+               <span style='color:${userColor};font-size:12px;font-weight:700;display:flex;align-items:center;gap:4px;'>
+                 <span style='font-size:14px;'>👤</span>${lastUser}
+               </span>
+               <span style='color:#607d8b;font-size:10px;display:flex;align-items:center;gap:4px;opacity:0.8;'>
+                 <span style='font-size:14px;'>🕒</span>${lastTime}
+               </span>
+             </div>`;
       } else {
         html += `<div style='color:#888;font-size:14px;padding:13px;'>لا يوجد صلاحية لعرض الملاحظات</div>`;
       }
@@ -973,13 +1007,22 @@ function renderNotesTabContent() {
               `noteInput_${emp}`
             ).value;
             const monthFormatted = String(month + 1).padStart(2, '0');
-            db.ref(`months/${year}/${monthFormatted}/notes/${emp}`)
-              .set(noteVal)
-              .then(() => {
-                btn.textContent = "✅ تم الحفظ";
-                setTimeout(() => {
-                  btn.textContent = "💾 حفظ الملاحظة";
-                }, 1200);
+            const payload = {
+              text: noteVal,
+              user: currentUser,
+              role: currentUserRole,
+              time: formatDateTimeNoSeconds(new Date())
+            };
+                db.ref(`months/${year}/${monthFormatted}/notes/${emp}`)
+                  .set(payload)
+                  .then(() => {
+                    showToast("✅ تم حفظ الملاحظة بنجاح", "success");
+                    // إعادة رندر المحتوى لتحديث اسم المستخدم والوقت فوراً
+                    renderNotesTabContent();
+                  })
+                  .catch(err => {
+                    showToast("❌ فشل حفظ الملاحظة", "error");
+                  });
                 logActivity(
                   "تعديل ملاحظة موظف",
                   `<span style='color:#007bff;font-weight:bold;'>${emp}</span> | <span style='color:#ffb300;'>${noteVal
@@ -987,7 +1030,6 @@ function renderNotesTabContent() {
                     .replace(/>/g, "&gt;")}</span>`,
                   { type: "note", emp: emp }
                 );
-              });
           };
         }
       );
@@ -3113,11 +3155,15 @@ document.addEventListener("DOMContentLoaded", function () {
     } else {
       document.getElementById("adminPanel").style.display = "none";
     }
-    // جلب صلاحيات allowedStatsEmps و canViewSalary وتخزينها في window.currentUserData
+    // جلب بيانات المستخدم وتخزينها في window.currentUserData مع تفعيل التحديث الفوري للصلاحيات
     db.ref("users/" + currentUser)
       .once("value")
       .then((snap) => {
         window.currentUserData = snap.val() || {};
+        // تفعيل الاستماع اللحظي للصلاحيات بمجرد تسجيل الدخول التلقائي
+        if (typeof startUserPermissionListener === 'function') {
+          startUserPermissionListener(currentUser);
+        }
         // عند تحميل الموظفين والجدول، إخفِ علامة التحميل فقط بعد اكتمال الجدول
         const empKey = `employees_${year}_${(month + 1)
           .toString()
@@ -4155,6 +4201,16 @@ function updateEmployeeDropdown() {
 
 // Assign employee to user
 async function assignEmployeeToUser(username) {
+  if (currentUserRole !== "admin") {
+    alert("غير مصرح لك بتعيين موظفين للمستخدمين.");
+    return;
+  }
+  const snap = await db.ref("users/" + username).once("value");
+  const targetUser = snap.val();
+  if (targetUser && targetUser.role === "admin") {
+    alert("لا يمكن التعديل على حساب المدير.");
+    return;
+  }
   if (!employees || employees.length === 0) {
     alert("❌ لا توجد موظفين محملين");
     return;
@@ -4287,6 +4343,16 @@ async function loadUsers() {
 
 // تسجيل خروج إجباري لمستخدم
 async function forceLogoutUser(username) {
+  if (currentUserRole !== "admin") {
+    alert("غير مصرح لك بإجراء وتسجيل خروج المستخدمين.");
+    return;
+  }
+  const snap = await db.ref("users/" + username).once("value");
+  const targetUser = snap.val();
+  if (targetUser && targetUser.role === "admin") {
+    alert("لا يمكن تسجيل الخروج القسري لحساب المدير.");
+    return;
+  }
   if (username === currentUser) {
     alert("❌ لا يمكنك تسجيل خروج نفسك إجباريًا.");
     return;
@@ -4308,6 +4374,16 @@ async function forceLogoutUser(username) {
 
 // تبديل صلاحية التعديل للمستخدم
 async function toggleUserEdit(username, currentCanEdit) {
+  if (currentUserRole !== "admin") {
+    alert("غير مصرح لك بإجراء هذا التعديل.");
+    return;
+  }
+  const snap = await db.ref("users/" + username).once("value");
+  const targetUser = snap.val();
+  if (targetUser && targetUser.role === "admin") {
+    alert("لا يمكن تعديل صلاحية حساب المدير.");
+    return;
+  }
   if (username === currentUser) {
     alert("❌ لا يمكنك تغيير صلاحيتك الخاصة.");
     return;
@@ -4320,6 +4396,16 @@ async function toggleUserEdit(username, currentCanEdit) {
 
 // حذف مستخدم مع نافذة منبثقة أنيقة وإخراج المستخدم فوراً
 async function deleteUser(username) {
+  if (currentUserRole !== "admin") {
+    alert("غير مصرح لك بحذف المستخدمين.");
+    return;
+  }
+  const snap = await db.ref("users/" + username).once("value");
+  const targetUser = snap.val();
+  if (targetUser && targetUser.role === "admin") {
+    alert("لا يمكن حذف حساب المدير.");
+    return;
+  }
   if (username === currentUser) {
     showPermissionRevokedModal("لا يمكن حذف نفسك.");
     return;
@@ -4432,6 +4518,10 @@ window.showPermissionRevokedModal = function (msg) {
 
 // إضافة مستخدم جديد
 async function addUser() {
+  if (currentUserRole !== "admin") {
+    alert("غير مصرح لك بإضافة مستخدمين جدد.");
+    return;
+  }
   if (!preventEditIfNotCurrentMonth()) return;
   const username = document
     .getElementById("newUserName")
@@ -5150,6 +5240,7 @@ function calculateStats(savedData) {
     });
 }
 
+
 // دالة منفصلة لتحديث DOM (تُستدعى بعد الرسم الأول)
 function renderStatsDOM(counts, allowedEmps, canViewSalary) {
   const bestShift = Object.entries(counts).sort(
@@ -5561,6 +5652,10 @@ function toggleAdminPanel() {
   const adminPanel = document.getElementById("adminPanel");
   if (!adminPanel) return;
 
+  if (typeof updateAdminTabsVisibility === "function") {
+    updateAdminTabsVisibility();
+  }
+
   const isVisible = adminPanel.style.display !== "none";
 
   // Close the sidebar menu first if open
@@ -5599,28 +5694,51 @@ window.updateAdminTabsVisibility = function() {
   const btnUsers = document.querySelector('.admin-tab-btn[data-tab="users"]');
   const btnSettings = document.querySelector('.admin-tab-btn[data-tab="settings"]');
   
-  if (btnEmployees) btnEmployees.style.display = hasPermission('staff') ? '' : 'none';
-  if (btnAdvances) btnAdvances.style.display = hasPermission('advances') ? '' : 'none';
-  if (btnSalary) btnSalary.style.display = hasPermission('salary') ? '' : 'none';
+  const paneEmployees = document.getElementById('employees');
+  const paneAdvances = document.getElementById('advances');
+  const paneSalary = document.getElementById('salary');
+  const paneUsers = document.getElementById('users');
+  const paneSettings = document.getElementById('settings');
+
+  const canStaff = hasPermission('staff') || isAdmin;
+  const canAdvances = hasPermission('advances') || isAdmin;
+  const canSalary = hasPermission('salary') || isAdmin;
+
+  if (btnEmployees) btnEmployees.style.display = canStaff ? '' : 'none';
+  if (btnAdvances) btnAdvances.style.display = canAdvances ? '' : 'none';
+  if (btnSalary) btnSalary.style.display = canSalary ? '' : 'none';
   if (btnUsers) btnUsers.style.display = isAdmin ? '' : 'none';
   if (btnSettings) btnSettings.style.display = isAdmin ? '' : 'none';
   
-  const canAdmin = hasPermission('staff') || hasPermission('advances') || hasPermission('salary') || isAdmin;
+  // Explicitly hide unauthorized panes
+  if (paneEmployees && !canStaff) { paneEmployees.style.display = 'none'; paneEmployees.classList.remove('active'); } else if (paneEmployees) { paneEmployees.style.display = ''; }
+  if (paneAdvances && !canAdvances) { paneAdvances.style.display = 'none'; paneAdvances.classList.remove('active'); } else if (paneAdvances) { paneAdvances.style.display = ''; }
+  if (paneSalary && !canSalary) { paneSalary.style.display = 'none'; paneSalary.classList.remove('active'); } else if (paneSalary) { paneSalary.style.display = ''; }
+  if (paneUsers && !isAdmin) { paneUsers.style.display = 'none'; paneUsers.classList.remove('active'); } else if (paneUsers) { paneUsers.style.display = ''; }
+  if (paneSettings && !isAdmin) { paneSettings.style.display = 'none'; paneSettings.classList.remove('active'); } else if (paneSettings) { paneSettings.style.display = ''; }
+
+  const canAdmin = canStaff || canAdvances || canSalary || isAdmin;
   const sidebarAdminBtn = document.getElementById('sidebarAdminBtn');
   if (sidebarAdminBtn) sidebarAdminBtn.style.display = canAdmin ? 'block' : 'none';
 
-  // If panel is open but active tab is hidden, switch to the first available
-  const activeTab = document.querySelector('.admin-tab-btn.active');
-  if (activeTab && activeTab.style.display === 'none') {
-    if (hasPermission('staff')) switchAdminTab('employees');
-    else if (hasPermission('advances')) switchAdminTab('advances');
-    else if (hasPermission('salary')) switchAdminTab('salary');
-    else if (isAdmin) switchAdminTab('settings');
+  // If panel is open but active tab is hidden/unauthorized, switch to the first available
+  const activeBtn = document.querySelector('.admin-tab-btn.active');
+  if (!activeBtn || activeBtn.style.display === 'none') {
+    if (canStaff) { if (typeof switchAdminTab === 'function') switchAdminTab('employees'); else window.switchAdminTab?.('employees'); }
+    else if (canAdvances) { if (typeof switchAdminTab === 'function') switchAdminTab('advances'); else window.switchAdminTab?.('advances'); }
+    else if (canSalary) { if (typeof switchAdminTab === 'function') switchAdminTab('salary'); else window.switchAdminTab?.('salary'); }
+    else if (isAdmin) { if (typeof switchAdminTab === 'function') switchAdminTab('settings'); else window.switchAdminTab?.('settings'); }
   }
 };
 
 // Function to switch admin tabs
-function switchAdminTab(tabName) {
+window.switchAdminTab = function(tabName) {
+  // Guard access
+  if (tabName === 'employees' && !hasPermission('staff') && currentUserRole !== 'admin') return;
+  if (tabName === 'advances' && !hasPermission('advances') && currentUserRole !== 'admin') return;
+  if (tabName === 'salary' && !hasPermission('salary') && currentUserRole !== 'admin') return;
+  if ((tabName === 'users' || tabName === 'settings') && currentUserRole !== 'admin') return;
+
   // Hide all tab panes
   const panes = document.querySelectorAll('.admin-tab-pane');
   panes.forEach(pane => pane.classList.remove('active'));
