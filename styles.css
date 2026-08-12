@@ -4939,6 +4939,21 @@ body.dark-mode .glass-modal,
   margin: 6px 0;
 }
 
+.music-sheet-drag-handle {
+  display: none;
+}
+@media (max-width: 600px) {
+  .music-sheet-drag-handle {
+    display: block;
+    width: 38px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.35);
+    border-radius: 3px;
+    margin: 8px auto 0 auto;
+    flex-shrink: 0;
+  }
+}
+
 .music-control-btn {
   background: rgba(255, 255, 255, 0.12);
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -4946,13 +4961,37 @@ body.dark-mode .glass-modal,
   font-size: 16px;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-  width: 46px;
-  height: 46px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+.music-control-btn.secondary-btn {
+  width: 36px;
+  height: 36px;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  opacity: 0.7;
+}
+
+.music-control-btn.secondary-btn:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.music-control-btn.secondary-btn.active {
+  opacity: 1;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  border-color: #ffffff;
+  color: #ffffff;
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.6);
+  transform: scale(1.05);
 }
 
 .music-control-btn:hover {
@@ -4967,8 +5006,8 @@ body.dark-mode .glass-modal,
   border: 1.5px solid #ffffff;
   color: white;
   font-size: 20px;
-  width: 58px;
-  height: 58px;
+  width: 56px;
+  height: 56px;
   box-shadow: 0 0 25px rgba(255, 255, 255, 0.25), inset 0 0 10px rgba(255, 255, 255, 0.1);
 }
 
@@ -5034,40 +5073,90 @@ body.dark-mode .glass-modal,
 
 /* Playlist and Forms */
 .music-playlist-section {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(139, 92, 246, 0.25) 100%);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.22) 0%, rgba(139, 92, 246, 0.22) 100%);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 24px;
-  padding: 18px;
+  padding: 16px;
   margin-top: 8px;
   box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 8px 32px rgba(0, 0, 0, 0.12);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
-.music-playlist-section h5 {
-  margin: 0;
-  font-weight: 800;
-  color: #ffffff;
-  font-size: 13px;
+/* Search Box Styling */
+.music-search-box {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 6px;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  transition: all 0.25s ease;
+}
+
+.music-search-box:focus-within {
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
+}
+
+.music-search-icon {
+  font-size: 13px;
+  opacity: 0.7;
+  margin-left: 6px;
+}
+
+#music-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-size: 13px;
+  padding: 8px 4px;
+  font-family: inherit;
+}
+
+#music-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.music-search-clear-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.music-search-clear-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .music-playlist-scroll {
-  max-height: 140px;
+  max-height: 320px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
   background: transparent;
   border: none;
+  padding-right: 4px;
 }
 
 .music-playlist-scroll::-webkit-scrollbar {
-  width: 4px;
+  width: 5px;
 }
 .music-playlist-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 3px;
 }
 
 .music-track-item {
@@ -5599,7 +5688,7 @@ body.dark-mode .glass-modal,
     bottom: 0;
     left: 0;
     width: 100vw;
-    height: 82vh; /* Bottom sheet modal height */
+    height: 90vh; /* Expanded height to comfortably view and scroll songs */
     border-radius: 24px 24px 0 0;
     border-bottom: none;
     border-left: none;
@@ -5785,4 +5874,163 @@ body.dark-mode .glass-modal,
 .music-modal-btn.btn-danger:hover {
   background: #dc2626;
   box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
+}
+
+/* ==========================================================================
+   CENTER SCREEN REALTIME NOTIFICATION CARD (PROFESSIONAL ELEGANT ANIMATION)
+   ========================================================================== */
+.center-alert-card {
+  position: relative;
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.94) 0%, rgba(30, 41, 59, 0.96) 100%);
+  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 20px;
+  padding: 14px 18px;
+  width: min(85vw, 315px);
+  text-align: right;
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.65), 
+              0 0 35px rgba(99, 102, 241, 0.14),
+              inset 0 1px 1px rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  font-family: inherit;
+  direction: rtl;
+  pointer-events: auto;
+  overflow: hidden;
+  opacity: 0;
+  transform: scale(0.8) translateY(24px);
+  filter: blur(8px);
+  will-change: transform, opacity, filter;
+  transition: transform 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+              opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.center-alert-shimmer-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2.5px;
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.8), rgba(129, 140, 248, 0.9), rgba(99, 102, 241, 0.8));
+  background-size: 200% 100%;
+  animation: shimmerMove 3s linear infinite;
+}
+
+@keyframes shimmerMove {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+
+.center-alert-card.show {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  filter: blur(0);
+}
+
+.center-alert-card.hide {
+  opacity: 0;
+  transform: scale(0.92) translateY(-16px);
+  filter: blur(6px);
+  transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              filter 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.center-alert-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.center-alert-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.32);
+  padding: 3px 8px;
+  border-radius: 10px;
+}
+
+.center-alert-pulse {
+  width: 6px;
+  height: 6px;
+  background: #22c55e;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #22c55e;
+  animation: centerPulse 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes centerPulse {
+  0% { transform: scale(0.85); opacity: 0.7; }
+  100% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 12px #22c55e; }
+}
+
+.center-alert-badge-text {
+  font-size: 10px;
+  font-weight: 700;
+  color: #4ade80;
+  letter-spacing: 0.2px;
+}
+
+.center-alert-time {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 600;
+}
+
+.center-alert-close-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: rgba(255, 255, 255, 0.55);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 10px;
+  transition: all 0.2s ease;
+}
+
+.center-alert-close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.center-alert-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.center-alert-title {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.2px;
+  margin-bottom: 1px;
+}
+
+.center-alert-message {
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.center-user-highlight {
+  display: inline-block;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.3) 0%, rgba(129, 140, 248, 0.3) 100%);
+  border: 1px solid rgba(165, 180, 252, 0.5);
+  color: #e0e7ff;
+  font-weight: 800;
+  padding: 2px 9px;
+  border-radius: 8px;
+  margin: 0 3px;
+  font-size: 12.5px;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
 }

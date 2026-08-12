@@ -95,6 +95,175 @@ window.showToast = function(titleOrMessage, description = '', type = 'success', 
   }
 };
 
+// Soft pleasant notification chime generator using Web Audio API
+window.playSoftNotificationChime = function() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
+    
+    // Tone 1: E5 (659.25 Hz) - Soft crystalline sine wave
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(659.25, ctx.currentTime);
+    gain1.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.55);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    
+    // Tone 2: B5 (987.77 Hz) - Soft harmonic note
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(987.77, ctx.currentTime + 0.1);
+    gain2.gain.setValueAtTime(0.08, ctx.currentTime + 0.1);
+    gain2.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.65);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.55);
+    osc2.start(ctx.currentTime + 0.1);
+    osc2.stop(ctx.currentTime + 0.65);
+  } catch (e) {
+    console.log("Audio chime playback error:", e);
+  }
+};
+
+// Unlock AudioContext on first user interaction so sounds play smoothly on mobile & desktop
+window.addEventListener('click', function unlockAudioContext() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (AudioCtx) {
+      const dummyCtx = new AudioCtx();
+      if (dummyCtx.state === 'suspended') dummyCtx.resume();
+    }
+  } catch(e) {}
+}, { once: true });
+
+// Center Screen Realtime Alert Card Generator (Ultra-engineered mobile & desktop card)
+window.showCenterNotificationCard = function(title, message, duration = 4500) {
+  try {
+    const existing = document.getElementById('center-notification-overlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'center-notification-overlay';
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+    `;
+
+    // Process message to highlight username if format matches "قام XXX بتحديث"
+    let formattedMessage = message;
+    if (message && message.includes("قام ") && message.includes(" بتحديث")) {
+      formattedMessage = message.replace(
+        /قام (.*?) بتحديث/,
+        'قام <span class="center-user-highlight">$1</span> بتحديث'
+      );
+    }
+
+    const card = document.createElement('div');
+    card.className = 'center-alert-card';
+    card.innerHTML = `
+      <div class="center-alert-shimmer-bar"></div>
+      <div class="center-alert-top-row">
+        <div class="center-alert-badge">
+          <span class="center-alert-pulse"></span>
+          <span class="center-alert-badge-text">تحديث مباشر</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span class="center-alert-time">الآن</span>
+          <button class="center-alert-close-btn" title="إغلاق">✕</button>
+        </div>
+      </div>
+      <div class="center-alert-body">
+        <div class="center-alert-title">${title}</div>
+        <div class="center-alert-message">${formattedMessage}</div>
+      </div>
+    `;
+
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    // Play soft crystalline audio chime
+    if (typeof window.playSoftNotificationChime === 'function') {
+      window.playSoftNotificationChime();
+    }
+
+    // Trigger smooth Entrance animation
+    requestAnimationFrame(() => {
+      card.classList.add('show');
+    });
+
+    const dismiss = () => {
+      card.classList.remove('show');
+      card.classList.add('hide');
+      setTimeout(() => {
+        if (overlay && overlay.parentNode) overlay.remove();
+      }, 450);
+    };
+
+    // Close button handler
+    const closeBtn = card.querySelector('.center-alert-close-btn');
+    if (closeBtn) closeBtn.onclick = dismiss;
+
+    setTimeout(dismiss, duration);
+  } catch (e) {
+    console.error("showCenterNotificationCard error:", e);
+  }
+};
+
+// Dedicated Real-time Listener for System Notifications across active users
+let _hasInitializedRealtimeListener = false;
+function startRealtimeNotificationListener() {
+  if (_hasInitializedRealtimeListener) return;
+  if (typeof db === 'undefined' || !db) return;
+
+  _hasInitializedRealtimeListener = true;
+  db.ref("system_notifications/attendance_edit").on("value", (snap) => {
+    const data = snap.val();
+    if (!data || !data.timestamp) return;
+
+    // Only notify if event occurred within the last 15 seconds (prevents stale alerts on load)
+    const timeDiff = Date.now() - data.timestamp;
+    if (timeDiff > 15000) return;
+
+    const activeUser = (currentUser || window.currentUser || localStorage.getItem('loggedUser') || "").trim().toLowerCase();
+    const editorName = (data.editor || "").trim().toLowerCase();
+
+    // Ignore if the current user was the editor
+    if (editorName && activeUser && editorName === activeUser) return;
+
+    // Trigger center alert card & audio chime for ALL OTHER online users!
+    if (typeof window.showCenterNotificationCard === 'function') {
+      window.showCenterNotificationCard(
+        "تحديث جديد في جدول الحضور",
+        data.message || `قام ${data.editor} بتحديث الحضور في الجدول`,
+        4500
+      );
+    }
+  });
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  setTimeout(startRealtimeNotificationListener, 1200);
+});
+
 // Fail-safe: Override the native window.alert to always use our premium showToast
 window.alert = function(message) {
   let type = 'success';
@@ -3870,6 +4039,23 @@ function generateTable(forceRebuild = false) {
                 cell.classList.remove("cell-updated-highlight");
               }, 850);
             }
+
+            // إطلاق كرت التنبيه المنبثق والنغمة الصوتية حصرياً للمستخدمين الآخرين (غير الذي قام بالتعديل)
+            const activeUser = currentUser || window.currentUser || localStorage.getItem('loggedUser');
+            const editorName = (savedData[day.key] && savedData[day.key].__editor) ? savedData[day.key].__editor : "";
+
+            if (editorName && editorName !== activeUser) {
+              if (!window._attendanceCardDebounce) {
+                window._attendanceCardDebounce = setTimeout(() => {
+                  if (typeof window.showCenterNotificationCard === 'function') {
+                    window.showCenterNotificationCard("تحديث جديد في جدول الحضور", `قام ${editorName} بتحديث الحضور في الجدول`, 4500);
+                  } else if (typeof window.playSoftNotificationChime === 'function') {
+                    window.playSoftNotificationChime();
+                  }
+                  window._attendanceCardDebounce = null;
+                }, 350);
+              }
+            }
           }
         });
       });
@@ -3989,6 +4175,18 @@ async function saveAttendanceData() {
       return;
     }
     await db.ref(attendancePath).set(updatedData);
+
+    // إرسال تنبيه لحظي فوراً لجميع المستخدمين المتواجدين على النظام في الوقت الحالي
+    try {
+      db.ref("system_notifications/attendance_edit").set({
+        editor: currentUser,
+        timestamp: Date.now(),
+        message: `قام ${currentUser} بتحديث الحضور في الجدول`
+      });
+    } catch(e) {
+      console.warn("Realtime notification publish error:", e);
+    }
+
     showToast("✅ تم حفظ التعديلات بنجاح");
     generateTable();
     changes.forEach((change) => {
@@ -9792,9 +9990,15 @@ updateWelcomeClock();
   let isMuted = false;
   let savedVolume = parseInt(localStorage.getItem("music_volume")) || 80;
 
+  // New features state
+  let isShuffle = false;
+  let isRepeat = false;
+  let searchQuery = "";
+
   // DOM Elements
   let widget, audioPlayer;
   let btnPlay, btnPrev, btnNext, btnMute, btnToggleView, btnClose, btnMaximize;
+  let btnShuffle, btnRepeat, searchInput, searchClear, playlistCount;
   let miniPlay, miniPrev, miniNext, miniExpand;
   let progressRange, timeCurrent, timeTotal;
   let volumeSlider, trackTitle, trackBadge, playlistList, activeTrackName;
@@ -9818,6 +10022,13 @@ updateWelcomeClock();
     btnToggleView = document.getElementById("music-btn-toggle-view");
     btnMaximize = document.getElementById("music-btn-maximize");
     btnClose = document.getElementById("music-btn-close-widget");
+
+    // New Controls
+    btnShuffle = document.getElementById("music-btn-shuffle");
+    btnRepeat = document.getElementById("music-btn-repeat");
+    searchInput = document.getElementById("music-search-input");
+    searchClear = document.getElementById("music-search-clear");
+    playlistCount = document.getElementById("music-playlist-count");
 
     // Controls Minimized (Mobile mini bar)
     miniPlay = document.getElementById("music-mini-btn-play");
@@ -9862,6 +10073,45 @@ updateWelcomeClock();
     miniPrev.onclick = playPrevTrack;
     btnNext.onclick = playNextTrack;
     miniNext.onclick = playNextTrack;
+
+    // Shuffle & Repeat handlers
+    if (btnShuffle) {
+      btnShuffle.onclick = function() {
+        isShuffle = !isShuffle;
+        this.classList.toggle("active", isShuffle);
+        if (typeof showToast === "function") {
+          showToast("الخلط العشوائي", isShuffle ? "تم تفعيل التشغيل العشوائي" : "تم إيقاف التشغيل العشوائي", "info", 2000);
+        }
+      };
+    }
+
+    if (btnRepeat) {
+      btnRepeat.onclick = function() {
+        isRepeat = !isRepeat;
+        this.classList.toggle("active", isRepeat);
+        if (typeof showToast === "function") {
+          showToast("تكرار الأغنية", isRepeat ? "تم تفعيل تكرار الأغنية الحالية" : "تم إيقاف التكرار", "info", 2000);
+        }
+      };
+    }
+
+    // Search input handler
+    if (searchInput) {
+      searchInput.oninput = function() {
+        searchQuery = this.value;
+        if (searchClear) searchClear.style.display = searchQuery ? "inline-block" : "none";
+        renderPlaylist();
+      };
+    }
+
+    if (searchClear) {
+      searchClear.onclick = function() {
+        if (searchInput) searchInput.value = "";
+        searchQuery = "";
+        this.style.display = "none";
+        renderPlaylist();
+      };
+    }
 
     btnMute.onclick = toggleMute;
     btnToggleView.onclick = toggleWidgetView;
@@ -10324,8 +10574,21 @@ updateWelcomeClock();
   function playNextTrack() {
     const list = activePlaylist === "official" ? officialTracks : privateTracks;
     if (list.length === 0) return;
-    let nextIndex = currentTrackIndex + 1;
-    if (nextIndex >= list.length) nextIndex = 0;
+
+    if (isRepeat) {
+      loadTrack(activePlaylist, currentTrackIndex, true);
+      return;
+    }
+
+    let nextIndex;
+    if (isShuffle && list.length > 1) {
+      do {
+        nextIndex = Math.floor(Math.random() * list.length);
+      } while (nextIndex === currentTrackIndex);
+    } else {
+      nextIndex = currentTrackIndex + 1;
+      if (nextIndex >= list.length) nextIndex = 0;
+    }
     loadTrack(activePlaylist, nextIndex, true);
   }
 
@@ -10333,8 +10596,21 @@ updateWelcomeClock();
   function playPrevTrack() {
     const list = activePlaylist === "official" ? officialTracks : privateTracks;
     if (list.length === 0) return;
-    let prevIndex = currentTrackIndex - 1;
-    if (prevIndex < 0) prevIndex = list.length - 1;
+
+    if (isRepeat) {
+      loadTrack(activePlaylist, currentTrackIndex, true);
+      return;
+    }
+
+    let prevIndex;
+    if (isShuffle && list.length > 1) {
+      do {
+        prevIndex = Math.floor(Math.random() * list.length);
+      } while (prevIndex === currentTrackIndex);
+    } else {
+      prevIndex = currentTrackIndex - 1;
+      if (prevIndex < 0) prevIndex = list.length - 1;
+    }
     loadTrack(activePlaylist, prevIndex, true);
   }
 
@@ -10479,51 +10755,64 @@ updateWelcomeClock();
   // Render list of playlist items
   function renderPlaylist() {
     playlistList.innerHTML = "";
-    const listToRender = visibleTab === "official" ? officialTracks : privateTracks;
+    const rawList = visibleTab === "official" ? officialTracks : privateTracks;
     const isAdmin = (typeof currentUserRole !== 'undefined' && currentUserRole === 'admin');
 
-    if (listToRender.length === 0) {
-      playlistList.innerHTML = `<div style="text-align:center; padding:12px; font-size:12px; color:var(--music-text-dim);">لا توجد أغاني في هذه القائمة!</div>`;
+    // Filter by search query
+    let filteredList = rawList.map((t, origIdx) => ({ track: t, originalIndex: origIdx }));
+    if (searchQuery.trim() !== "") {
+      const q = searchQuery.trim().toLowerCase();
+      filteredList = filteredList.filter(item => item.track.title && item.track.title.toLowerCase().includes(q));
+    }
+
+    if (playlistCount) {
+      playlistCount.textContent = `${filteredList.length} / ${rawList.length} أغانٍ`;
+    }
+
+    if (filteredList.length === 0) {
+      playlistList.innerHTML = searchQuery.trim()
+        ? `<div style="text-align:center; padding:12px; font-size:12px; color:var(--music-text-dim);">لا توجد نتائج تطابق "${searchQuery}"</div>`
+        : `<div style="text-align:center; padding:12px; font-size:12px; color:var(--music-text-dim);">لا توجد أغاني في هذه القائمة!</div>`;
       return;
     }
 
     const canEdit = (visibleTab === "private" || (visibleTab === "official" && isAdmin));
 
-    listToRender.forEach((track, index) => {
+    filteredList.forEach(({ track, originalIndex }, idx) => {
       const item = document.createElement("div");
       item.className = "music-track-item";
       
       // Cascade stagger animation delay
-      item.style.animationDelay = `${index * 35}ms`;
+      item.style.animationDelay = `${idx * 35}ms`;
       
       // If it is currently playing and the visible tab matches the active playing playlist
-      if (activePlaylist === visibleTab && index === currentTrackIndex) {
+      if (activePlaylist === visibleTab && originalIndex === currentTrackIndex) {
         item.classList.add("active");
       }
 
       item.onclick = function(e) {
         // Prevent trigger if they click action buttons
         if (e.target.closest('.music-track-action-btn') || e.target.closest('.music-track-edit-btn') || e.target.closest('.music-track-delete-btn')) return;
-        loadTrack(visibleTab, index, true);
+        loadTrack(visibleTab, originalIndex, true);
       };
 
-      const sourceLabel = track.type === "youtube" ? "يوتيوب 📺" : (track.uploaded ? "ملف مرفوع ☁️" : "ملف مباشر 🎵");
+      const sourceLabel = track.type === "youtube" ? "يوتيوب" : (track.uploaded ? "ملف مرفوع" : "ملف مباشر");
       const thumbUrl = getTrackThumbnail(track);
-      const trackId = track.id || (visibleTab + "_" + index);
+      const trackId = track.id || (visibleTab + "_" + originalIndex);
       const isLiked = !!likedTracks[trackId];
       const isDisliked = !!dislikedTracks[trackId];
 
       if (canEdit) {
         item.innerHTML = `
           <img class="music-track-thumb" src="${thumbUrl}" alt="Cover" />
-          <button class="music-track-action-btn music-track-like-btn ${isLiked ? 'active' : ''}" title="أعجبني">👍</button>
+          <button class="music-track-action-btn music-track-like-btn ${isLiked ? 'active' : ''}" title="إعجاب">♥</button>
           <div class="music-track-item-info">
             <div class="music-track-item-title">${track.title}</div>
             <div class="music-track-item-subtitle">${sourceLabel}</div>
           </div>
           <div class="music-track-item-actions">
-            <button class="music-track-edit-btn" title="تعديل الاسم">✏️</button>
-            <button class="music-track-delete-btn" title="حذف">❌</button>
+            <button class="music-track-edit-btn" title="تعديل الاسم">تعديل</button>
+            <button class="music-track-delete-btn" title="حذف">✕</button>
           </div>
         `;
 
@@ -10536,18 +10825,18 @@ updateWelcomeClock();
         // Wire edit button
         item.querySelector(".music-track-edit-btn").onclick = function(e) {
           e.stopPropagation();
-          editTrack(index);
+          editTrack(originalIndex);
         };
 
         // Wire delete button
         item.querySelector(".music-track-delete-btn").onclick = function(e) {
           e.stopPropagation();
-          deleteTrack(index);
+          deleteTrack(originalIndex);
         };
       } else {
         item.innerHTML = `
           <img class="music-track-thumb" src="${thumbUrl}" alt="Cover" />
-          <button class="music-track-action-btn music-track-like-btn ${isLiked ? 'active' : ''}" title="أعجبني">👍</button>
+          <button class="music-track-action-btn music-track-like-btn ${isLiked ? 'active' : ''}" title="إعجاب">♥</button>
           <div class="music-track-item-info">
             <div class="music-track-item-title">${track.title}</div>
             <div class="music-track-item-subtitle">${sourceLabel}</div>

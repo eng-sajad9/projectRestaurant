@@ -1524,6 +1524,8 @@
   <!-- ركن الترفيه - مشغل الموسيقى العائم -->
   <!-- ============================================ -->
   <div id="music-player-widget" class="music-player-card closed" aria-label="مشغل الموسيقى">
+    <!-- مقبض سحب الموبايل -->
+    <div class="music-sheet-drag-handle"></div>
     <!-- عنصر الصوت القياسي -->
     <audio id="music-audio-player" style="display:none;"></audio>
     <!-- حاوية تشغيل يوتيوب المخفية -->
@@ -1535,7 +1537,7 @@
     <!-- الجزء العلوي: رأس المشغل -->
     <div class="music-header">
       <div class="music-header-title">
-        <span class="music-title-text">🎵 ركن الترفيه</span>
+        <span class="music-title-text">ركن الترفيه</span>
         <span id="music-active-track-name" class="music-track-scroll">لا يوجد تراك حالياً</span>
       </div>
       <div class="music-visualizer-bars">
@@ -1550,14 +1552,14 @@
           style="color: rgba(255, 255, 255, 0.2); font-size: 14px; letter-spacing: 2px; margin-left: 8px; display: inline-block; vertical-align: middle;">•••••</span>
         <button id="music-btn-toggle-view" class="music-header-btn" title="تصغير">-</button>
         <button id="music-btn-maximize" class="music-header-btn" title="تكبير">□</button>
-        <button id="music-btn-close-widget" class="music-header-btn" title="إغلاق">X</button>
+        <button id="music-btn-close-widget" class="music-header-btn" title="إغلاق">✕</button>
       </div>
     </div>
 
     <!-- تبويبات قائمة التشغيل في الجزء العلوي للمظهر الفاخر -->
     <div class="music-playlist-tabs">
-      <button id="music-tab-official" class="music-tab-btn active">🎙️ قائمة الموقع الرسمية</button>
-      <button id="music-tab-private" class="music-tab-btn">👤 قائمتي الشخصية</button>
+      <button id="music-tab-official" class="music-tab-btn active">القائمة الرسمية</button>
+      <button id="music-tab-private" class="music-tab-btn">قائمتي الشخصية</button>
     </div>
 
     <!-- الجزء الأوسط: عرض التراك والقرص الدوار -->
@@ -1603,7 +1605,7 @@
       <div class="music-progress-wrapper">
         <div class="music-progress-slider-row">
           <input type="range" id="music-progress-bar" min="0" max="100" value="0" step="0.1" />
-          <button id="music-btn-mute" class="music-volume-btn" title="كتم/تفعيل الصوت">🔊</button>
+          <button id="music-btn-mute" class="music-volume-btn" title="كتم/تفعيل الصوت">VOL</button>
         </div>
         <div class="music-progress-time-row">
           <span id="music-time-current">00:00</span>
@@ -1613,9 +1615,11 @@
 
       <!-- أزرار التحكم الأساسية بالتشغيل -->
       <div class="music-controls">
-        <button id="music-btn-prev" class="music-control-btn" title="السابق">⏮</button>
+        <button id="music-btn-shuffle" class="music-control-btn secondary-btn" title="خلط">MIX</button>
+        <button id="music-btn-prev" class="music-control-btn" title="السابق">◀◀</button>
         <button id="music-btn-play" class="music-control-btn main-play-btn" title="تشغيل/إيقاف">▶</button>
-        <button id="music-btn-next" class="music-control-btn" title="التالي">⏭</button>
+        <button id="music-btn-next" class="music-control-btn" title="التالي">▶▶</button>
+        <button id="music-btn-repeat" class="music-control-btn secondary-btn" title="تكرار">REP</button>
       </div>
 
       <!-- التحكم بالصوت -->
@@ -1625,21 +1629,31 @@
 
       <!-- قائمة التشغيل وإضافة الأغاني -->
       <div class="music-playlist-section">
-        <h5>📋 قائمة التشغيل المخصصة</h5>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <h5 style="margin: 0;">قائمة التشغيل</h5>
+          <span id="music-playlist-count" style="font-size: 11px; opacity: 0.7; background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 12px;">0 أغانٍ</span>
+        </div>
+
+        <!-- شريط البحث عن الأغاني -->
+        <div class="music-search-box">
+          <input type="text" id="music-search-input" placeholder="بحث عن أغنية..." autocomplete="off" />
+          <button id="music-search-clear" class="music-search-clear-btn" style="display: none;" title="مسح">✕</button>
+        </div>
+
         <div id="music-playlist-list" class="music-playlist-scroll">
           <!-- سيتم بناؤها ديناميكياً بـ JS -->
         </div>
 
         <!-- فورم إضافة أغنية جديدة -->
         <div class="music-add-form">
-          <h6>➕ إضافة أغنية جديدة</h6>
+          <h6>إضافة أغنية جديدة</h6>
           <input type="text" id="music-input-title" placeholder="اسم الأغنية/التراك" autocomplete="off" />
           <input type="text" id="music-input-url" placeholder="رابط مباشر MP3 أو رابط YouTube" autocomplete="off" />
           
           <!-- فاصل "أو" -->
           <div class="music-upload-divider">
             <span class="music-upload-divider-line"></span>
-            <span class="music-upload-divider-text">أو ارفع ملف صوتي</span>
+            <span class="music-upload-divider-text">أو رفع ملف صوتي</span>
             <span class="music-upload-divider-line"></span>
           </div>
 
@@ -1647,7 +1661,6 @@
           <div class="music-upload-area" id="music-upload-area">
             <input type="file" id="music-file-input" accept="audio/*" style="display:none;" />
             <label for="music-file-input" class="music-upload-label" id="music-upload-label">
-              <span class="music-upload-icon">📁</span>
               <span class="music-upload-text">اختر ملف صوتي (MP3, WAV, OGG...)</span>
             </label>
             <div class="music-upload-file-info" id="music-upload-file-info" style="display:none;">
@@ -1675,7 +1688,6 @@
     <!-- واجهة التشغيل المصغرة لأسفل الشاشة (Mini bottom bar) للموبايل -->
     <div class="music-body-minimized">
       <div class="music-mini-info">
-        <span class="music-mini-icon">🎵</span>
         <span id="music-mini-track-title" class="music-mini-text">لا يوجد تراك</span>
       </div>
       <div class="music-mini-controls">
