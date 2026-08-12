@@ -2560,11 +2560,8 @@ async function saveData() {
   try {
     const attendanceSnapshot = await db.ref(attendancePath).once("value");
     const savedData = attendanceSnapshot.val() || {};
-    const updatedData = { ...savedData };
-    let changes = [];
-    let anyChange = false;
+    let patchUpdates = {};
     days.forEach((day, dayIndex) => {
-      if (!updatedData[day.key]) updatedData[day.key] = {};
       let dayChanged = false;
       monthEmployees.forEach((employee, empIndex) => {
         const selectElement = document.getElementById(
@@ -2576,7 +2573,7 @@ async function saveData() {
             ? savedData[day.key][employee]
             : "";
           if (newValue !== oldValue) {
-            updatedData[day.key][employee] = newValue;
+            patchUpdates[`${day.key}/${employee}`] = newValue;
             dayChanged = true;
             anyChange = true;
             changes.push({
@@ -2591,16 +2588,15 @@ async function saveData() {
         }
       });
       if (dayChanged) {
-        updatedData[day.key].__editor = currentUser;
-        const now = new Date();
-        updatedData[day.key].__editedAt = formatDateTimeNoSeconds(now);
+        patchUpdates[`${day.key}/__editor`] = currentUser;
+        patchUpdates[`${day.key}/__editedAt`] = formatDateTimeNoSeconds(new Date());
       }
     });
     if (!anyChange) {
       showToast("لا يوجد أي تعديل لحفظه.", "info");
       return;
     }
-    await db.ref(attendancePath).set(updatedData);
+    await db.ref(attendancePath).update(patchUpdates);
     showToast("✅ تم حفظ التعديلات بنجاح");
     generateTable();
     changes.forEach((change) => {
@@ -3703,28 +3699,79 @@ function getDays() {
   return days;
 }
 
-function generateTable() {
-  // إظهار علامة التحميل
-  document.getElementById("loaderSpinner").style.display = "flex";
+let currentAttendancePath = null;
+let currentAttendanceCallback = null;
+
+function generateTable(forceRebuild = false) {
   const days = getDays();
   const monthFormatted = String(month + 1).padStart(2, '0');
   const attendancePath = `months/${year}/${monthFormatted}/attendance`;
 
   // تحديث عنوان الجدول باسم الشهر الحالي
-  document.querySelector(
-    "#mainContent h2"
-  ).textContent = `📋 جدول الحضور - ${arMonths[month]}`;
-  const tbody = document.getElementById("tableBody");
-  tbody.innerHTML = "";
-  // إخفاء رأس عمود التاريخ أثناء التحميل
+  const mainTitle = document.querySelector("#mainContent h2");
+  if (mainTitle) {
+    mainTitle.textContent = `📋 جدول الحضور - ${arMonths[month]}`;
+  }
+
   var dateHeader = document.getElementById("dateHeaderTh");
-  if (dateHeader) dateHeader.style.display = "none";
-  db.ref(attendancePath)
-    .once("value")
-    .then((snapshot) => {
-      const savedData = snapshot.val() || {};
-      // الموظفين لهذا الشهر فقط من قاعدة البيانات الشهرية
-      let monthEmployees = employees.slice();
+  const spinner = document.getElementById("loaderSpinner");
+
+  // إلغاء الاستماع من المسار القديم إذا تغير الشهر أو السنة
+  if (currentAttendancePath && currentAttendancePath !== attendancePath) {
+    if (currentAttendanceCallback && typeof db !== 'undefined' && db && typeof db.ref === 'function') {
+      try {
+        db.ref(currentAttendancePath).off("value", currentAttendanceCallback);
+      } catch (e) {
+        console.warn("Failed to detach attendance listener", e);
+      }
+    }
+    currentAttendancePath = null;
+    currentAttendanceCallback = null;
+  }
+
+  // إظهار اللودر في أول تحميل للمسار أو عند إعادة البناء الصريحة
+  const isInitialLoad = !currentAttendancePath || forceRebuild;
+  if (isInitialLoad && spinner) {
+    spinner.style.display = "flex";
+    if (dateHeader) dateHeader.style.display = "none";
+  }
+
+  function applyCellStyling(cell, select, val) {
+    if (!cell || !select) return;
+    if (val === "شفت") {
+      cell.style.background = "#d4edda";
+      cell.style.boxShadow = "none";
+      cell.style.color = "";
+      select.style.color = "";
+    } else if (val === "نص") {
+      cell.style.background = "#fff9db";
+      cell.style.boxShadow = "none";
+      cell.style.color = "";
+      select.style.color = "";
+    } else if (val === "\u274c") {
+      cell.style.background = "#ffe3e3";
+      cell.style.boxShadow = "none";
+      cell.style.color = "#d32f2f";
+      select.style.color = "#d32f2f";
+    } else {
+      cell.style.background = "#f5f7fa";
+      cell.style.boxShadow = "inset 0 0 0 1px #c8d0dc";
+      cell.style.color = "";
+      select.style.color = "#bbb";
+    }
+  }
+
+  const handleSnapshot = (snapshot) => {
+    const savedData = snapshot.val() || {};
+    window.savedData = savedData;
+    let monthEmployees = employees.slice();
+    const tbody = document.getElementById("tableBody");
+
+    const existingRows = tbody ? tbody.querySelectorAll("tr") : [];
+    const needsFullRebuild = isInitialLoad || forceRebuild || existingRows.length !== days.length;
+
+    if (needsFullRebuild) {
+      tbody.innerHTML = "";
       days.forEach((day, dayIndex) => {
         const row = document.createElement("tr");
         const dateCell = document.createElement("td");
@@ -3737,8 +3784,6 @@ function generateTable() {
           📝 ${editor}${ts ? " - " + toEnglishNumbers(ts) : ""}
         </div>`;
         }
-        // عند الضغط على اليوم، افتح نافذة التفاصيل
-        // للحفاظ على المظهر القديم تماماً نعيد innerHTML كما كان، ثم نربط الحدث بشكل آمن
         dateCell.innerHTML = `<span style='cursor:pointer;'>${dateContent}</span>`;
         const spanEl = dateCell.querySelector('span');
         if (spanEl) {
@@ -3761,119 +3806,120 @@ function generateTable() {
             option.textContent = status;
             select.appendChild(option);
           });
-          if (
-            savedData[day.key] &&
-            savedData[day.key][employee] !== undefined
-          ) {
-            select.value = savedData[day.key][employee];
-          }
-          if (select.value === "شفت") {
-            cell.style.background = "#d4edda";
-            cell.style.boxShadow = "none";
-            cell.style.color = "";
-            select.style.color = "";
-          } else if (select.value === "نص") {
-            cell.style.background = "#fff9db";
-            cell.style.boxShadow = "none";
-            cell.style.color = "";
-            select.style.color = "";
-          } else if (select.value === "\u274c") {
-            cell.style.background = "#ffe3e3";
-            cell.style.boxShadow = "none";
-            cell.style.color = "#d32f2f";
-            select.style.color = "#d32f2f";
-          } else {
-            /* Empty — inset shadow acts as a subtle dashed-style indicator */
-            cell.style.background = "#f5f7fa";
-            cell.style.boxShadow = "inset 0 0 0 1px #c8d0dc";
-            cell.style.color = "";
-            select.style.color = "#bbb";
-          }
+          const currentVal = (savedData[day.key] && savedData[day.key][employee] !== undefined)
+            ? savedData[day.key][employee]
+            : "";
+          select.value = currentVal;
+          applyCellStyling(cell, select, currentVal);
+
           if (!currentUserCanEdit || !isCurrentMonthSelected()) {
             select.setAttribute("disabled", "disabled");
-            select.addEventListener("change", (e) => {
-              e.target.value = savedData[day.key]
-                ? savedData[day.key][employee]
-                : "";
-            });
           }
+
           select.addEventListener("change", function () {
-            if (this.value === "شفت") {
-              cell.style.background = "#d4edda";
-              cell.style.boxShadow = "none";
-              cell.style.color = "";
-              select.style.color = "";
-            } else if (this.value === "نص") {
-              cell.style.background = "#fff9db";
-              cell.style.boxShadow = "none";
-              cell.style.color = "";
-              select.style.color = "";
-            } else if (this.value === "\u274c") {
-              cell.style.background = "#ffe3e3";
-              cell.style.boxShadow = "none";
-              cell.style.color = "#d32f2f";
-              select.style.color = "#d32f2f";
-            } else {
-              cell.style.background = "#f5f7fa";
-              cell.style.boxShadow = "inset 0 0 0 1px #c8d0dc";
-              cell.style.color = "";
-              select.style.color = "#bbb";
-            }
+            applyCellStyling(cell, select, this.value);
           });
           cell.appendChild(select);
           row.appendChild(cell);
         });
         tbody.appendChild(row);
       });
-      // تعطيل زر الحفظ إذا لم يكن الشهر الحالي أو لا يوجد صلاحية
-      const saveBtn = document.querySelector(
-        'button[onclick="saveData()"]'
-      );
-      if (saveBtn)
-        saveBtn.disabled =
-          !currentUserCanEdit || !isCurrentMonthSelected();
-      calculateStats(savedData);
-      // Save savedData globally for use in other functions
-      window.savedData = savedData;
-      if (typeof renderUserEmpStats === "function") renderUserEmpStats();
-      // إظهار رأس عمود التاريخ بعد اكتمال تحميل الجدول
-      if (dateHeader) dateHeader.style.display = "";
-      // إخفاء علامة التحميل بعد اكتمال التحميل
+    } else {
+      // تحديث لحظي ذكي بدون إعادة بناء كامل الجدول
+      days.forEach((day, dayIndex) => {
+        const row = existingRows[dayIndex];
+        if (!row) return;
+
+        // تحديث تاج التعديل في خلية التاريخ
+        const dateCell = row.cells[0];
+        if (dateCell) {
+          let dateContent = toEnglishNumbers(day.label);
+          if (savedData[day.key] && savedData[day.key].__editor) {
+            const ts = savedData[day.key].__editedAt || "";
+            const editor = savedData[day.key].__editor;
+            const color = editor === "admin" ? "#1fa745" : "#dc3545";
+            dateContent += `<div class='editor-tag' style="color:${color};font-weight:bold;">
+            📝 ${editor}${ts ? " - " + toEnglishNumbers(ts) : ""}
+          </div>`;
+          }
+          const spanEl = dateCell.querySelector('span');
+          if (spanEl && spanEl.innerHTML !== dateContent) {
+            spanEl.innerHTML = dateContent;
+          }
+        }
+
+        // تحديث قيم خلايا الموظفين
+        monthEmployees.forEach((employee, empIndex) => {
+          const select = document.getElementById(`d${dayIndex}e${empIndex}`);
+          if (!select) return;
+          const newVal = (savedData[day.key] && savedData[day.key][employee] !== undefined)
+            ? savedData[day.key][employee]
+            : "";
+          
+          if (select.value !== newVal && document.activeElement !== select) {
+            const cell = select.parentElement;
+            select.value = newVal;
+            applyCellStyling(cell, select, newVal);
+
+            // تأطير وتأثير بصري متوافق مع الموبايل عند تغيير الخلية
+            if (cell) {
+              cell.classList.remove("cell-updated-highlight");
+              void cell.offsetWidth; // Force reflow
+              cell.classList.add("cell-updated-highlight");
+              setTimeout(() => {
+                cell.classList.remove("cell-updated-highlight");
+              }, 850);
+            }
+          }
+        });
+      });
+    }
+
+    // تعطيل زر الحفظ إذا لم يكن الشهر الحالي أو لا يوجد صلاحية
+    const saveBtn = document.querySelector('button[onclick="saveData()"]');
+    if (saveBtn) {
+      saveBtn.disabled = !currentUserCanEdit || !isCurrentMonthSelected();
+    }
+
+    calculateStats(savedData);
+    if (typeof renderUserEmpStats === "function") renderUserEmpStats();
+
+    // تحديث جدول الكعده لحظياً إذا كان مفتوحاً
+    const kadahWrapper = document.getElementById("kadahStatsTableWrapper");
+    if (kadahWrapper && kadahWrapper.style.display !== "none" && typeof renderKadahStatsTable === "function") {
+      renderKadahStatsTable();
+    }
+
+    // إظهار رأس عمود التاريخ
+    if (dateHeader) dateHeader.style.display = "";
+
+    // إخفاء التحميل
+    if (spinner && spinner.style.display !== "none") {
       setTimeout(function () {
-        document.getElementById("loaderSpinner").style.display = "none";
-        // Update welcome screen after all data is loaded
-        if (window.currentUser) {
+        spinner.style.display = "none";
+        if (window.currentUser && typeof updateWelcomeScreenData === "function") {
           updateWelcomeScreenData(window.currentUser);
         }
       }, 350);
-    });
-  // تعطيل جميع select وinput وtextarea وأزرار الحفظ إذا فقدت الصلاحية (احتياطي)
-  setTimeout(() => {
-    if (!currentUserCanEdit || !isCurrentMonthSelected()) {
-      document
-        .querySelectorAll(
-          "#mainContent select, #mainContent input, #mainContent textarea"
-        )
-        .forEach((el) => {
-          el.setAttribute("disabled", "disabled");
-        });
-      const saveBtn = document.querySelector(
-        'button[onclick="saveData()"]'
-      );
-      if (saveBtn) saveBtn.disabled = true;
-    } else {
-      document
-        .querySelectorAll(
-          "#mainContent select, #mainContent input, #mainContent textarea"
-        )
-        .forEach((el) => {
-          el.removeAttribute("disabled");
-        });
-      const saveBtn = document.querySelector(
-        'button[onclick="saveData()"]'
-      );
-      if (saveBtn) saveBtn.disabled = false;
     }
+  };
+
+  // ربط المستمع اللحظي بقاعدة البيانات فوراً
+  if (!currentAttendancePath) {
+    currentAttendancePath = attendancePath;
+    currentAttendanceCallback = handleSnapshot;
+    db.ref(attendancePath).on("value", currentAttendanceCallback);
+  }
+
+  // تعطيل جميع العناصر إذا لم تكن هناك صلاحية تعديل (احتياطي)
+  setTimeout(() => {
+    const isEditable = currentUserCanEdit && isCurrentMonthSelected();
+    document.querySelectorAll("#mainContent select, #mainContent input, #mainContent textarea").forEach((el) => {
+      if (isEditable) el.removeAttribute("disabled");
+      else el.setAttribute("disabled", "disabled");
+    });
+    const saveBtn = document.querySelector('button[onclick="saveData()"]');
+    if (saveBtn) saveBtn.disabled = !isEditable;
   }, 100);
 }
 

@@ -791,6 +791,29 @@ button:active {
   position: relative;
 }
 
+/* Real-time cell update highlight animation (fully responsive on all screen sizes) */
+@keyframes realtimeCellGlow {
+  0% {
+    box-shadow: 0 0 0 0px rgba(11, 116, 201, 0.7), inset 0 0 10px rgba(11, 116, 201, 0.4);
+    transform: scale(1.04);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(11, 116, 201, 0.35), inset 0 0 14px rgba(11, 116, 201, 0.25);
+    transform: scale(1.05);
+  }
+  100% {
+    box-shadow: 0 0 0 0px rgba(11, 116, 201, 0), inset 0 0 0px rgba(11, 116, 201, 0);
+    transform: scale(1);
+  }
+}
+
+.cell-updated-highlight {
+  position: relative !important;
+  z-index: 10 !important;
+  animation: realtimeCellGlow 0.8s cubic-bezier(0.25, 1, 0.5, 1) !important;
+  border-radius: 6px !important;
+}
+
 #attendanceTable td:hover {
   background-color: #f8fbff;
 }
